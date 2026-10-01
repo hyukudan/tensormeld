@@ -1,14 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-runtime-observation",
-  "scope": "Add strict runtime observation import and conservative runtime candidate and memory-budget resolution, with tests, CLI and docs.",
-  "started_at": "2026-10-01T15:30:00+02:00",
-  "completed_at": "2026-10-01T16:42:00+02:00",
-  "expires_at": null,
-  "base_commit": "2f8b5ae134e8be9f6912e648927e67d601200705",
-  "validation_record": "docs/implementation/validation/runtime-availability-2026-10-01.md",
-  "completion_condition": "Implementation, tests, CLI and docs are on main and portable CI passed.",
-  "next_step": "Implement a trusted-local native adapter probe for the pinned llama.cpp candidate: verify artifact identity and parse a bounded machine-readable capability handshake without launching model inference.",
-  "instructions": "Do not repeat runtime observation work. Read current HEAD and third-party registry before claiming the native probe slice."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-native-probe",
+  "scope": "Implement a trusted-local native llama.cpp probe for the pinned revision: verify binary artifact identity, bounded --version/--list-devices execution, parse only conservative observations, tests and docs. No model inference.",
+  "started_at": "2026-10-01T16:47:00+02:00",
+  "expires_at": "2026-10-01T18:47:00+02:00",
+  "base_commit": "a6a304046e151b3718879a140704d79ed9f1363f",
+  "completion_condition": "Probe, tests, docs and provenance are on main and portable CI passes without claiming GPU qualification.",
+  "next_step": "Implement bounded subprocess probe and fixture-backed parser for pinned llama.cpp behavior.",
+  "instructions": "No model loading, no RPC listener, no shell=True, no downloads/builds. Preserve public pre-alpha status."
 }
