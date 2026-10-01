@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-backend-e2-evidence-record",
-  "scope": "Add a strict retained E2 backend-readiness evidence record around native llama.cpp test-backend-ops results, including native-only retention eligibility, exact identity/applicability checks, bounded loading, and invalidation inputs without claiming hardware qualification.",
-  "started_at": "2026-10-01T23:31:00+02:00",
-  "expires_at": "2026-10-02T01:31:00+02:00",
-  "base_commit": "244d05601ee38f34531088c3e81b41f18569e88a",
-  "completion_condition": "Retained E2 record/applicability code, portable negative/positive contract tests, documentation and validation ledger are committed; CI result is recorded if available.",
-  "next_step": "Implement runtime model/operator/memory manifests tied to exact model/workload, while preserving physical-pool accounting and keeping runtime readiness distinct from reservation/admission.",
-  "instructions": "Completed after PR #1 merged the backend self-test slice. Retention accepts native-subprocess results only and never restores runtime ready without a live recheck. No CUDA/HIP/Windows GPU/Strix/performance/distributed-inference claim was made."
+  "status": "active",
+  "owner": "chatgpt-runtime-model-manifest",
+  "scope": "Implement the next roadmap slice: strict runtime model/operator/memory manifests tied to an exact model and workload, preserving physical-pool accounting and keeping manifest evidence separate from readiness, reservations and execution authorization.",
+  "started_at": "2026-10-02T00:00:00+02:00",
+  "expires_at": "2026-10-02T02:00:00+02:00",
+  "base_commit": "226eaa56cdeff1e28dd95b5879cdd7f2b7b4cac6",
+  "completion_condition": "Runtime model/operator/memory manifest contracts, portable tests, status/roadmap/testing documentation and validation ledger are committed; CI result is recorded if available.",
+  "next_step": "Reuse existing exact model identity and v2 workload contracts to add bounded runtime manifests with per-physical-pool memory demand, explicit operator coverage and no implicit readiness/reservation/execution promotion.",
+  "instructions": "Reservation created after reconciling main, open PRs and the existing empty branch. Keep the core hardware-neutral and physical-pool based. Do not claim real CUDA/HIP/Windows GPU/Strix performance or distributed inference without real target-host evidence."
 }
