@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add a versioned native-adapter capability envelope.
+- Add an exact whole-block representability gate between planner output and future live
+  adapter qualification.
+- Reject unsupported device ownership, explicit ranges, route modes, backends,
+  coordinators and adapter limits with structured reason codes.
+- Keep representable plans explicitly non-qualified and non-executable.
+
 ## 0.2.0a2 — 2026-10-01
 
 - Adopt TensorMeld and preserve the existing Git history.
