@@ -8,7 +8,8 @@ import sys
 from . import __version__
 from .diagnostics import loopback
 from .config_v2 import load_config
-from .selection import resolve_candidates
+from .selection import resolve_candidates, resolve_runtime_candidates
+from .runtime_observation import load_runtime_observation
 from .planning_contract import load_planning_input
 from .planner_v2 import plan_v2
 from .migration import migrate_config
@@ -19,8 +20,13 @@ from .schema import ValidationError, load
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="tensormeld",
-                                    description="Control-plane prototype: inventory, v2 policy resolution, advisory placement; NO GPU inference yet.")
+    parser = argparse.ArgumentParser(
+        prog="tensormeld",
+        description=(
+            "Control-plane prototype: inventory, policy/runtime resolution and advisory "
+            "placement; NO GPU inference yet."
+        ),
+    )
     parser.add_argument("--version", action="version", version=__version__)
     subs = parser.add_subparsers(dest="command", required=True)
     p = subs.add_parser("probe", help="Read-only local hardware inventory")
@@ -32,11 +38,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("scenario", type=Path)
     p.add_argument("--devices", nargs="+", help="Restrict candidate devices, e.g. strix-a strix-b")
     p.add_argument("--out", type=Path)
-    p = subs.add_parser("validate-config", help="Validate an TensorMeld v2 installation config")
+    p = subs.add_parser("validate-config", help="Validate a TensorMeld v2 installation config")
     p.add_argument("config", type=Path)
     p.add_argument("--out", type=Path)
     p = subs.add_parser("select", help="Resolve legal v2 compute/coordinator candidates before placement")
     p.add_argument("config", type=Path)
+    p.add_argument("--profile", help="Profile name; defaults to installation.default_profile")
+    p.add_argument("--out", type=Path)
+    p = subs.add_parser(
+        "runtime-select",
+        help="Intersect static policy with one advisory runtime snapshot; no reservation is created",
+    )
+    p.add_argument("config", type=Path)
+    p.add_argument("runtime_observation", type=Path)
     p.add_argument("--profile", help="Profile name; defaults to installation.default_profile")
     p.add_argument("--out", type=Path)
     p = subs.add_parser("plan-v2", help="Bounded synthetic multi-node whole-block planner; not executable")
@@ -59,11 +73,25 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.out:
-            inputs = [getattr(args, name, None) for name in ("config", "planning_input", "scenario", "source", "destination")]
+            inputs = [
+                getattr(args, name, None)
+                for name in (
+                    "config", "runtime_observation", "planning_input", "scenario",
+                    "source", "destination",
+                )
+            ]
             inputs += getattr(args, "paths", [])
-            if any(isinstance(p, Path) and (p.resolve() == args.out.resolve()
-                   or (p.exists() and args.out.exists() and p.samefile(args.out))) for p in inputs):
-                raise ValidationError("--out must not overwrite an input file or migration destination")
+            if any(
+                isinstance(p, Path)
+                and (
+                    p.resolve() == args.out.resolve()
+                    or (p.exists() and args.out.exists() and p.samefile(args.out))
+                )
+                for p in inputs
+            ):
+                raise ValidationError(
+                    "--out must not overwrite an input file or migration destination"
+                )
         code = 0
         if args.command == "probe":
             result = probe()
@@ -73,6 +101,11 @@ def main(argv: list[str] | None = None) -> int:
             result = migrate_config(args.source, args.destination)
         elif args.command == "inspect-gguf":
             result = inspect_gguf(args.paths, trusted_local_file=args.trusted_local_file)
+        elif args.command == "runtime-select":
+            config = load_config(args.config)
+            observation = load_runtime_observation(args.runtime_observation)
+            result = resolve_runtime_candidates(config, observation, args.profile)
+            code = 0 if result["status"] == "RUNTIME_CANDIDATES_READY" else 2
         elif args.command == "plan-v2":
             config = load_config(args.config)
             model = load_planning_input(args.planning_input, config)
@@ -81,17 +114,24 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command in ("validate-config", "select"):
             config = load_config(args.config)
             if args.command == "validate-config":
-                result = {"valid": True, "config_schema": "tensormeld/v2",
-                          "config_sha256": config.fingerprint,
-                          "nodes": len(config.nodes), "devices": len(config.devices),
-                          "profiles": [p.name for p in config.profiles]}
+                result = {
+                    "valid": True,
+                    "config_schema": "tensormeld/v2",
+                    "config_sha256": config.fingerprint,
+                    "nodes": len(config.nodes),
+                    "devices": len(config.devices),
+                    "profiles": [p.name for p in config.profiles],
+                }
             else:
                 result = resolve_candidates(config, args.profile)
         else:
             scenario = load(args.scenario)
             if args.command == "validate":
-                result = {"valid": True, "scenario_sha256": scenario.fingerprint,
-                          "provenance": scenario.provenance}
+                result = {
+                    "valid": True,
+                    "scenario_sha256": scenario.fingerprint,
+                    "provenance": scenario.provenance,
+                }
             else:
                 result = plan(scenario, args.devices)
                 code = 2 if result["best"] is None else 0
