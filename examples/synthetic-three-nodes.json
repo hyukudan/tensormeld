@@ -1,0 +1,415 @@
+{
+  "schema_version": 1,
+  "name": "synthetic-workstation-two-companions",
+  "provenance": "synthetic",
+  "workload": {
+    "model_revision": "synthetic-ordered-stages-v1-NOT-A-REAL-MODEL",
+    "quantization": "synthetic-fixed-layout",
+    "context_tokens": 8192,
+    "concurrency": 1,
+    "phase": "decode"
+  },
+  "pools": [
+    {
+      "id": "desktop-vram",
+      "node": "desktop",
+      "budget_bytes": 90194313216
+    },
+    {
+      "id": "strix-a-uma",
+      "node": "strix-a",
+      "budget_bytes": 111669149696
+    },
+    {
+      "id": "strix-b-uma",
+      "node": "strix-b",
+      "budget_bytes": 111669149696
+    }
+  ],
+  "devices": [
+    {
+      "id": "desktop-gpu",
+      "node": "desktop",
+      "pool": "desktop-vram",
+      "backend": "cuda-unqualified",
+      "runtime_bytes": 2147483648
+    },
+    {
+      "id": "strix-a",
+      "node": "strix-a",
+      "pool": "strix-a-uma",
+      "backend": "hip-unqualified",
+      "runtime_bytes": 2147483648
+    },
+    {
+      "id": "strix-b",
+      "node": "strix-b",
+      "pool": "strix-b-uma",
+      "backend": "hip-unqualified",
+      "runtime_bytes": 2147483648
+    }
+  ],
+  "links": [
+    {
+      "id": "desktop-gpu-to-strix-a",
+      "source": "desktop-gpu",
+      "target": "strix-a",
+      "payload_bytes_per_s": 110000000,
+      "fixed_latency_us": 250,
+      "physical_group": "desktop-single-ethernet-port"
+    },
+    {
+      "id": "strix-a-to-desktop-gpu",
+      "source": "strix-a",
+      "target": "desktop-gpu",
+      "payload_bytes_per_s": 110000000,
+      "fixed_latency_us": 250,
+      "physical_group": "desktop-single-ethernet-port"
+    },
+    {
+      "id": "desktop-gpu-to-strix-b",
+      "source": "desktop-gpu",
+      "target": "strix-b",
+      "payload_bytes_per_s": 110000000,
+      "fixed_latency_us": 250,
+      "physical_group": "desktop-single-ethernet-port"
+    },
+    {
+      "id": "strix-b-to-desktop-gpu",
+      "source": "strix-b",
+      "target": "desktop-gpu",
+      "payload_bytes_per_s": 110000000,
+      "fixed_latency_us": 250,
+      "physical_group": "desktop-single-ethernet-port"
+    },
+    {
+      "id": "strix-a-to-strix-b-rail1",
+      "source": "strix-a",
+      "target": "strix-b",
+      "payload_bytes_per_s": 2000000000,
+      "fixed_latency_us": 100,
+      "physical_group": "usb4-rail1-NOT-concurrently-qualified"
+    },
+    {
+      "id": "strix-a-to-strix-b-rail2",
+      "source": "strix-a",
+      "target": "strix-b",
+      "payload_bytes_per_s": 2000000000,
+      "fixed_latency_us": 100,
+      "physical_group": "usb4-rail2-NOT-concurrently-qualified"
+    },
+    {
+      "id": "strix-b-to-strix-a-rail1",
+      "source": "strix-b",
+      "target": "strix-a",
+      "payload_bytes_per_s": 2000000000,
+      "fixed_latency_us": 100,
+      "physical_group": "usb4-rail1-NOT-concurrently-qualified"
+    },
+    {
+      "id": "strix-b-to-strix-a-rail2",
+      "source": "strix-b",
+      "target": "strix-a",
+      "payload_bytes_per_s": 2000000000,
+      "fixed_latency_us": 100,
+      "physical_group": "usb4-rail2-NOT-concurrently-qualified"
+    }
+  ],
+  "route_mode": "via_coordinator",
+  "coordinators": [
+    "desktop-gpu",
+    "strix-a",
+    "strix-b"
+  ],
+  "stages": [
+    {
+      "id": "block-00",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-01",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-02",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-03",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-04",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-05",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-06",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-07",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-08",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-09",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-10",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-11",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-12",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-13",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-14",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-15",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-16",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-17",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-18",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-19",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-20",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-21",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-22",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    },
+    {
+      "id": "block-23",
+      "weights_bytes": 8589934592,
+      "state_bytes": 134217728,
+      "workspace_bytes": 2147483648,
+      "output_bytes": 32768,
+      "decode_ms": {
+        "desktop-gpu": 0.6,
+        "strix-a": 2.4,
+        "strix-b": 2.4
+      }
+    }
+  ],
+  "feedback_bytes": 16
+}
