@@ -1,0 +1,121 @@
+{
+  "planning_schema": "tensormeld/planning-v1",
+  "provenance": "synthetic",
+  "manifest_ref": "catalog:approved-model-manifest",
+  "workload": {
+    "phase": "decode",
+    "context_tokens": 8192,
+    "max_output_tokens": 1024,
+    "concurrency": 1
+  },
+  "worker_resident": {
+    "pc-gpu": {
+      "pc-vram": 268435456
+    },
+    "helper-a-igpu": {
+      "helper-a-shared-ram": 268435456
+    }
+  },
+  "coordinator_resident": {
+    "pc": {
+      "pc-ram": 134217728
+    },
+    "helper-a": {
+      "helper-a-shared-ram": 134217728
+    }
+  },
+  "units": [
+    {
+      "id": "block.0",
+      "output_bytes": 65536,
+      "placements": {
+        "pc-gpu": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "pc-vram": 5368709120
+          },
+          "workspace_bytes": {
+            "pc-vram": 268435456
+          }
+        },
+        "helper-a-igpu": {
+          "decode_us": 4000,
+          "resident_bytes": {
+            "helper-a-shared-ram": 5368709120
+          },
+          "workspace_bytes": {
+            "helper-a-shared-ram": 268435456
+          }
+        }
+      }
+    },
+    {
+      "id": "block.1",
+      "output_bytes": 65536,
+      "placements": {
+        "pc-gpu": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "pc-vram": 5368709120
+          },
+          "workspace_bytes": {
+            "pc-vram": 268435456
+          }
+        },
+        "helper-a-igpu": {
+          "decode_us": 4000,
+          "resident_bytes": {
+            "helper-a-shared-ram": 5368709120
+          },
+          "workspace_bytes": {
+            "helper-a-shared-ram": 268435456
+          }
+        }
+      }
+    },
+    {
+      "id": "block.2",
+      "output_bytes": 65536,
+      "placements": {
+        "pc-gpu": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "pc-vram": 5368709120
+          },
+          "workspace_bytes": {
+            "pc-vram": 268435456
+          }
+        },
+        "helper-a-igpu": {
+          "decode_us": 4000,
+          "resident_bytes": {
+            "helper-a-shared-ram": 5368709120
+          },
+          "workspace_bytes": {
+            "helper-a-shared-ram": 268435456
+          }
+        }
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "ethernet-0",
+      "source": "device:pc-gpu",
+      "target": "device:helper-a-igpu",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "one-ethernet-path"
+    },
+    {
+      "id": "ethernet-1",
+      "source": "device:helper-a-igpu",
+      "target": "device:pc-gpu",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "one-ethernet-path"
+    }
+  ],
+  "route_mode": "direct",
+  "feedback_bytes": 8
+}
