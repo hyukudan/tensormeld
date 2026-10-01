@@ -32,7 +32,7 @@
       "commit": "552f18f912a32ea86edf82e2b76431cb7131538d",
       "license": "MIT",
       "adoption": "native-adapter-candidate",
-      "status": "revision identified; not downloaded, compiled or integrated as an execution worker",
+      "status": "trusted-local no-model probe implemented for pinned revision; fixture tests added; no real native binary compiled or executed in this environment",
       "notice": "licenses/ggml-MIT.txt"
     },
     {
