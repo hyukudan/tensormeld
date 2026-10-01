@@ -2,11 +2,11 @@
   "schema": "tensormeld/work-session/v1",
   "status": "active",
   "owner": "chatgpt-llamacpp-backend-self-test",
-  "scope": "Add a bounded llama.cpp test-backend-ops adapter contract for exact backend self-test evidence without model loading, then validate portable parsing and readiness promotion rules.",
-  "started_at": "2026-10-01T18:28:00+02:00",
-  "expires_at": "2026-10-01T20:28:00+02:00",
-  "base_commit": "b4c112b5dad0b7f05da96166463895e0d8ab6051",
-  "completion_condition": "Self-test contract, strict parser/promotion rules, portable tests and status documentation are committed; CI result is recorded if available.",
-  "next_step": "Implement a fixture-driven adapter around pinned upstream test-backend-ops with exact artifact/backend/config binding and no model execution.",
-  "instructions": "Do not auto-promote list-devices observations. Do not claim hardware qualification from fixture tests; real E2 evidence requires executing the pinned upstream test tool on the bound backend."
+  "scope": "Complete the bounded llama.cpp test-backend-ops adapter contract for exact backend self-test evidence without model loading, then validate portable parsing and readiness promotion rules.",
+  "started_at": "2026-10-01T22:25:00+02:00",
+  "expires_at": "2026-10-02T00:25:00+02:00",
+  "base_commit": "6829994d0b44e476b6fc03283064b811de58d37e",
+  "completion_condition": "Self-test contract, strict target-backend execution proof, portable tests and status documentation are committed; CI result is recorded if available.",
+  "next_step": "Implement a fixture-driven adapter around the pinned upstream test-backend-ops target, requiring positive proof that the requested backend initialized and executed tests rather than trusting exit code alone.",
+  "instructions": "This replaces the expired 18:28 reservation after reconciliation with HEAD 6829994d0b44e476b6fc03283064b811de58d37e. Do not auto-promote list-devices observations. Do not claim hardware qualification from fixture tests; real E2 evidence requires executing the pinned upstream test tool on the bound backend."
 }
