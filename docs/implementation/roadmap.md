@@ -2,7 +2,7 @@
 
 ## M0.2 — General contracts and policy
 
-Status: **in progress; configuration, policy and synthetic bounded planning implemented**.
+Status: **in progress; configuration, policy, synthetic bounded planning and static adapter representability implemented**.
 
 Deliverables:
 
@@ -13,14 +13,18 @@ Deliverables:
 - structured policy errors;
 - bounded planner interface replacing the legacy three-device assumption;
 - tests for 1, 2, 3, 4, 8 and 16 simulated nodes;
+- versioned native-adapter capability envelope;
+- exact whole-block candidate representability gate with structured rejection;
 - no network listener required.
 
 The optional GGUF directory adapter is an early M2 preparation, not a complete model
-manifest. Remaining work includes trusted capability/availability input and real
-backend manifest/admission integration.
+manifest. Static adapter capabilities are declarations, not live qualification evidence.
+Remaining M0.2/M2 work includes trusted capability/availability input and real backend
+manifest/admission integration.
 
-Exit gate: the control plane can represent and validate heterogeneous installations
-without knowledge of one particular model or hardware family.
+Exit gate: the control plane can represent and validate heterogeneous installations and
+can distinguish planner feasibility from adapter representability without knowledge of
+one particular model or hardware family.
 
 ## M1 — Agent and enrollment
 
@@ -47,7 +51,8 @@ Exit gate: planning inputs can be traced to measurements or explicit unknowns.
 
 ## M3 — First executable distributed inference
 
-- revision-pinned native adapter;
+- revision-pinned native adapter implementation;
+- live adapter qualification against a concrete engine/build;
 - whole-block placement across one or more nodes;
 - immutable accepted plan;
 - stable local streaming API;
