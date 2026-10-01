@@ -153,4 +153,4 @@ Before investing significant effort in an implementation, please assume interfac
 
 ## License
 
-Licensing information for TensorMeld itself and notices for incorporated third-party components will be maintained in the repository as the implementation develops.
+TensorMeld's original code is released under the [MIT License](LICENSE). Third-party components keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `third_party/` for provenance and retained notices.
