@@ -25,6 +25,38 @@ TensorMeld is intended to remain hardware-neutral at its core. Early development
 
 The project is not limited to very large models. The same architecture should eventually support anything from a 12 GB desktop GPU assisted by one companion node to much larger heterogeneous systems.
 
+## Why TensorMeld?
+
+Local AI hardware is increasingly heterogeneous.
+
+A desktop GPU may provide very high compute throughput and fast local VRAM, but its memory capacity can limit the models, quantizations, contexts, or workloads it can run. A companion system may have much more usable memory—especially unified-memory machines such as Strix Halo—while being slower for some operations than the discrete GPU.
+
+Those resources should not necessarily be treated as interchangeable, and TensorMeld is not trying to pretend that remote memory is simply extra VRAM.
+
+The idea is instead to **place each part of a workload where it makes the most sense**.
+
+For example, a future TensorMeld plan could decide to:
+
+- keep compute-heavy or latency-sensitive operations on a fast discrete GPU;
+- place model blocks, experts, state, or other memory-heavy components on a high-capacity companion;
+- use more than one companion when the additional capacity or parallelism justifies the communication cost;
+- keep an entire model on a companion when splitting it would be slower;
+- leave a device unused when involving it would make the workload worse;
+- reserve part of the main GPU for the desktop or another application;
+- choose a different placement for capacity, latency, throughput, or long-context goals.
+
+A simple example is a PC with a 12 GB GPU plus a 128 GB unified-memory companion. The discrete GPU may be substantially faster for suitable kernels, while the companion makes models possible that cannot fit in 12 GB at all.
+
+At the other end of the spectrum, a workstation with a 96 GB discrete GPU may already run many models locally, but one or more high-memory companions could make larger models, higher-precision quantizations, longer contexts, or different placement strategies possible.
+
+The hard part is that **more aggregate memory and more devices do not automatically mean better inference**. Every split introduces communication, synchronization, memory-placement, backend-compatibility, and scheduling costs. A mathematically balanced partition can still be much slower than a simpler one.
+
+TensorMeld therefore aims to answer a more useful question than “how do we use every GPU?”:
+
+> **Given this model, this workload, these devices, these memory pools, and these links, which resources should participate, what should each one own, and is the resulting plan actually worthwhile?**
+
+That decision should eventually be based on measured capabilities and explicit constraints rather than fixed assumptions about vendor names or device classes.
+
 ## Current status
 
 **Status: pre-alpha / architecture and implementation work in progress.**
