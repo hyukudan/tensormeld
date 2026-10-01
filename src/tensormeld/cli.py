@@ -16,6 +16,10 @@ from .migration import migrate_config
 from .gguf_catalog import inspect_gguf
 from .llamacpp_probe import probe_llamacpp
 from .device_binding import bind_llamacpp_probe, load_llamacpp_binding, load_llamacpp_probe_report
+from .llamacpp_selftest import (
+    load_llamacpp_bound_result,
+    self_test_llamacpp_backend,
+)
 from .planner import plan
 from .probe import probe
 from .schema import ValidationError, load
@@ -80,6 +84,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("probe_report", type=Path)
     p.add_argument("binding", type=Path)
     p.add_argument("--out", type=Path)
+    p = subs.add_parser(
+        "self-test-llamacpp-backend",
+        help=(
+            "Run pinned upstream test-backend-ops on one explicitly bound backend; "
+            "successful evidence promotes only that runtime observation to ready"
+        ),
+    )
+    p.add_argument("config", type=Path)
+    p.add_argument("bound_result", type=Path)
+    p.add_argument("test_binary", type=Path)
+    p.add_argument("tensormeld_device_id")
+    p.add_argument("--trusted-local-binary", action="store_true")
+    p.add_argument("--expected-sha256", required=True)
+    p.add_argument("--timeout", type=float, default=30.0)
+    p.add_argument("--out", type=Path)
     p = subs.add_parser("bench-loopback", help="Loopback-only bounded TCP echo diagnostic")
     p.add_argument("--iterations", type=int, default=20)
     p.add_argument("--out", type=Path)
@@ -91,6 +110,7 @@ def main(argv: list[str] | None = None) -> int:
                 for name in (
                     "config", "runtime_observation", "planning_input", "scenario",
                     "source", "destination", "binary", "probe_report", "binding",
+                    "bound_result", "test_binary",
                 )
             ]
             inputs += getattr(args, "paths", [])
@@ -126,6 +146,18 @@ def main(argv: list[str] | None = None) -> int:
             probe_report = load_llamacpp_probe_report(args.probe_report)
             binding = load_llamacpp_binding(args.binding)
             result = bind_llamacpp_probe(config, probe_report, binding)
+        elif args.command == "self-test-llamacpp-backend":
+            config = load_config(args.config)
+            bound_result = load_llamacpp_bound_result(args.bound_result)
+            result = self_test_llamacpp_backend(
+                args.test_binary,
+                config=config,
+                bound_result=bound_result,
+                tensormeld_device_id=args.tensormeld_device_id,
+                trusted_local_binary=args.trusted_local_binary,
+                expected_artifact_sha256=args.expected_sha256,
+                timeout_s=args.timeout,
+            )
         elif args.command == "runtime-select":
             config = load_config(args.config)
             observation = load_runtime_observation(args.runtime_observation)

@@ -11,70 +11,38 @@ GPU allocation limit.
 TensorMeld reuses upstream `gguf==0.19.0` for trusted local GGUF inspection. A metadata
 index is not a checkpoint hash, runtime memory manifest or execution qualification.
 
-## llama.cpp native probe and explicit identity binding
+## llama.cpp native probe, binding and backend readiness
 
 The third-party registry pins llama.cpp source revision
 `552f18f912a32ea86edf82e2b76431cb7131538d`.
 
-The trusted-local probe reuses upstream discovery:
+The trusted-local probe executes only upstream version/device discovery. Engine-local
+names remain unresolved until an explicit approved binding is applied.
 
-```bash
-python -m tensormeld probe-llamacpp /path/to/llama-cli \
-  --trusted-local-binary \
-  --expected-sha256 <artifact-sha256> \
-  --out local/llamacpp-probe.json
-```
+A successful binding emits runtime state `observed`, not `ready`. Backend identity
+comes from TensorMeld config, never from labels such as `CUDA0` or `ROCm0`. At most
+one mapped device may report free memory for a physical pool.
 
-It executes only `--version` and `--list-devices`, with no shell, stdin, model or
-listener.
+The next narrow gate reuses the pinned upstream `test-backend-ops` target. TensorMeld
+fixes the invocation to test mode, the explicitly bound engine device, the `ADD`
+operation, SQL output and one worker. The SQL text is parsed as data and never executed.
 
-Engine-local names are deliberately unresolved after probing. TensorMeld requires an
-explicit approved mapping document:
+At the pinned revision, selecting a backend name that is absent can still return process
+success after every available device is skipped. TensorMeld therefore does not trust exit
+code alone. It requires at least one successful supported `ADD` result row for the
+exact bound backend, verifies the reported pinned source revision, and rejects any failed
+supported target row.
 
-```json
-{
-  "binding_schema": "tensormeld/llamacpp-device-binding-v1",
-  "config_sha256": "<exact-config-fingerprint>",
-  "node_id": "pc",
-  "artifact_sha256": "<exact-probed-binary-sha256>",
-  "approval": "explicit",
-  "mappings": [
-    {
-      "engine_device_name": "CUDA0",
-      "tensormeld_device_id": "pc-gpu",
-      "memory_reporter": true
-    }
-  ]
-}
-```
+Only a strict pass changes that device from `observed` to `ready`; it still creates no
+reservation and leaves `qualified=false` and `executable=false`.
 
-Apply it with:
-
-```bash
-python -m tensormeld bind-llamacpp-devices \
-  config.json local/llamacpp-probe.json binding.json \
-  --out local/llamacpp-bound.json
-```
-
-Backend identity comes from TensorMeld config, not from labels such as `CUDA0` or
-`ROCm0`. Unmapped engine devices are reported but not auto-bound.
-
-When multiple configured devices alias one physical memory pool, at most one mapped
-engine device may be selected as `memory_reporter`; TensorMeld never sums duplicated
-reports for a shared pool.
-
-A successful binding emits a runtime observation with state `observed`, not `ready`.
-The ordinary runtime selector accepts the state syntactically but excludes it from
-runtime-ready candidates. A later backend self-test/qualification is required before
-promotion to ready.
-
-Current native-probe/binding tests use fixtures. No real llama.cpp CUDA/HIP binary has
-been downloaded, compiled or run in this development environment.
+Portable tests use injected output and are not hardware evidence. No real llama.cpp
+CUDA/HIP backend self-test, native GPU inference or distributed inference is claimed by
+this repository snapshot.
 
 ## Alternate native engines
 
 The pinned `llama-halo-hybrid` candidate remains a separate evaluation. Do not assume
 protocol interoperability with upstream workers.
 
-Unauthenticated experimental RPC is not TensorMeld's LAN security boundary. No native
-GPU inference or distributed execution is included in this snapshot.
+Unauthenticated experimental RPC is not TensorMeld's LAN security boundary.

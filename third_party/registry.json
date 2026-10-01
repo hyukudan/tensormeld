@@ -31,8 +31,9 @@
       "source": "https://github.com/ggml-org/llama.cpp",
       "commit": "552f18f912a32ea86edf82e2b76431cb7131538d",
       "license": "MIT",
-      "adoption": "native-adapter-candidate",
-      "status": "trusted-local no-model probe implemented for pinned revision; fixture tests added; no real native binary compiled or executed in this environment",
+      "adoption": "native-adapter-source-and-test-tool",
+      "integration_target": "tests/test-backend-ops.cpp",
+      "status": "trusted-local probe, explicit device binding and strict backend-self-test adapter implemented; portable self-test coverage uses fixtures/injected runners; no real native GPU binary executed in this environment",
       "notice": "licenses/ggml-MIT.txt"
     },
     {
