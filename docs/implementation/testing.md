@@ -47,6 +47,21 @@ not prove that a native GPU backend actually ran. A retained record does not res
 runtime `ready`; live worker/driver/topology invalidation identity and a runtime recheck
 remain required.
 
+## Runtime model/operator/memory manifest tests
+
+Portable fixtures validate exact binding to configuration, model manifest, profile
+workload, adapter capability fingerprint, engine revision and worker artifact identity.
+
+Operator requirements are explicit and compared against each declared worker device.
+Incomplete coverage remains a valid observation but never self-qualifies.
+
+Memory is reported at the physical-pool level, not once per logical device. Duplicate
+pool records are rejected. Resident bytes, state bytes and peak workspace form the
+steady peak; preparation peak must cover it and cannot exceed a known physical capacity.
+
+Fixture provenance is contract evidence only. A native-adapter manifest still needs live
+admission and E3 correctness evidence before execution.
+
 ## Agent/transport integration tests
 
 Use real sockets/processes with bounded payloads and authenticated test identities.
@@ -68,7 +83,8 @@ cannot override failed correctness or resource gates.
 Tests cover v2 whole-block memory/cost search, manual and empty-list semantics, explicit
 migration, required owners, host/coordinator overhead, shared pools, token feedback,
 directed paths, multirail non-aggregation, search exhaustion, exact adapter
-representability, model/evidence invalidation and advisory runtime availability.
+representability, model/evidence invalidation, advisory runtime availability and exact
+runtime-manifest invariants.
 
 GGUF tests using injected readers are adapter-contract tests. The separately named
 `GGUFUpstreamIntegrationTests` requires the real optional package; a skip is explicitly
