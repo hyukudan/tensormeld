@@ -12,7 +12,7 @@ python -m pip install ".[system]"
 python -m tensormeld probe --out local/inventory.json
 ```
 
-## GGUF catalog: adapter implemented; upstream integration pending in this environment
+## GGUF catalog: upstream adapter integrated in portable CI
 
 ```bash
 python -m pip install ".[gguf]"
@@ -21,26 +21,53 @@ python -m tensormeld inspect-gguf /path/to/model.gguf --trusted-local-file --out
 
 For split files, supply each local path explicitly. Partial sets are marked incomplete;
 inconsistent metadata, duplicate names/indexes and out-of-file tensor ranges fail.
-No automatic model download or remote Python execution is allowed. Only a small metadata
-allowlist is exported; tensor values and tokenizer text are not exported.
+No automatic model download or remote Python execution is allowed.
 
 The reader is the upstream package, not a rewritten binary parser. Inspection maps
 local files read-only; an index hash is NOT a checkpoint hash. The trusted-local flag is
 an explicit precondition, not a sandbox. Hostile-file resource limits/process isolation
 are still pending, so agents must not expose this routine to untrusted remote input.
 
-The injected-reader tests exercise this adapter contract. A separate real upstream
-writer/reader integration test exists and is skipped when the package is unavailable.
-During this session, network/package download was unavailable; do not record that skip
-as a successful GGUF parse. This release does not declare new model/quantization support
-merely because metadata can be indexed.
+Portable optional-dependency CI installs `gguf==0.19.0` and exercises the real upstream
+writer/reader roundtrip on Windows and Linux. That validates the catalog adapter only;
+it does not declare model execution support.
 
-## Native engines: identified and pinned, not vendored or compiled
+## llama.cpp native probe: implemented, no real engine binary qualified yet
 
-The third-party registry records two native candidates. The next integration step is
-an isolated, revision-pinned worker adapter with platform/backend smoke tests and exact
-placement rejection. Keep alternate engine protocols distinct; never mix clients and
-workers from different forks without an interoperability qualification record.
+The third-party registry pins llama.cpp source revision
+`552f18f912a32ea86edf82e2b76431cb7131538d`.
+
+The trusted-local probe deliberately reuses the upstream executable's own discovery
+surface instead of reproducing backend enumeration:
+
+```bash
+python -m tensormeld probe-llamacpp /path/to/llama-cli \
+  --trusted-local-binary \
+  --expected-sha256 <artifact-sha256> \
+  --out local/llamacpp-probe.json
+```
+
+The probe computes the artifact SHA-256 and executes only:
+
+- `--version`;
+- `--list-devices`.
+
+It uses no shell, no stdin, bounded output and a bounded timeout. The observed source
+commit must match the pinned revision. The device parser exports engine-local name,
+description, total memory and transient free memory.
+
+No model is loaded and no listener is started. Engine-local names such as `CUDA0` or
+`ROCm0` are **not** automatically mapped to TensorMeld identities or backend policy.
+A successful probe remains non-qualified and non-executable.
+
+Current tests use a harmless injected runner/fixture. No real llama.cpp CUDA/HIP binary
+was downloaded, built or run in the development environment for this milestone.
+
+## Alternate native engines
+
+The registry also records the pinned `llama-halo-hybrid` candidate. It remains a
+separate adapter evaluation. Never assume protocol interoperability between upstream and
+fork workers simply because they share ancestry.
 
 Do not reuse unauthenticated experimental RPC directly as the product's LAN security
 boundary. A secure wrapper's overhead must eventually be measured. No GPU kernel,
