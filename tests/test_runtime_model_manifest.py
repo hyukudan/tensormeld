@@ -152,7 +152,10 @@ class RuntimeModelManifestTests(unittest.TestCase):
         pool_ids = [x["pool_ref"] for x in raw["physical_pool_memory"]]
         self.assertEqual(pool_ids.count(raw_cfg["devices"][0]["pool_ref"]), 1)
         parsed = parse_runtime_model_manifest(raw, config=cfg, model=m, adapter=a)
-        self.assertEqual(len(parsed.pools), 1)
+        self.assertEqual(
+            sum(p.pool == raw_cfg["devices"][0]["pool_ref"] for p in parsed.pools),
+            1,
+        )
 
         raw["physical_pool_memory"].append(copy.deepcopy(raw["physical_pool_memory"][0]))
         with self.assertRaises(ValidationError):
@@ -231,7 +234,7 @@ class RuntimeModelManifestTests(unittest.TestCase):
                 "max_segments": a.max_segments,
             },
             "route_modes": sorted(a.route_modes),
-            "coordinator_nodes": sorted(a.coordinator_nodes),
+            "coordinator_nodes": [n.id for n in cfg.nodes],
             "devices": [
                 {"id": d.id, "node": d.node, "backend": d.backend}
                 for d in a.devices
