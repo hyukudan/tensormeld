@@ -32,27 +32,29 @@ Implemented:
 - pinned llama.cpp trusted-local no-model probe;
 - explicit approved engine-device ↔ TensorMeld-device binding;
 - one explicit memory reporter per physical pool;
-- observed-but-not-ready native device state.
+- observed-but-not-ready native device state;
+- pinned upstream `test-backend-ops` readiness contract with target-execution proof;
+- narrow observed → ready promotion after strict E2 backend self-test evidence.
 
 Next:
 
-- backend self-test/qualification that can promote an observed bound device to ready;
-- real target-host device/backend qualification records;
-- runtime model/operator/memory observations;
+- real target-host backend-readiness records;
+- runtime model/operator/memory manifests tied to exact model/workload;
 - directional path profiling and evidence provenance;
 - invalidation rules tied to worker/driver/topology changes.
 
-No native GPU binary has been qualified by TensorMeld yet.
+No real native GPU backend has yet been qualified by TensorMeld; portable fixtures do not
+satisfy the real E2 gate.
 
 ## M3 — First executable distributed inference
 
 - revision-pinned native adapter implementation;
-- real target-host llama.cpp capability probe;
-- explicit engine-device identity binding;
-- backend self-test and live adapter qualification;
+- real target-host llama.cpp capability probe and device binding;
+- real backend self-test and live adapter qualification;
 - runtime memory/admission manifest for exact model/workload;
 - atomic/leased resource admission and launch-time recheck;
-- whole-block placement across one or more nodes;
+- secure enrolled agent and authenticated private transport;
+- whole-block executable adapter across one or more nodes;
 - immutable accepted plan;
 - stable local streaming API;
 - cancellation and deterministic release;

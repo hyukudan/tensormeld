@@ -7,7 +7,7 @@ infrastructure. A package being public does not by itself authorize copying its 
 |---|---|---|---|
 | psutil 7.2.2 | Optional `system` runtime dependency | BSD-3-Clause | Real local Linux probe and adapter tests |
 | gguf 0.19.0 | Optional `gguf` dependency and read-only directory adapter | MIT | Interface/source reviewed; see validation records for local and hosted integration results |
-| llama.cpp | Pinned native execution candidate, not incorporated yet | MIT at reviewed revision | Source identity recorded; no build/execution claim |
+| llama.cpp | Pinned native adapter source plus upstream backend-readiness test target | MIT at reviewed revision | Probe/binding/self-test contracts implemented; portable self-test coverage uses fixtures; no real GPU execution claim |
 | llama-halo-hybrid | Pinned alternate native candidate, not incorporated yet | MIT at reviewed revision | Root license checked; backend qualification pending |
 
 Sources, exact revisions and adoption states are in [third_party/registry.json](third_party/registry.json).

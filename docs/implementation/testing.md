@@ -21,6 +21,18 @@ failure and CLI/output safety.
 These tests prove conservative control-plane behavior only. They do not prove freshness,
 create memory reservations, or establish GPU availability at launch time.
 
+## Native backend readiness tests
+
+Portable tests inject bounded fixture output from the pinned llama.cpp
+`test-backend-ops` contract. They verify artifact/config/binding checks, exact command
+construction, strict SQL-record parsing, rejection of exit-0-without-target-execution,
+source-revision matching and observed → ready promotion.
+
+An injected runner is fixture evidence only. Real E2 evidence requires the actual pinned
+native `test-backend-ops` artifact to execute on the explicitly bound backend. Runtime
+`ready` remains distinct from model/operator qualification, memory reservation and
+execution authorization.
+
 ## Agent/transport integration tests
 
 Use real sockets/processes with bounded payloads and authenticated test identities.
@@ -49,5 +61,5 @@ GGUF tests using injected readers are adapter-contract tests. The separately nam
 not a pass. The optional-dependencies CI job installs the package and requires imports
 before running this integration suite.
 
-Hosted Windows/Linux CI validates portable software behavior only. Native GPU qualification
-remains a separate hardware job class.
+Hosted Windows/Linux CI validates portable software behavior only. Native GPU
+qualification remains a separate hardware job class.
