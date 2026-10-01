@@ -1,0 +1,48 @@
+{
+  "schema": "tensormeld/third-party-v1",
+  "reviewed_on": "2026-10-01",
+  "vendored_source": false,
+  "fully_resolved_dependency_lock": false,
+  "components": [
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "source": "https://github.com/giampaolo/psutil",
+      "license": "BSD-3-Clause",
+      "adoption": "optional-runtime-dependency",
+      "extra": "system",
+      "status": "integrated and tested on the available Linux environment",
+      "notice": "licenses/psutil-BSD-3-Clause.txt"
+    },
+    {
+      "name": "gguf",
+      "version": "0.19.0",
+      "source": "https://github.com/ggml-org/llama.cpp/tree/gguf-v0.19.0/gguf-py",
+      "license": "MIT",
+      "adoption": "optional-runtime-dependency",
+      "extra": "gguf",
+      "status": "adapter implemented; injected-reader tests pass; real upstream integration not run here",
+      "wheel_sha256": "70bcd10edfe697fb2dad6e40af2234b9d8ece9a41a99761405121ebda1c3c1cd",
+      "source_distribution_sha256": "dbadcd6cc7ccd44256f2229fe7c2dff5e8aa5cf0612ab987fd2b1a57e428923f",
+      "notice": "licenses/ggml-MIT.txt"
+    },
+    {
+      "name": "llama.cpp",
+      "source": "https://github.com/ggml-org/llama.cpp",
+      "commit": "552f18f912a32ea86edf82e2b76431cb7131538d",
+      "license": "MIT",
+      "adoption": "native-adapter-candidate",
+      "status": "revision identified; not downloaded, compiled or integrated as an execution worker",
+      "notice": "licenses/ggml-MIT.txt"
+    },
+    {
+      "name": "llama-halo-hybrid",
+      "source": "https://github.com/sixvolts/llama-halo-hybrid",
+      "commit": "f072119325817083ba9ee1011ea5be985371e2b0",
+      "license": "MIT",
+      "adoption": "native-adapter-candidate",
+      "status": "revision and root license checked; CUDA/Windows/interoperability not qualified",
+      "notice": "licenses/ggml-MIT.txt"
+    }
+  ]
+}
