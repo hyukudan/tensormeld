@@ -1,12 +1,14 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-engine-device-binding",
   "scope": "Add explicit approved llama.cpp engine-device to TensorMeld-device binding, conservative memory reporter selection, and observed-not-ready runtime conversion.",
   "started_at": "2026-10-01T17:05:00+02:00",
-  "expires_at": "2026-10-01T19:05:00+02:00",
+  "completed_at": "2026-10-01T17:24:00+02:00",
+  "expires_at": null,
   "base_commit": "65af959df5d999c8fbeb2ce9cecc42ff64d8f61d",
-  "completion_condition": "Binding/conversion contracts, tests/docs are on main and portable CI passes.",
-  "next_step": "Implement explicit one-to-one device binding and observed runtime conversion without backend-name inference.",
-  "instructions": "Do not promote discovered devices to ready or executable. No model loading or network listeners."
+  "validation_record": "docs/implementation/validation/llamacpp-device-binding-2026-10-01.md",
+  "completion_condition": "Binding/conversion contracts, CLI, tests/docs are on main and portable CI passed.",
+  "next_step": "Evaluate and implement a bounded no-model backend self-test using an upstream native test tool when available, so observed bound devices can gain E2 evidence without inventing custom GPU kernels.",
+  "instructions": "Do not repeat device binding work. Never promote observed devices to ready from naming or list-devices alone."
 }
