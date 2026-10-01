@@ -35,4 +35,4 @@ and E3 model correctness evidence before execution.
 No CUDA/HIP backend, Windows GPU, Strix Halo, model inference, performance test or
 distributed inference was executed for this validation record.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #3, workflow `Portable Python tests`, run #68 (36935749574) passed all 6 jobs: Linux and Windows on Python 3.11/3.13 plus optional-adapter integration jobs on both operating systems. The first run (#66) exposed two fixture-test defects; both were corrected before the successful run. Hosted CI remains portable software evidence, not GPU qualification.
