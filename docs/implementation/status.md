@@ -16,6 +16,9 @@ the pre-alpha status or qualify any execution path.
 - bounded synthetic v2 whole-block placement, 1..N configured devices;
 - multi-pool resident/workspace accounting, independent coordinator overhead;
 - explicit directional routes, token feedback, budgeted work and top-k output;
+- static native-adapter capability envelope and exact representability gate;
+- structured rejection for unsupported ownership, ranges, routes, backends, devices,
+  coordinators and adapter limits;
 - optional psutil inventory reuse, with read-only fallbacks;
 - optional GGUF catalog adapter using the upstream package;
 - dependency/license register, revision-pinned native engine candidates;
@@ -24,18 +27,24 @@ the pre-alpha status or qualify any execution path.
 ## Tested here
 
 Local Linux/Python 3.13 unit/contract tests, exact small-case planner oracle, budgeted
-simulated 1/2/3/4/8/16-node scenarios, real psutil inventory, archive/install smoke tests
-as recorded in the release validation. GGUF adapter tests use injected readers.
+simulated 1/2/3/4/8/16-node scenarios, static adapter representability/rejection tests,
+real psutil inventory, archive/install smoke tests as recorded in the release validation.
+
+GitHub Actions separately records portable Windows/Linux tests and an upstream GGUF
+integration pass. Those hosted results still do not constitute GPU qualification.
 
 ## Not tested / not implemented
 
-- real upstream gguf integration: package unavailable here; one explicit test skip;
-- native Windows execution; GitHub Actions results are reported separately and do not constitute GPU qualification;
+- live native adapter handshake or capability attestation;
+- native Windows GPU execution; hosted Python CI is not GPU qualification;
 - remote enrollment/agent, secure transport and active memory reservations;
 - verified model-specific execution manifests and hardware/backend qualification;
 - native worker compilation or CUDA/HIP/distributed inference;
 - balanced/throughput v2 scoring, expert/tensor/phase placement, multirail, GUI/API.
 
-The v2 planner is advisory and synthetic. It cannot authorize a worker or upgrade itself
-to qualified. A tensor file index is not runtime memory admission. No measured RTX,
-Strix or model speed is claimed. M0.2 is advanced, not a claim that M1/M2/M3 are done.
+The v2 planner is advisory and synthetic. Static adapter representability only proves
+that a declared adapter contract can express the candidate without semantic placement
+changes. It cannot authorize a worker or upgrade itself to qualified/executable.
+
+A tensor file index is not runtime memory admission. No measured RTX, Strix or model
+speed is claimed. M0.2 is advanced, not a claim that M1/M2/M3 are done.
