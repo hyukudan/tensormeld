@@ -8,6 +8,11 @@
 - Reject unsupported device ownership, explicit ranges, route modes, backends,
   coordinators and adapter limits with structured reason codes.
 - Keep representable plans explicitly non-qualified and non-executable.
+- Add an exact GGUF-backed model identity manifest requiring complete shard coverage and
+  full SHA-256 identities rather than treating tensor payload size as runtime memory.
+- Add qualification-evidence records bound to adapter/build/model/config/devices/workload
+  with explicit E0-E5 applicability and invalidation checks.
+- Keep applicable evidence non-executable until live admission/session preparation exists.
 
 ## 0.2.0a2 — 2026-10-01
 
