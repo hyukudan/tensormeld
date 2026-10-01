@@ -1,12 +1,14 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-model-qualification-contract",
   "scope": "Add exact model-manifest identity and qualification-evidence contracts without inferring runtime memory or claiming hardware execution.",
   "started_at": "2026-10-01T15:12:00+02:00",
-  "expires_at": "2026-10-01T17:12:00+02:00",
+  "completed_at": "2026-10-01T15:28:00+02:00",
+  "expires_at": null,
   "base_commit": "ce7d1bdeb381ad92f77dbcc2fea968095dd1e14f",
-  "completion_condition": "Model manifest/evidence contracts, tests and docs are reachable from main and portable CI passes.",
-  "next_step": "Implement exact GGUF-backed identity manifest and evidence binding, then verify CI.",
-  "instructions": "Do not overlap this contract slice. No live hardware qualification or execution claims."
+  "validation_record": "docs/implementation/validation/model-qualification-contract-2026-10-01.md",
+  "completion_condition": "Model manifest/evidence contracts, tests and docs are reachable from main and portable CI passed six jobs.",
+  "next_step": "Implement the first live/native adapter probe that produces a bounded capability observation from a pinned engine/build, then bind real runtime memory/operator evidence without marking sessions executable before admission.",
+  "instructions": "Do not repeat the model/evidence contract slice. Read current HEAD, roadmap and work-session before claiming the next bounded increment."
 }
