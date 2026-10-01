@@ -5,14 +5,14 @@
 - Add exact adapter representability, model identity and qualification-evidence contracts.
 - Add advisory runtime availability/budget intersection without treating free memory as
   a reservation.
-- Add a trusted-local probe for the pinned llama.cpp revision:
-  - artifact SHA-256 verification;
-  - bounded `--version` and `--list-devices` subprocess calls;
-  - source-revision verification;
-  - conservative engine-local device/memory parsing;
-  - no model loading, listener or automatic TensorMeld identity mapping.
-- Keep planner, representability, evidence, runtime observation and native probe stages
-  separate from live executable-session admission.
+- Add a trusted-local probe for the pinned llama.cpp revision with artifact/source
+  identity and bounded `--version` / `--list-devices` execution.
+- Add explicit approved one-to-one engine-device ↔ TensorMeld-device binding.
+- Never infer backend identity from engine labels.
+- Allow at most one explicit engine memory reporter per physical pool.
+- Convert bound devices to runtime state `observed`, not `ready`; backend self-test
+  remains required.
+- Keep all pre-execution stages separate from live session admission.
 
 ## 0.2.0a2 — 2026-10-01
 
