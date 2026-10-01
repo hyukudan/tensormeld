@@ -1,14 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-initial-publication",
-  "scope": "Reconcile the initial public import, preserve concurrent changes, and fix the observed publication-notice and Windows path-identity CI failures.",
-  "started_at": "2026-10-01T12:03:37Z",
-  "completed_at": "2026-10-01T12:41:16Z",
-  "expires_at": null,
-  "base_commit": "9e259c7c5f98a23653e8acc5d8d8ba4ff82fc20e",
-  "validation_record": "docs/implementation/2026-10-01-publication-ci.md",
-  "completion_condition": "Effective only when this complete patch is reachable from main; unattached Git objects do not count as publication.",
-  "next_step": "Inspect the latest complete CI result; address actual failures, then continue the next isolated adapter/capability slice from the roadmap.",
-  "instructions": "Do not repeat the initial import or restore the obsolete private-publication helper. Read current HEAD and open work before taking a fresh bounded claim. Never force-push or overwrite concurrent changes."
+  "status": "active",
+  "owner": "chatgpt-adapter-representability",
+  "scope": "Implement the static native-adapter representability contract: exact whole-block ownership/ranges, backend/node/device limits, structured rejection, tests and ADR. No worker launch or qualification.",
+  "started_at": "2026-10-01T14:18:00+02:00",
+  "expires_at": "2026-10-01T16:18:00+02:00",
+  "base_commit": "430f2f7cb59d4602cc04378b129e51236da4eb0e",
+  "completion_condition": "Contract, tests, ADR/status updates are reachable from main and portable CI completes without weakening existing tests.",
+  "next_step": "Implement and publish adapter representability validation, then verify CI.",
+  "instructions": "Do not overlap this adapter-contract slice. Preserve README/publication notice and do not claim executable or qualified inference."
 }
