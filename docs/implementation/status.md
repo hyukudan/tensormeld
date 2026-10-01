@@ -23,6 +23,10 @@ the pre-alpha status or qualify any execution path.
 - native-only retained E2 backend-readiness records with deterministic fingerprints;
 - exact config/probe/binding/test-artifact/device/backend applicability checks for retained E2;
 - retained E2 evidence never restores `ready` without a live runtime recheck;
+- strict runtime model/operator/memory manifests tied to exact config/model/profile/workload/adapter identities;
+- runtime memory is represented once per physical pool with resident/state/workspace/preparation peaks;
+- operator coverage is explicit per device and cannot self-promote qualification/execution;
+- CLI validation for runtime manifests without creating resource reservations;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -31,34 +35,35 @@ the pre-alpha status or qualify any execution path.
 
 Contract tests cover policy, planner, adapter representability, exact model/evidence
 identity, runtime availability, llama.cpp probe parsing/safety, explicit device binding,
-strict backend-self-test parsing/promotion behavior and retained-E2 identity rules.
+strict backend-self-test parsing/promotion behavior, retained-E2 identity rules and
+runtime-manifest identity/pool/operator invariants.
 
 GitHub Actions separately validates portable Windows/Linux Python behavior and the real
 optional GGUF dependency integration. Hosted CI is not GPU qualification.
 
 The llama.cpp probe, binding, backend-self-test and retained-evidence portable tests use
-harmless fixtures or synthetic records where appropriate. Injected-runner self-test
-results are explicitly rejected from retained hardware evidence.
+harmless fixtures or synthetic records where appropriate. Runtime-manifest tests use
+fixture provenance and do not claim native runtime measurements. Injected-runner
+self-test results remain rejected from retained hardware evidence.
 
-No real llama.cpp CUDA/HIP `test-backend-ops` execution has been recorded by TensorMeld
-in this development environment.
+No real llama.cpp CUDA/HIP `test-backend-ops` execution or real native runtime-model
+manifest has been recorded by TensorMeld in this development environment.
 
 ## Not tested / not implemented
 
 - real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
+- real native-adapter model/operator/memory manifest capture on target hardware;
 - live worker/driver/topology identity needed to safely reuse retained E2 readiness;
 - native Windows GPU inference;
 - remote enrollment/agent and authenticated private-LAN transport;
 - active memory reservations/leases and launch-time re-admission;
-- model-specific runtime memory/operator manifest from a real engine;
 - native CUDA/HIP/distributed inference;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
 
-The native probe and binding remain E1-style identity/observation stages. The self-test
-contract can produce narrow E2 backend-readiness evidence only when the real pinned
-native target executes on the bound backend. Retained E2 records preserve that narrow
-fact, but cannot by themselves re-promote a later runtime observation because
-worker/driver/topology invalidation identity is not implemented yet.
+Runtime manifests are evidence inputs, not reservations. Even complete declared operator
+coverage remains distinct from E3 model correctness qualification. Physical-pool memory
+figures describe one exact manifest tuple and still require live admission/recheck before
+allocation.
 
 No measured RTX, Strix or model speed is claimed.
