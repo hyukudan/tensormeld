@@ -1,0 +1,10 @@
+{
+  "schema": "tensormeld/work-session/v1",
+  "status": "active",
+  "owner": "chatgpt-initial-publication",
+  "scope": "Import the previously prepared source, tests, specifications and third-party records; preserve the public README and LICENSE.",
+  "started_at": "2026-10-01T12:03:37Z",
+  "expires_at": "2026-10-01T13:03:37Z",
+  "base_commit": "becf759c1ae0044fae7f566f37694692f9f25dba",
+  "instructions": "Do not duplicate this import while the claim is active. Read current HEAD and reconcile actual files after expiry; this record is not a runtime lock or evidence of completed work."
+}
