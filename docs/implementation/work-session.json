@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-backend-e2-evidence-record",
   "scope": "Add a strict retained E2 backend-readiness evidence record around native llama.cpp test-backend-ops results, including native-only retention eligibility, exact identity/applicability checks, bounded loading, and invalidation inputs without claiming hardware qualification.",
   "started_at": "2026-10-01T23:31:00+02:00",
   "expires_at": "2026-10-02T01:31:00+02:00",
   "base_commit": "244d05601ee38f34531088c3e81b41f18569e88a",
   "completion_condition": "Retained E2 record/applicability code, portable negative/positive contract tests, documentation and validation ledger are committed; CI result is recorded if available.",
-  "next_step": "Persist only native-subprocess self-test evidence with exact source/artifact/config/binding/device/backend identities and explicit invalidation inputs; reject injected-runner fixtures from retained hardware evidence.",
-  "instructions": "Reconciled after PR #1 merged the completed backend self-test slice. This slice records evidence contracts only: no real CUDA/HIP/Windows GPU qualification is claimed without a real target-host run. Do not create reservations or mark inference executable."
+  "next_step": "Implement runtime model/operator/memory manifests tied to exact model/workload, while preserving physical-pool accounting and keeping runtime readiness distinct from reservation/admission.",
+  "instructions": "Completed after PR #1 merged the backend self-test slice. Retention accepts native-subprocess results only and never restores runtime ready without a live recheck. No CUDA/HIP/Windows GPU/Strix/performance/distributed-inference claim was made."
 }
