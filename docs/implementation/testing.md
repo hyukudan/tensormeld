@@ -12,6 +12,15 @@ pools, required resources and deterministic resolution. These run on Windows and
 Synthetic models/topologies exercise search bounds, failure explanations and resource
 accounting. They prove algorithm behavior, not hardware performance.
 
+## Runtime observation tests
+
+Runtime snapshots test config identity binding, backend identity, ready/offline/draining
+states, physical-pool available-byte bounds, owner headroom intersection, required-resource
+failure and CLI/output safety.
+
+These tests prove conservative control-plane behavior only. They do not prove freshness,
+create memory reservations, or establish GPU availability at launch time.
+
 ## Agent/transport integration tests
 
 Use real sockets/processes with bounded payloads and authenticated test identities.
@@ -30,12 +39,15 @@ cannot override failed correctness or resource gates.
 
 ## 0.2.0a2 additions
 
-New tests cover v2 whole-block memory/cost search, manual and empty-list semantics,
-explicit migration, required owners, host/coordinator overhead, shared pools, token
-feedback, directed paths, multirail non-aggregation and work/deadline exhaustion.
-An independent small exhaustive enumerator checks an optimal synthetic result.
+Tests cover v2 whole-block memory/cost search, manual and empty-list semantics, explicit
+migration, required owners, host/coordinator overhead, shared pools, token feedback,
+directed paths, multirail non-aggregation, search exhaustion, exact adapter
+representability, model/evidence invalidation and advisory runtime availability.
 
 GGUF tests using injected readers are adapter-contract tests. The separately named
 `GGUFUpstreamIntegrationTests` requires the real optional package; a skip is explicitly
 not a pass. The optional-dependencies CI job installs the package and requires imports
-before running this integration suite. Hosted CI has not run in this session.
+before running this integration suite.
+
+Hosted Windows/Linux CI validates portable software behavior only. Native GPU qualification
+remains a separate hardware job class.
