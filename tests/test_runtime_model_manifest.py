@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from tensormeld.adapter_contract import AdapterCapabilities
+from tensormeld.cli import main
 from tensormeld.config_v2 import Config
 from tensormeld.model_manifest import ModelManifest
 from tensormeld.runtime_model_manifest import (
@@ -18,8 +19,8 @@ from tensormeld.schema import ValidationError
 from test_config_v2 import data
 
 
-def model() -> ModelManifest:
-    return ModelManifest.parse({
+def model_data():
+    return {
         "model_manifest_schema": "tensormeld/model-manifest-v1",
         "model_id": "fixture/model",
         "revision": "fixture-rev",
@@ -31,7 +32,11 @@ def model() -> ModelManifest:
         "tensor_index_sha256": "b" * 64,
         "tensor_count": 10,
         "tensor_payload_bytes": 900,
-    })
+    }
+
+
+def model() -> ModelManifest:
+    return ModelManifest.parse(model_data())
 
 
 def adapter(cfg: Config) -> AdapterCapabilities:
@@ -136,14 +141,19 @@ class RuntimeModelManifestTests(unittest.TestCase):
         )
 
     def test_shared_pool_is_represented_once_not_per_device(self):
-        cfg, m, a = setup()
+        raw_cfg = data()
+        m = model()
+        raw_cfg["profiles"]["interactive"]["model_manifest_ref"] = m.manifest_sha256
+        raw_cfg["devices"][1]["node"] = raw_cfg["devices"][0]["node"]
+        raw_cfg["devices"][1]["pool_ref"] = raw_cfg["devices"][0]["pool_ref"]
+        cfg = Config.parse(raw_cfg)
+        a = adapter(cfg)
         raw = manifest(cfg, m, a)
-        raw["devices"].append(copy.deepcopy(raw["devices"][0]))
-        raw["devices"][-1]["id"] = raw["devices"][1]["id"]
-        with self.assertRaises(ValidationError):
-            parse_runtime_model_manifest(raw, config=cfg, model=m, adapter=a)
+        pool_ids = [x["pool_ref"] for x in raw["physical_pool_memory"]]
+        self.assertEqual(pool_ids.count(raw_cfg["devices"][0]["pool_ref"]), 1)
+        parsed = parse_runtime_model_manifest(raw, config=cfg, model=m, adapter=a)
+        self.assertEqual(len(parsed.pools), 1)
 
-        raw = manifest(cfg, m, a)
         raw["physical_pool_memory"].append(copy.deepcopy(raw["physical_pool_memory"][0]))
         with self.assertRaises(ValidationError):
             parse_runtime_model_manifest(raw, config=cfg, model=m, adapter=a)
@@ -199,6 +209,68 @@ class RuntimeModelManifestTests(unittest.TestCase):
         self.assertEqual(summary["provenance"], "fixture")
         self.assertIn("Fixture provenance", " ".join(summary["warnings"]))
         self.assertFalse(summary["qualified"])
+
+    def test_cli_roundtrip_and_output_safety(self):
+        cfg, m, a = setup()
+        raw_cfg = data()
+        raw_cfg["profiles"]["interactive"]["model_manifest_ref"] = m.manifest_sha256
+        raw_adapter = {
+            "adapter_schema": "tensormeld/adapter-capabilities-v1",
+            "adapter_id": a.adapter_id,
+            "engine": a.engine,
+            "engine_revision": a.engine_revision,
+            "placement": {
+                "strategies": sorted(a.strategies),
+                "exact_owner_binding": a.exact_owner_binding,
+                "explicit_unit_ranges": a.explicit_unit_ranges,
+                "mixed_backends": a.mixed_backends,
+                "remote_compute": a.remote_compute,
+                "coordinator_outside_compute": a.coordinator_outside_compute,
+                "max_compute_devices": a.max_compute_devices,
+                "max_compute_nodes": a.max_compute_nodes,
+                "max_segments": a.max_segments,
+            },
+            "route_modes": sorted(a.route_modes),
+            "coordinator_nodes": sorted(a.coordinator_nodes),
+            "devices": [
+                {"id": d.id, "node": d.node, "backend": d.backend}
+                for d in a.devices
+            ],
+        }
+        raw_runtime = manifest(cfg, m, a)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            config_path = root / "config.json"
+            model_path = root / "model.json"
+            adapter_path = root / "adapter.json"
+            runtime_path = root / "runtime.json"
+            out = root / "out.json"
+            config_path.write_text(json.dumps(raw_cfg), encoding="utf-8")
+            model_path.write_text(json.dumps(model_data()), encoding="utf-8")
+            adapter_path.write_text(json.dumps(raw_adapter), encoding="utf-8")
+            runtime_path.write_text(json.dumps(raw_runtime), encoding="utf-8")
+            self.assertEqual(main([
+                "validate-runtime-manifest",
+                str(config_path),
+                str(model_path),
+                str(adapter_path),
+                str(runtime_path),
+                "--out",
+                str(out),
+            ]), 0)
+            result = json.loads(out.read_text(encoding="utf-8"))
+            self.assertFalse(result["reservation_created"])
+            before = runtime_path.read_bytes()
+            self.assertEqual(main([
+                "validate-runtime-manifest",
+                str(config_path),
+                str(model_path),
+                str(adapter_path),
+                str(runtime_path),
+                "--out",
+                str(runtime_path),
+            ]), 1)
+            self.assertEqual(runtime_path.read_bytes(), before)
 
     def test_loader_rejects_duplicate_keys(self):
         cfg, m, a = setup()
