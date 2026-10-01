@@ -34,14 +34,16 @@ Implemented:
 - one explicit memory reporter per physical pool;
 - observed-but-not-ready native device state;
 - pinned upstream `test-backend-ops` readiness contract with target-execution proof;
-- narrow observed → ready promotion after strict E2 backend self-test evidence.
+- narrow observed → ready promotion after strict E2 backend self-test evidence;
+- native-only retained E2 backend-readiness record with exact identity fingerprints;
+- conservative retained-E2 applicability that still requires a live runtime recheck.
 
 Next:
 
-- real target-host backend-readiness records;
 - runtime model/operator/memory manifests tied to exact model/workload;
-- directional path profiling and evidence provenance;
-- invalidation rules tied to worker/driver/topology changes.
+- live worker/driver/topology identity and invalidation rules for retained evidence;
+- real target-host backend-readiness records;
+- directional path profiling and evidence provenance.
 
 No real native GPU backend has yet been qualified by TensorMeld; portable fixtures do not
 satisfy the real E2 gate.
