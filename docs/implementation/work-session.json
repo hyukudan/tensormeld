@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
   "status": "active",
-  "owner": "chatgpt-adapter-probe",
-  "scope": "Add a bounded trusted-local adapter capability handshake with artifact hash verification, strict JSON parsing, portable tests, CLI and docs.",
+  "owner": "chatgpt-runtime-observation",
+  "scope": "Add strict runtime observation import and conservative runtime candidate and memory-budget resolution, with tests, CLI and docs.",
   "started_at": "2026-10-01T15:30:00+02:00",
   "expires_at": "2026-10-01T17:30:00+02:00",
   "base_commit": "2f8b5ae134e8be9f6912e648927e67d601200705",
   "completion_condition": "Implementation, tests and docs are on main and portable CI passes.",
-  "next_step": "Implement adapter capability handshake and validate with a harmless fixture.",
-  "instructions": "Preserve pre-alpha notice and existing third-party adoption status; do not claim GPU or distributed inference support."
+  "next_step": "Implement runtime observation parsing and conservative availability and budget intersection.",
+  "instructions": "Preserve the pre-alpha notice and current third-party adoption status."
 }
