@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
+from tensormeld.cli import main
 from tensormeld.config_v2 import Config
 from tensormeld.device_binding import LlamaCppBinding, bind_llamacpp_probe
 from tensormeld.llamacpp_probe import LLAMACPP_PINNED_COMMIT
@@ -180,3 +186,59 @@ class DeviceBindingTests(unittest.TestCase):
             "pc-gpu",
             [d["id"] for d in result["runtime_eligible_compute_devices"]],
         )
+
+
+class DeviceBindingCLITests(unittest.TestCase):
+    def test_cli_binding_roundtrip_and_output_safety(self):
+        raw = data()
+        cfg = Config.parse(raw)
+        p = probe()
+        b = {
+            "binding_schema": "tensormeld/llamacpp-device-binding-v1",
+            "config_sha256": cfg.fingerprint,
+            "node_id": "pc",
+            "artifact_sha256": H,
+            "approval": "explicit",
+            "mappings": [{
+                "engine_device_name": "CUDA0",
+                "tensormeld_device_id": "pc-gpu",
+                "memory_reporter": True,
+            }],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            config_path = root / "config.json"
+            probe_path = root / "probe.json"
+            binding_path = root / "binding.json"
+            out = root / "bound.json"
+            config_path.write_text(json.dumps(raw), encoding="utf-8")
+            probe_path.write_text(json.dumps(p), encoding="utf-8")
+            binding_path.write_text(json.dumps(b), encoding="utf-8")
+            code = main([
+                "bind-llamacpp-devices",
+                str(config_path), str(probe_path), str(binding_path),
+                "--out", str(out),
+            ])
+            self.assertEqual(code, 0)
+            result = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(
+                result["runtime_observation"]["devices"]["pc-gpu"]["state"],
+                "observed",
+            )
+            before = binding_path.read_bytes()
+            with contextlib.redirect_stderr(io.StringIO()):
+                code = main([
+                    "bind-llamacpp-devices",
+                    str(config_path), str(probe_path), str(binding_path),
+                    "--out", str(binding_path),
+                ])
+            self.assertEqual(code, 1)
+            self.assertEqual(binding_path.read_bytes(), before)
+
+    def test_binding_loader_rejects_duplicate_keys(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "binding.json"
+            path.write_text('{"binding_schema":"x","binding_schema":"y"}', encoding="utf-8")
+            from tensormeld.device_binding import load_llamacpp_binding
+            with self.assertRaises(ValidationError):
+                load_llamacpp_binding(path)
