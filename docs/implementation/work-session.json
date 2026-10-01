@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
   "status": "active",
-  "owner": "chatgpt-llamacpp-backend-self-test",
-  "scope": "Complete the bounded llama.cpp test-backend-ops adapter contract for exact backend self-test evidence without model loading, then validate portable parsing and readiness promotion rules.",
-  "started_at": "2026-10-01T22:25:00+02:00",
-  "expires_at": "2026-10-02T00:25:00+02:00",
-  "base_commit": "6829994d0b44e476b6fc03283064b811de58d37e",
-  "completion_condition": "Self-test contract, strict target-backend execution proof, portable tests and status documentation are committed; CI result is recorded if available.",
-  "next_step": "Implement a fixture-driven adapter around the pinned upstream test-backend-ops target, requiring positive proof that the requested backend initialized and executed tests rather than trusting exit code alone.",
-  "instructions": "This replaces the expired 18:28 reservation after reconciliation with HEAD 6829994d0b44e476b6fc03283064b811de58d37e. Do not auto-promote list-devices observations. Do not claim hardware qualification from fixture tests; real E2 evidence requires executing the pinned upstream test tool on the bound backend."
+  "owner": "chatgpt-backend-e2-evidence-record",
+  "scope": "Add a strict retained E2 backend-readiness evidence record around native llama.cpp test-backend-ops results, including native-only retention eligibility, exact identity/applicability checks, bounded loading, and invalidation inputs without claiming hardware qualification.",
+  "started_at": "2026-10-01T23:31:00+02:00",
+  "expires_at": "2026-10-02T01:31:00+02:00",
+  "base_commit": "244d05601ee38f34531088c3e81b41f18569e88a",
+  "completion_condition": "Retained E2 record/applicability code, portable negative/positive contract tests, documentation and validation ledger are committed; CI result is recorded if available.",
+  "next_step": "Persist only native-subprocess self-test evidence with exact source/artifact/config/binding/device/backend identities and explicit invalidation inputs; reject injected-runner fixtures from retained hardware evidence.",
+  "instructions": "Reconciled after PR #1 merged the completed backend self-test slice. This slice records evidence contracts only: no real CUDA/HIP/Windows GPU qualification is claimed without a real target-host run. Do not create reservations or mark inference executable."
 }
