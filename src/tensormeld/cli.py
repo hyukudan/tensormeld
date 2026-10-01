@@ -14,6 +14,7 @@ from .planning_contract import load_planning_input
 from .planner_v2 import plan_v2
 from .migration import migrate_config
 from .gguf_catalog import inspect_gguf
+from .llamacpp_probe import probe_llamacpp
 from .planner import plan
 from .probe import probe
 from .schema import ValidationError, load
@@ -67,6 +68,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("paths", nargs="+", type=Path)
     p.add_argument("--trusted-local-file", action="store_true")
     p.add_argument("--out", type=Path)
+    p = subs.add_parser("probe-llamacpp", help="Trusted-local no-model probe of the pinned llama.cpp revision")
+    p.add_argument("binary", type=Path)
+    p.add_argument("--trusted-local-binary", action="store_true")
+    p.add_argument("--expected-sha256")
+    p.add_argument("--timeout", type=float, default=5.0)
+    p.add_argument("--out", type=Path)
     p = subs.add_parser("bench-loopback", help="Loopback-only bounded TCP echo diagnostic")
     p.add_argument("--iterations", type=int, default=20)
     p.add_argument("--out", type=Path)
@@ -77,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
                 getattr(args, name, None)
                 for name in (
                     "config", "runtime_observation", "planning_input", "scenario",
-                    "source", "destination",
+                    "source", "destination", "binary",
                 )
             ]
             inputs += getattr(args, "paths", [])
@@ -101,6 +108,13 @@ def main(argv: list[str] | None = None) -> int:
             result = migrate_config(args.source, args.destination)
         elif args.command == "inspect-gguf":
             result = inspect_gguf(args.paths, trusted_local_file=args.trusted_local_file)
+        elif args.command == "probe-llamacpp":
+            result = probe_llamacpp(
+                args.binary,
+                trusted_local_binary=args.trusted_local_binary,
+                expected_artifact_sha256=args.expected_sha256,
+                timeout_s=args.timeout,
+            )
         elif args.command == "runtime-select":
             config = load_config(args.config)
             observation = load_runtime_observation(args.runtime_observation)
