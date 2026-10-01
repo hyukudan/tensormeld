@@ -160,7 +160,7 @@ def resolve_runtime_candidates(
             raise ValidationError(
                 f"runtime observation: backend mismatch for {device_id}"
             )
-        if state not in ("ready", "draining", "offline", "error"):
+        if state not in ("observed", "ready", "draining", "offline", "error"):
             raise ValidationError(
                 f"runtime observation: unsupported state for {device_id}"
             )
