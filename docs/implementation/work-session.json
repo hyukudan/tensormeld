@@ -1,14 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-adapter-representability",
-  "scope": "Implement the static native-adapter representability contract: exact whole-block ownership/ranges, backend/node/device limits, structured rejection, tests and ADR. No worker launch or qualification.",
-  "started_at": "2026-10-01T14:18:00+02:00",
-  "completed_at": "2026-10-01T15:07:00+02:00",
-  "expires_at": null,
-  "base_commit": "430f2f7cb59d4602cc04378b129e51236da4eb0e",
-  "validation_record": "docs/implementation/validation/adapter-representability-2026-10-01.md",
-  "completion_condition": "Contract, tests, ADR/status updates are reachable from main and portable CI completed successfully.",
-  "next_step": "Implement a model/runtime qualification evidence contract that can bind an exact model manifest and adapter/build/device observations without promoting static capability declarations to executable state.",
-  "instructions": "Do not repeat the representability slice. Read current HEAD and roadmap before taking a fresh bounded claim."
+  "status": "active",
+  "owner": "chatgpt-model-qualification-contract",
+  "scope": "Add exact model-manifest identity and qualification-evidence contracts without inferring runtime memory or claiming hardware execution.",
+  "started_at": "2026-10-01T15:12:00+02:00",
+  "expires_at": "2026-10-01T17:12:00+02:00",
+  "base_commit": "ce7d1bdeb381ad92f77dbcc2fea968095dd1e14f",
+  "completion_condition": "Model manifest/evidence contracts, tests and docs are reachable from main and portable CI passes.",
+  "next_step": "Implement exact GGUF-backed identity manifest and evidence binding, then verify CI.",
+  "instructions": "Do not overlap this contract slice. No live hardware qualification or execution claims."
 }
