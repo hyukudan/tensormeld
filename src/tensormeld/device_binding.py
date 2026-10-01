@@ -4,11 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from .config_v2 import Config
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
-from .schema import ValidationError, items, record, text, unique
+from .schema import MAX_INPUT_BYTES, ValidationError, _no_duplicates, items, record, text, unique
 
 MAX_BINDINGS = 128
 
@@ -184,3 +185,28 @@ def bind_llamacpp_probe(
             "Native engine free memory remains transient and is not a reservation.",
         ],
     }
+
+
+def _load_json_object(path: str | Path, where: str) -> dict[str, Any]:
+    with Path(path).open("rb") as f:
+        raw = f.read(MAX_INPUT_BYTES + 1)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise ValidationError(f"{where} exceeds 2 MiB")
+    try:
+        value = json.loads(raw, object_pairs_hook=_no_duplicates)
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
+        raise ValidationError(f"invalid {where} JSON: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValidationError(f"{where}: expected object")
+    return value
+
+
+def load_llamacpp_binding(path: str | Path) -> LlamaCppBinding:
+    return LlamaCppBinding.parse(_load_json_object(path, "llama.cpp binding"))
+
+
+def load_llamacpp_probe_report(path: str | Path) -> dict[str, Any]:
+    value = _load_json_object(path, "llama.cpp probe report")
+    if value.get("probe_schema") != "tensormeld/llamacpp-probe-v1":
+        raise ValidationError("probe report: unexpected schema")
+    return value
