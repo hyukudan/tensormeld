@@ -36,17 +36,20 @@ Implemented:
 - pinned upstream `test-backend-ops` readiness contract with target-execution proof;
 - narrow observed → ready promotion after strict E2 backend self-test evidence;
 - native-only retained E2 backend-readiness record with exact identity fingerprints;
-- conservative retained-E2 applicability that still requires a live runtime recheck.
+- conservative retained-E2 applicability that still requires a live runtime recheck;
+- exact runtime model/operator/memory manifest contract;
+- per-device operator declarations plus one memory record per physical pool;
+- fixture/native-adapter provenance separation and non-executable CLI validation.
 
 Next:
 
-- runtime model/operator/memory manifests tied to exact model/workload;
+- live reservation/admission using runtime pool observations plus exact manifest peaks;
 - live worker/driver/topology identity and invalidation rules for retained evidence;
-- real target-host backend-readiness records;
+- real target-host backend-readiness/runtime-manifest records;
 - directional path profiling and evidence provenance.
 
 No real native GPU backend has yet been qualified by TensorMeld; portable fixtures do not
-satisfy the real E2 gate.
+satisfy the real E2/E3 gates.
 
 ## M3 — First executable distributed inference
 

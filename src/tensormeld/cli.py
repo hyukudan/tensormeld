@@ -20,6 +20,12 @@ from .llamacpp_selftest import (
     load_llamacpp_bound_result,
     self_test_llamacpp_backend,
 )
+from .model_manifest import load_model_manifest
+from .adapter_contract import load_adapter_capabilities
+from .runtime_model_manifest import (
+    load_runtime_model_manifest,
+    runtime_manifest_summary,
+)
 from .planner import plan
 from .probe import probe
 from .schema import ValidationError, load
@@ -99,6 +105,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--expected-sha256", required=True)
     p.add_argument("--timeout", type=float, default=30.0)
     p.add_argument("--out", type=Path)
+    p = subs.add_parser(
+        "validate-runtime-manifest",
+        help="Validate an exact runtime model/operator/memory manifest; no reservation is created",
+    )
+    p.add_argument("config", type=Path)
+    p.add_argument("model_manifest", type=Path)
+    p.add_argument("adapter_capabilities", type=Path)
+    p.add_argument("runtime_manifest", type=Path)
+    p.add_argument("--profile")
+    p.add_argument("--out", type=Path)
     p = subs.add_parser("bench-loopback", help="Loopback-only bounded TCP echo diagnostic")
     p.add_argument("--iterations", type=int, default=20)
     p.add_argument("--out", type=Path)
@@ -110,7 +126,8 @@ def main(argv: list[str] | None = None) -> int:
                 for name in (
                     "config", "runtime_observation", "planning_input", "scenario",
                     "source", "destination", "binary", "probe_report", "binding",
-                    "bound_result", "test_binary",
+                    "bound_result", "test_binary", "model_manifest",
+                    "adapter_capabilities", "runtime_manifest",
                 )
             ]
             inputs += getattr(args, "paths", [])
@@ -158,6 +175,18 @@ def main(argv: list[str] | None = None) -> int:
                 expected_artifact_sha256=args.expected_sha256,
                 timeout_s=args.timeout,
             )
+        elif args.command == "validate-runtime-manifest":
+            config = load_config(args.config)
+            model_manifest = load_model_manifest(args.model_manifest)
+            adapter = load_adapter_capabilities(args.adapter_capabilities)
+            runtime_manifest = load_runtime_model_manifest(
+                args.runtime_manifest,
+                config=config,
+                model=model_manifest,
+                adapter=adapter,
+                profile_name=args.profile,
+            )
+            result = runtime_manifest_summary(runtime_manifest)
         elif args.command == "runtime-select":
             config = load_config(args.config)
             observation = load_runtime_observation(args.runtime_observation)
