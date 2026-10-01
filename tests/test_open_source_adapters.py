@@ -66,16 +66,31 @@ class GGUFAdapterContractTests(unittest.TestCase):
 
     def test_duplicate_cross_shard_tensors_rejected(self):
         other=self.path.with_name('other.gguf');other.write_bytes(self.path.read_bytes())
-        def factory(path,mode):return reader(split=2,index=0 if path==str(self.path) else 1,total=2)
+        def factory(path,mode):return reader(split=2,index=0 if Path(path).samefile(self.path) else 1,total=2)
         with self.assertRaises(ValidationError):inspect_gguf([self.path,other],trusted_local_file=True,reader_factory=factory)
 
     def test_consistent_complete_shards(self):
         other=self.path.with_name('other.gguf');other.write_bytes(self.path.read_bytes())
         def factory(path,mode):
-            i=0 if path==str(self.path) else 1
+            i=0 if Path(path).samefile(self.path) else 1
             return reader(name=f'blk.{i}.weight',split=2,index=i,total=2)
         r=inspect_gguf([other,self.path],trusted_local_file=True,reader_factory=factory)
         self.assertTrue(r['complete_shard_set']);self.assertEqual(r['tensor_count'],2)
+
+
+    def test_complete_shards_with_noncanonical_input_path(self):
+        nested = self.path.parent / 'nested'
+        nested.mkdir()
+        self.path = nested / '..' / self.path.name
+        other = self.path.with_name('other.gguf')
+        other.write_bytes(self.path.read_bytes())
+        def factory(path, mode):
+            index = 0 if Path(path).samefile(self.path) else 1
+            return reader(name=f'blk.{index}.weight', split=2, index=index, total=2)
+        result = inspect_gguf([other, self.path], trusted_local_file=True, reader_factory=factory)
+        self.assertTrue(result['complete_shard_set'])
+        self.assertEqual(result['tensor_count'], 2)
+        self.assertEqual([part['split_index'] for part in result['files']], [0, 1])
 
 
 class SystemReuseTests(unittest.TestCase):
