@@ -33,6 +33,20 @@ native `test-backend-ops` artifact to execute on the explicitly bound backend. R
 `ready` remains distinct from model/operator qualification, memory reservation and
 execution authorization.
 
+## Retained E2 evidence tests
+
+Portable tests build deterministic records from synthetic self-test dictionaries and
+exercise exact config/probe/binding/test-artifact/device/backend applicability.
+
+The retention boundary is intentionally stricter than the self-test parser:
+`execution_source=injected-runner` is rejected. Only a self-test result marked
+`native-subprocess` can become a retained E2 record.
+
+These tests validate serialization, fingerprints and invalidation behavior only. They do
+not prove that a native GPU backend actually ran. A retained record does not restore
+runtime `ready`; live worker/driver/topology invalidation identity and a runtime recheck
+remain required.
+
 ## Agent/transport integration tests
 
 Use real sockets/processes with bounded payloads and authenticated test identities.
