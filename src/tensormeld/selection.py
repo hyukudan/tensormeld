@@ -5,7 +5,7 @@ from dataclasses import asdict
 from typing import Any
 
 from .config_v2 import Config, Device
-from .schema import ValidationError
+from .schema import ValidationError, number, record, text
 
 
 def pool_budgets(config: Config) -> dict[str, int | None]:
@@ -101,5 +101,169 @@ def resolve_candidates(config: Config, profile_name: str | None = None) -> dict[
             "Policy eligibility is not live availability or model/backend compatibility.",
             "Pool budgets are intersected static ceilings, not guaranteed allocatable memory.",
             "No performance ranking or distributed inference is performed by select.",
+        ],
+    }
+
+
+
+def resolve_runtime_candidates(
+    config: Config,
+    observation: dict[str, Any],
+    profile_name: str | None = None,
+) -> dict[str, Any]:
+    """Intersect static policy with one bounded runtime snapshot.
+
+    This is an advisory pre-admission view. The snapshot has no freshness
+    attestation and creates no memory reservation, so it cannot authorize execution.
+    """
+    root = record(
+        observation,
+        "runtime observation",
+        {
+            "runtime_observation_schema",
+            "config_sha256",
+            "devices",
+            "pools",
+            "qualified",
+            "executable",
+        },
+    )
+    if root["runtime_observation_schema"] != "tensormeld/runtime-observation-v1":
+        raise ValidationError(
+            "runtime_observation_schema: expected tensormeld/runtime-observation-v1"
+        )
+    if root["config_sha256"] != config.fingerprint:
+        raise ValidationError("runtime observation config_sha256 does not match config")
+    if root["qualified"] is not False or root["executable"] is not False:
+        raise ValidationError(
+            "runtime observation cannot self-declare qualified or executable"
+        )
+    if not isinstance(root["devices"], dict) or len(root["devices"]) > 128:
+        raise ValidationError("runtime observation devices: expected bounded object")
+    if not isinstance(root["pools"], dict) or len(root["pools"]) > 192:
+        raise ValidationError("runtime observation pools: expected bounded object")
+
+    static = resolve_candidates(config, profile_name)
+    device_map = {d.id: d for d in config.devices}
+    pool_map = {p.id: p for p in config.pools}
+    policies = {p.pool: p for p in config.resource_policies}
+
+    observed_devices: dict[str, dict[str, str]] = {}
+    for device_id, raw in root["devices"].items():
+        text(device_id, "runtime device id")
+        if device_id not in device_map:
+            raise ValidationError(f"runtime observation: unknown device {device_id}")
+        item = record(raw, f"runtime device {device_id}", {"backend", "state"})
+        backend = text(item["backend"], f"runtime device {device_id}.backend")
+        state = text(item["state"], f"runtime device {device_id}.state")
+        if backend != device_map[device_id].backend:
+            raise ValidationError(
+                f"runtime observation: backend mismatch for {device_id}"
+            )
+        if state not in ("ready", "draining", "offline", "error"):
+            raise ValidationError(
+                f"runtime observation: unsupported state for {device_id}"
+            )
+        observed_devices[device_id] = {"backend": backend, "state": state}
+
+    observed_pools: dict[str, int] = {}
+    for pool_id, raw in root["pools"].items():
+        text(pool_id, "runtime pool id")
+        if pool_id not in pool_map:
+            raise ValidationError(f"runtime observation: unknown pool {pool_id}")
+        item = record(raw, f"runtime pool {pool_id}", {"available_bytes"})
+        available = int(
+            number(
+                item["available_bytes"],
+                f"runtime pool {pool_id}.available_bytes",
+                0,
+                True,
+            )
+        )
+        capacity = pool_map[pool_id].reported_capacity_bytes
+        if capacity is not None and available > capacity:
+            raise ValidationError(
+                f"runtime observation: available bytes exceed reported capacity for {pool_id}"
+            )
+        observed_pools[pool_id] = available
+
+    runtime_budgets: dict[str, int] = {}
+    for pool_id, available in observed_pools.items():
+        dynamic = max(0, available - policies[pool_id].safety_headroom_bytes)
+        static_budget = static["physical_pool_budgets"][pool_id]
+        runtime_budgets[pool_id] = (
+            dynamic if static_budget is None else min(dynamic, static_budget)
+        )
+
+    eligible = []
+    for item in static["eligible_compute_devices"]:
+        observed = observed_devices.get(item["id"])
+        if observed is None or observed["state"] != "ready":
+            continue
+        if item["pool"] not in runtime_budgets:
+            continue
+        eligible.append({
+            **item,
+            "pool_budget_bytes": runtime_budgets[item["pool"]],
+            "runtime_state": "ready",
+        })
+
+    eligible_ids = {d["id"] for d in eligible}
+    eligible_nodes = {d["node"] for d in eligible}
+    reasons = []
+    missing_required_devices = sorted(
+        set(static["required_devices"]) - eligible_ids
+    )
+    if missing_required_devices:
+        reasons.append({
+            "code": "REQUIRED_DEVICE_NOT_RUNTIME_READY",
+            "ids": missing_required_devices,
+        })
+    missing_required_nodes = sorted(set(static["required_nodes"]) - eligible_nodes)
+    if missing_required_nodes:
+        reasons.append({
+            "code": "REQUIRED_NODE_NOT_RUNTIME_READY",
+            "ids": missing_required_nodes,
+        })
+    if len(eligible_ids) < static["min_compute_devices"]:
+        reasons.append({
+            "code": "MIN_RUNTIME_DEVICES_UNMET",
+            "required": static["min_compute_devices"],
+            "observed": len(eligible_ids),
+        })
+    if len(eligible_nodes) < static["min_compute_nodes"]:
+        reasons.append({
+            "code": "MIN_RUNTIME_NODES_UNMET",
+            "required": static["min_compute_nodes"],
+            "observed": len(eligible_nodes),
+        })
+    required_local = set(static["required_any_local_gpu"])
+    if required_local and not (required_local & eligible_ids):
+        reasons.append({
+            "code": "REQUIRED_LOCAL_GPU_NOT_RUNTIME_READY",
+            "ids": sorted(required_local),
+        })
+
+    return {
+        "result_schema": "tensormeld/runtime-candidates-v1",
+        "status": (
+            "RUNTIME_CANDIDATES_READY"
+            if not reasons
+            else "RUNTIME_REQUIREMENTS_UNMET"
+        ),
+        "config_sha256": config.fingerprint,
+        "profile": static["profile"],
+        "runtime_eligible_compute_nodes": sorted(eligible_nodes),
+        "runtime_eligible_compute_devices": eligible,
+        "runtime_pool_budgets": dict(sorted(runtime_budgets.items())),
+        "reasons": reasons,
+        "reservation_created": False,
+        "qualified": False,
+        "executable": False,
+        "warnings": [
+            "Runtime snapshot has no freshness attestation; re-observe before admission.",
+            "Observed free memory is not a reservation and can change immediately.",
+            "Coordinator runtime availability is not established by this snapshot.",
+            "No model/operator correctness or performance qualification is inferred.",
         ],
     }
