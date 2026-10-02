@@ -176,6 +176,17 @@ class HostAgent:
         self.sequence = 0
         self.admission = LocalAdmissionController()
 
+    def health(self) -> dict[str, Any]:
+        return {
+            "status": "HEALTHY" if self.lifecycle == "enabled" else self.lifecycle.upper(),
+            "node_id": self.enrollment.node_id,
+            "instance_id": self.instance_id,
+            "lifecycle": self.lifecycle,
+            "active_lease_ids": [lease.lease_id for lease in self.admission.active_leases()],
+            "qualified": False,
+            "executable": False,
+        }
+
     def describe(self) -> dict[str, Any]:
         self.sequence += 1
         return sign_capability_envelope(

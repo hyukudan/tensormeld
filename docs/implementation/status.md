@@ -40,6 +40,9 @@ the pre-alpha status or qualify any execution path.
 - bounded private control framing with connection epoch and monotonic replay rejection;
 - real ephemeral-certificate mTLS loopback integration in Linux CI;
 - enrolled peer identity can be bound to an exact TLS certificate SHA-256;
+- explicit private/loopback endpoint policy rejects public, hostname and link-local targets;
+- bounded remote HostAgent dispatch over the private control channel with request correlation;
+- remote reserve/recheck accepts only locally registered manifest/snapshot identities, never peer-supplied paths or payload objects;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.

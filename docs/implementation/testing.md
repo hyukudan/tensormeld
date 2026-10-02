@@ -142,3 +142,19 @@ exchanges bounded allowlisted control frames through `PrivateControlChannel`.
 No certificate or private key fixture is committed to Git. Windows continues to validate
 the portable TLS/control contract but does not run this OpenSSL-generated integration job.
 Loopback mTLS success is not private-LAN performance or distributed-inference evidence.
+
+
+## Private endpoint and remote-agent dispatch tests
+
+Portable tests validate that remote endpoints are explicit IP literals and are restricted
+to private or loopback address space. Public, hostname, unspecified, multicast and
+link-local targets fail closed.
+
+Remote dispatch accepts only the existing HostAgent operation allowlist. Reservation and
+launch-recheck requests carry only a lease ID, runtime-manifest SHA-256 and observation
+ID; the actual manifest/snapshot must already exist in a host-owned local registry.
+Unknown local references, duplicate request IDs and unexpected argument fields are
+rejected.
+
+These tests validate control-plane semantics only. They do not create a real two-machine
+LAN deployment, transport tensor payloads, or prove distributed inference.
