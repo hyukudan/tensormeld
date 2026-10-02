@@ -158,3 +158,15 @@ rejected.
 
 These tests validate control-plane semantics only. They do not create a real two-machine
 LAN deployment, transport tensor payloads, or prove distributed inference.
+
+
+## End-to-end remote dispatch over real mTLS
+
+The dedicated real-mTLS Linux job now also constructs a HostAgent, pre-registers an exact
+runtime manifest and admission snapshot on the server, then performs RemoteAgentClient
+calls through the real mutually authenticated TLS socket. The test validates a remote
+`health` call and a remote `reserve` request that resolves only server-local object
+identities and creates the lease on the server-side HostAgent.
+
+This is still loopback-only integration. It does not establish multi-machine LAN
+reachability, tensor transport, GPU execution or distributed inference.
