@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-mtls-loopback-integration",
   "scope": "Add a real provisioned-certificate mTLS loopback integration test using ephemeral CI-generated certificates, bind enrolled peer identity to exact certificate SHA-256, and verify bounded private control frames over the real TLS socket.",
   "started_at": "2026-10-02T16:32:00+02:00",
   "expires_at": "2026-10-02T18:32:00+02:00",
   "base_commit": "f79015ceea82720b923eca2cf0ca333df22d9b3c",
   "completion_condition": "Real mTLS loopback integration, enrollment-certificate binding, dedicated Linux CI job, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Generate ephemeral CA/server/client certificates during Linux CI with OpenSSL, perform a real mutual TLS loopback handshake, pin the peer certificate to enrolled identity, and exchange only bounded allowlisted control frames.",
-  "instructions": "No private keys or certificates are committed. Windows remains portable contract coverage only for this slice. No LAN performance, tensor transport, GPU qualification or distributed inference claim."
+  "next_step": "Move the authenticated control channel from loopback-only integration to explicit private-LAN endpoints with enrolled-node endpoint policy, then expose only bounded remote agent control methods before any tensor transport.",
+  "instructions": "Completed with ephemeral certificates generated at CI runtime; no private keys or certificates are committed. The integration proves real mutual TLS on loopback only. No LAN performance, tensor transport, CUDA/HIP qualification, Windows GPU execution or distributed inference claim is made."
 }
