@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-live-reservation-admission",
-  "scope": "Implement hardware-neutral live reservation/admission over physical pools: atomically admit one exact runtime manifest against current runtime observations and owner policy, issue bounded local leases, recheck at launch, and deterministically release without treating observations as reservations.",
-  "started_at": "2026-10-02T09:00:00+02:00",
-  "expires_at": "2026-10-02T11:00:00+02:00",
-  "base_commit": "ad0dfe1aeda32049c5fa2a94fe0585c8887f2219",
-  "completion_condition": "Atomic local physical-pool lease/admission code, launch-time recheck, deterministic release, portable concurrency/aliasing tests, documentation and validation ledger are committed; CI result is recorded if available.",
-  "next_step": "Extend the local lease primitive behind a secure enrolled host agent so node-owner policy remains authoritative across machines; then add authenticated private transport before any whole-block executable adapter.",
-  "instructions": "Completed as an in-process hardware-neutral lease primitive. Admission snapshots explicitly identify which active leases are already reflected in telemetry to avoid double subtraction. No distributed lock, remote reservation, GPU qualification, model correctness or executable distributed-inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-secure-agent-enrollment",
+  "scope": "Implement a cross-platform local agent/enrollment skeleton with explicit node identity, authenticated versioned capability envelopes, replay rejection, lifecycle state, and allowlisted host-control operations only; do not expose a remote listener before authenticated encrypted transport exists.",
+  "started_at": "2026-10-02T14:48:00+02:00",
+  "expires_at": "2026-10-02T16:48:00+02:00",
+  "base_commit": "8d6167871c4724d72c0efb986ad02ae4d46f2024",
+  "completion_condition": "Enrollment identity/capability envelope/lifecycle code, bounded replay-safe verification tests, docs/ADR/validation and CI are committed.",
+  "next_step": "Build an offline/local agent skeleton using explicit enrollment material and authenticated capability envelopes, with no arbitrary execution surface and no remote listener.",
+  "instructions": "Use standard-library HMAC-SHA256 primitives rather than implementing cryptography. Secrets are injected at runtime and never serialized to repository/config/output. This slice does not claim secure LAN transport; mutual authenticated encryption remains the next gate."
 }
