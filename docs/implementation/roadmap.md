@@ -20,7 +20,7 @@ Implemented:
 
 Next:
 
-- private-LAN integration beyond loopback using provisioned certificates and enrolled endpoints;
+- real multi-machine private-LAN integration using provisioned certificates and enrolled endpoint records;
 - loopback/private-LAN integration tests through that channel;
 - OS-protected key/certificate storage integration and rotation/revocation persistence.
 
@@ -31,7 +31,9 @@ Implemented transport foundation:
 - bounded versioned control frames with epoch/sequence replay protection;
 - only the existing agent allowlist is representable as a control operation;
 - real loopback mTLS handshake with ephemeral CI-generated CA/server/client certificates;
-- exact peer-certificate fingerprint bound to enrolled node identity before control exchange.
+- exact peer-certificate fingerprint bound to enrolled node identity before control exchange;
+- explicit private/loopback endpoint policy plus bounded remote agent method dispatch;
+- request/response correlation and local-object registry for reserve/recheck references.
 
 Exit gate: two machines can establish a secure control relationship without exposing an
 arbitrary execution surface.
