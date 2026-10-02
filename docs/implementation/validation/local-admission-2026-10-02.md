@@ -26,4 +26,4 @@ These are process-local software tests. They do not prove cross-process arbitrat
 remote host authority, CUDA/HIP allocation, Windows GPU behavior, model correctness,
 performance or distributed inference.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #4, workflow `Portable Python tests`, run #72 (36976422657) passed all 6 jobs: Linux and Windows on Python 3.11/3.13 plus optional-adapter integration jobs on both operating systems. Hosted CI remains portable software evidence, not GPU qualification.
