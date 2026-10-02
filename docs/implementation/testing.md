@@ -130,3 +130,15 @@ The socket tests use an injected TLS-socket fixture and therefore prove the cont
 contract, not a real certificate handshake or encrypted LAN path. Real provisioned mTLS
 integration remains a separate test gate. Python `ssl`/OpenSSL is reused; TensorMeld does
 not implement TLS cryptography itself.
+
+
+## Real mTLS loopback integration
+
+A dedicated Linux CI job generates an ephemeral CA plus server/client certificates with
+OpenSSL at runtime, stores them only in the job workspace, performs a real mutual TLS
+handshake over 127.0.0.1, verifies certificate pinning against enrolled identities, and
+exchanges bounded allowlisted control frames through `PrivateControlChannel`.
+
+No certificate or private key fixture is committed to Git. Windows continues to validate
+the portable TLS/control contract but does not run this OpenSSL-generated integration job.
+Loopback mTLS success is not private-LAN performance or distributed-inference evidence.
