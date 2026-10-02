@@ -38,6 +38,8 @@ the pre-alpha status or qualify any execution path.
 - TLS/mTLS context policy builders using Python ssl/OpenSSL with CA verification and client certificates;
 - exact peer-certificate SHA-256 pinning plus dedicated control-channel ALPN;
 - bounded private control framing with connection epoch and monotonic replay rejection;
+- real ephemeral-certificate mTLS loopback integration in Linux CI;
+- enrolled peer identity can be bound to an exact TLS certificate SHA-256;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -66,7 +68,6 @@ manifest has been recorded by TensorMeld in this development environment.
 - real native-adapter model/operator/memory manifest capture on target hardware;
 - live worker/driver/topology identity needed to safely reuse retained E2 readiness;
 - native Windows GPU inference;
-- real certificate-provisioned mTLS handshake/integration around the private control channel;
 - native CUDA/HIP/distributed inference;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
