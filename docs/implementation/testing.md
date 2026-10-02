@@ -62,6 +62,18 @@ steady peak; preparation peak must cover it and cannot exceed a known physical c
 Fixture provenance is contract evidence only. A native-adapter manifest still needs live
 admission and E3 correctness evidence before execution.
 
+## Local reservation/admission tests
+
+Portable tests exercise atomic in-process leases across all physical pools required by an
+exact runtime manifest. Tests cover concurrent contenders, deterministic release, launch-time
+recheck using a newly identified observation, rejection under reduced availability, and
+shared-pool accounting inherited from the manifest.
+
+Admission snapshots may explicitly list active lease IDs whose allocations are already
+reflected in reported available bytes. Such leases are not subtracted again; active leases
+not listed as reflected are charged conservatively. This accounting rule is local process
+control-plane behavior only and is not a distributed lock or proof of GPU allocation.
+
 ## Agent/transport integration tests
 
 Use real sockets/processes with bounded payloads and authenticated test identities.
