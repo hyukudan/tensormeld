@@ -27,6 +27,10 @@ the pre-alpha status or qualify any execution path.
 - runtime memory is represented once per physical pool with resident/state/workspace/preparation peaks;
 - operator coverage is explicit per device and cannot self-promote qualification/execution;
 - CLI validation for runtime manifests without creating resource reservations;
+- in-process atomic physical-pool leases for exact runtime manifests;
+- launch-time re-admission requires a newly identified runtime observation;
+- active leases can be explicitly marked reflected in telemetry to avoid double subtraction;
+- deterministic local lease release and concurrent admission serialization;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -56,14 +60,14 @@ manifest has been recorded by TensorMeld in this development environment.
 - live worker/driver/topology identity needed to safely reuse retained E2 readiness;
 - native Windows GPU inference;
 - remote enrollment/agent and authenticated private-LAN transport;
-- active memory reservations/leases and launch-time re-admission;
 - native CUDA/HIP/distributed inference;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
 
-Runtime manifests are evidence inputs, not reservations. Even complete declared operator
-coverage remains distinct from E3 model correctness qualification. Physical-pool memory
-figures describe one exact manifest tuple and still require live admission/recheck before
-allocation.
+Runtime manifests are evidence inputs, not reservations. The local admission controller can
+now reserve their exact preparation peaks atomically within one process and recheck before
+launch, but this is not yet a distributed/agent lease service. Explicit reflected-lease IDs
+separate telemetry that already includes an allocation from pending logical reservations so
+committed bytes are not necessarily subtracted twice.
 
 No measured RTX, Strix or model speed is claimed.
