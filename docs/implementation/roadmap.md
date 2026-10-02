@@ -20,9 +20,16 @@ Implemented:
 
 Next:
 
-- mutually authenticated encrypted private-LAN channel;
+- real certificate-provisioned mTLS handshake/private-LAN integration around the implemented TLS control channel;
 - loopback/private-LAN integration tests through that channel;
 - OS-protected key/certificate storage integration and rotation/revocation persistence.
+
+Implemented transport foundation:
+
+- strict client/server TLS policy builders with CA verification and client certificates;
+- dedicated ALPN and exact peer-certificate SHA-256 pinning;
+- bounded versioned control frames with epoch/sequence replay protection;
+- only the existing agent allowlist is representable as a control operation.
 
 Exit gate: two machines can establish a secure control relationship without exposing an
 arbitrary execution surface.
