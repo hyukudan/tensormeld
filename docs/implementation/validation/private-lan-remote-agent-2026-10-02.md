@@ -22,4 +22,4 @@ bounded lifecycle calls.
 
 These tests do not establish a real multi-machine private LAN or distributed inference.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #8, workflow `Portable Python tests`, run #94 (37033679451) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. This validates the bounded remote-control contract and preserves the previously validated real loopback mTLS path; it is not multi-machine LAN or distributed-inference evidence.
