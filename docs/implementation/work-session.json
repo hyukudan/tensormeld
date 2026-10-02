@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-mtls-loopback-integration",
-  "scope": "Add a real provisioned-certificate mTLS loopback integration test using ephemeral CI-generated certificates, bind enrolled peer identity to exact certificate SHA-256, and verify bounded private control frames over the real TLS socket.",
-  "started_at": "2026-10-02T16:32:00+02:00",
-  "expires_at": "2026-10-02T18:32:00+02:00",
-  "base_commit": "f79015ceea82720b923eca2cf0ca333df22d9b3c",
-  "completion_condition": "Real mTLS loopback integration, enrollment-certificate binding, dedicated Linux CI job, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Move the authenticated control channel from loopback-only integration to explicit private-LAN endpoints with enrolled-node endpoint policy, then expose only bounded remote agent control methods before any tensor transport.",
-  "instructions": "Completed with ephemeral certificates generated at CI runtime; no private keys or certificates are committed. The integration proves real mutual TLS on loopback only. No LAN performance, tensor transport, CUDA/HIP qualification, Windows GPU execution or distributed inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-private-lan-remote-agent",
+  "scope": "Implement explicit private-LAN endpoint policy plus bounded remote HostAgent control dispatch over the existing mTLS PrivateControlChannel, with enrolled peer identity, allowlisted operations, request/response correlation, and no tensor or arbitrary execution surface.",
+  "started_at": "2026-10-02T18:22:00+02:00",
+  "expires_at": "2026-10-02T20:22:00+02:00",
+  "base_commit": "55f00d79ff96d4a5cc4b61a6fb3076ddaf260279",
+  "completion_condition": "Endpoint policy, remote dispatch/client contract, portable tests, docs/ADR/validation and CI are committed.",
+  "next_step": "Add explicit enrolled endpoint records restricted to private/loopback addresses, dispatch only existing HostAgent allowlisted operations, correlate bounded request/response IDs, and keep workers/native RPC loopback-only.",
+  "instructions": "No tensor payloads, arbitrary shell/executable/path dispatch, public endpoint policy, secrets, model downloads, GPU claims or distributed inference. This slice validates control-plane semantics; real multi-machine LAN integration remains separate."
 }
