@@ -26,4 +26,4 @@ These tests do **not** perform a real TLS certificate handshake or private-LAN e
 No encryption performance, CUDA/HIP, Windows GPU execution, tensor transport or
 distributed inference is claimed.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #6, workflow `Portable Python tests`, run #81 (37011333042) passed all 6 jobs: Linux and Windows on Python 3.11/3.13 plus optional-adapter integration jobs on both operating systems. This validates the portable TLS/control-channel contract only; no real certificate-provisioned handshake or private-LAN exchange ran in hosted CI.
