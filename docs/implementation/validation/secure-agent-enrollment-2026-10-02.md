@@ -28,4 +28,4 @@ These are portable control-plane tests. They do not prove encrypted LAN transpor
 certificate storage, CUDA/HIP or Windows GPU execution, model correctness, performance
 or distributed inference.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #5, workflow `Portable Python tests`, run #77 (37009093182) passed all 6 jobs: Linux and Windows on Python 3.11/3.13 plus optional-adapter integration jobs on both operating systems. Hosted CI remains portable software evidence, not encrypted-LAN or GPU qualification.
