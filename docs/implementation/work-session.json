@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-private-tls-control-channel",
   "scope": "Implement the authenticated private transport foundation: strict TLS client/server policy builders, exact peer-certificate pinning, bounded control framing over an already-authenticated TLS socket, connection epoch/sequence replay rejection, and no arbitrary execution surface.",
   "started_at": "2026-10-02T14:50:00+02:00",
   "expires_at": "2026-10-02T16:50:00+02:00",
   "base_commit": "989e76912a2bfdb7c62f429a1ba1bc2b778073bc",
   "completion_condition": "TLS policy/channel code, bounded/replay-safe portable tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Use Python ssl/OpenSSL rather than implementing cryptography; require CA verification and client certificates, pin exact peer certificate SHA-256 after handshake, then carry only bounded versioned control frames.",
-  "instructions": "This slice does not claim a real certificate handshake was executed in CI unless such integration is actually added. No tensor payloads, shell commands, peer-supplied executables, public-interface listener or distributed inference."
+  "next_step": "Add real provisioned-certificate mTLS loopback/private-LAN integration and bind verified enrolled node identity to the TLS peer certificate before exposing remote agent methods.",
+  "instructions": "Completed as a transport foundation over an already-authenticated TLS socket. CI uses injected TLS-socket fixtures, not a real TLS handshake. No tensor payloads, public listener, shell/executable commands, CUDA/HIP qualification, performance or distributed inference are claimed."
 }

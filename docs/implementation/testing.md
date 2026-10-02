@@ -117,3 +117,16 @@ execution/shell API.
 The agent module opens no remote listener. HMAC-SHA256 uses Python's standard-library
 implementation; this slice is an authenticated envelope and host-authority primitive, not
 encrypted LAN transport. Mutual authenticated encryption remains a separate gate.
+
+
+## Private TLS control-channel tests
+
+Portable tests validate TLS policy construction, required client-certificate verification,
+dedicated ALPN, exact peer-certificate SHA-256 pinning, bounded control framing,
+connection-epoch checks, monotonic sequence enforcement and rejection of non-allowlisted
+operations.
+
+The socket tests use an injected TLS-socket fixture and therefore prove the control-channel
+contract, not a real certificate handshake or encrypted LAN path. Real provisioned mTLS
+integration remains a separate test gate. Python `ssl`/OpenSSL is reused; TensorMeld does
+not implement TLS cryptography itself.
