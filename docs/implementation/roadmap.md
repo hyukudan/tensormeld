@@ -10,12 +10,19 @@ snapshots, not reservations.
 
 ## M1 — Agent and enrollment
 
-- cross-platform agent skeleton;
-- authenticated pairing and node identity;
-- signed/versioned capability envelope;
-- health, drain, disable and worker lifecycle;
-- local owner policy is authoritative;
-- loopback and private-LAN integration tests.
+Implemented:
+
+- cross-platform local agent skeleton without a remote listener;
+- explicit enrollment/node/key identity supplied at runtime;
+- authenticated versioned capability envelope with replay rejection;
+- drain/disable/revoke lifecycle and fixed allowlisted operations;
+- host-owned physical-pool lease authority over the existing local admission primitive.
+
+Next:
+
+- mutually authenticated encrypted private-LAN channel;
+- loopback/private-LAN integration tests through that channel;
+- OS-protected key/certificate storage integration and rotation/revocation persistence.
 
 Exit gate: two machines can establish a secure control relationship without exposing an
 arbitrary execution surface.
@@ -45,7 +52,6 @@ Implemented:
 
 Next:
 
-- secure enrolled agent and host-owned lease service extending the local lease primitive;
 - live worker/driver/topology identity and invalidation rules for retained evidence;
 - real target-host backend-readiness/runtime-manifest records;
 - directional path profiling and evidence provenance.
