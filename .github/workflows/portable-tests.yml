@@ -79,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p local/mtls
-          openssl req -x509 -newkey rsa:2048 -nodes -days 1             -subj "/CN=TensorMeld Test CA"             -keyout local/mtls/ca.key -out local/mtls/ca.pem
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1             -subj "/CN=TensorMeld Test CA"             -addext "basicConstraints=critical,CA:TRUE"             -addext "keyUsage=critical,keyCertSign,cRLSign"             -addext "subjectKeyIdentifier=hash"             -keyout local/mtls/ca.key -out local/mtls/ca.pem
           openssl req -newkey rsa:2048 -nodes             -subj "/CN=localhost"             -keyout local/mtls/server.key -out local/mtls/server.csr
           printf '%s\n'             'subjectAltName=DNS:localhost,IP:127.0.0.1'             'extendedKeyUsage=serverAuth' > local/mtls/server.ext
           openssl x509 -req -days 1             -in local/mtls/server.csr             -CA local/mtls/ca.pem -CAkey local/mtls/ca.key -CAcreateserial             -extfile local/mtls/server.ext             -out local/mtls/server.pem
