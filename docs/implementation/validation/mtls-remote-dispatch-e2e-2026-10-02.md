@@ -14,4 +14,4 @@ bounded allowlisted operations and host-local object authority in one path.
 This remains loopback-only evidence. No two-machine private LAN, tensor transfer, GPU
 execution, performance claim or distributed inference is established.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #9, workflow `Portable Python tests`, run #99 (37051535623) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job exercising end-to-end RemoteAgentClient/Dispatcher health and reserve calls. The first run (#97) exposed only an unittest module-discovery path issue; the dedicated job was switched to unittest discovery before the successful run. Evidence remains loopback-only.
