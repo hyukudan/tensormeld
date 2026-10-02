@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-secure-agent-enrollment",
-  "scope": "Implement a cross-platform local agent/enrollment skeleton with explicit node identity, authenticated versioned capability envelopes, replay rejection, lifecycle state, and allowlisted host-control operations only; do not expose a remote listener before authenticated encrypted transport exists.",
-  "started_at": "2026-10-02T14:48:00+02:00",
-  "expires_at": "2026-10-02T16:48:00+02:00",
-  "base_commit": "8d6167871c4724d72c0efb986ad02ae4d46f2024",
-  "completion_condition": "Enrollment identity/capability envelope/lifecycle code, bounded replay-safe verification tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Implement mutually authenticated encrypted private transport around the enrolled agent, keeping legacy/native workers loopback-only and preserving bounded message/replay semantics.",
-  "instructions": "Completed without opening a remote listener. Enrollment secrets are runtime-only and never serialized. Host agents reserve only their own node's physical pools. This does not claim secure LAN transport, CUDA/HIP qualification, Windows GPU execution, performance or distributed inference."
+  "status": "active",
+  "owner": "chatgpt-private-tls-control-channel",
+  "scope": "Implement the authenticated private transport foundation: strict TLS client/server policy builders, exact peer-certificate pinning, bounded control framing over an already-authenticated TLS socket, connection epoch/sequence replay rejection, and no arbitrary execution surface.",
+  "started_at": "2026-10-02T14:50:00+02:00",
+  "expires_at": "2026-10-02T16:50:00+02:00",
+  "base_commit": "989e76912a2bfdb7c62f429a1ba1bc2b778073bc",
+  "completion_condition": "TLS policy/channel code, bounded/replay-safe portable tests, docs/ADR/validation and CI are committed.",
+  "next_step": "Use Python ssl/OpenSSL rather than implementing cryptography; require CA verification and client certificates, pin exact peer certificate SHA-256 after handshake, then carry only bounded versioned control frames.",
+  "instructions": "This slice does not claim a real certificate handshake was executed in CI unless such integration is actually added. No tensor payloads, shell commands, peer-supplied executables, public-interface listener or distributed inference."
 }
