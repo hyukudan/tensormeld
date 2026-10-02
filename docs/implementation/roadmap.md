@@ -33,7 +33,8 @@ Implemented transport foundation:
 - real loopback mTLS handshake with ephemeral CI-generated CA/server/client certificates;
 - exact peer-certificate fingerprint bound to enrolled node identity before control exchange;
 - explicit private/loopback endpoint policy plus bounded remote agent method dispatch;
-- request/response correlation and local-object registry for reserve/recheck references.
+- request/response correlation and local-object registry for reserve/recheck references;
+- end-to-end remote health/reserve dispatch through the real loopback mTLS channel.
 
 Exit gate: two machines can establish a secure control relationship without exposing an
 arbitrary execution surface.
