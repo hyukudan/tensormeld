@@ -39,11 +39,13 @@ Implemented:
 - conservative retained-E2 applicability that still requires a live runtime recheck;
 - exact runtime model/operator/memory manifest contract;
 - per-device operator declarations plus one memory record per physical pool;
-- fixture/native-adapter provenance separation and non-executable CLI validation.
+- fixture/native-adapter provenance separation and non-executable CLI validation;
+- atomic in-process physical-pool leases for exact manifest preparation peaks;
+- launch-time recheck with explicit telemetry/reflected-lease accounting and release.
 
 Next:
 
-- live reservation/admission using runtime pool observations plus exact manifest peaks;
+- secure enrolled agent and host-owned lease service extending the local lease primitive;
 - live worker/driver/topology identity and invalidation rules for retained evidence;
 - real target-host backend-readiness/runtime-manifest records;
 - directional path profiling and evidence provenance.
