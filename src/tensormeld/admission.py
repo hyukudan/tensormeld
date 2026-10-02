@@ -115,6 +115,7 @@ class LocalAdmissionController:
         config: Config,
         manifest: RuntimeModelManifest,
         runtime: dict[str, Any],
+        owned_node_id: str | None = None,
     ) -> dict[str, int]:
         if manifest.config_sha256 != config.fingerprint:
             raise ValidationError("runtime manifest config identity mismatch")
@@ -126,7 +127,12 @@ class LocalAdmissionController:
         eligible_ids = {
             item["id"] for item in runtime["runtime_eligible_compute_devices"]
         }
-        manifest_ids = {device.id for device in manifest.devices}
+        manifest_ids = {
+            device.id for device in manifest.devices
+            if owned_node_id is None or device.node == owned_node_id
+        }
+        if owned_node_id is not None and not manifest_ids:
+            raise ValidationError("runtime manifest has no devices owned by this node")
         missing = sorted(manifest_ids - eligible_ids)
         if missing:
             raise ValidationError(
@@ -136,11 +142,15 @@ class LocalAdmissionController:
         budgets = runtime["runtime_pool_budgets"]
         demand: dict[str, int] = {}
         for pool in manifest.pools:
+            if owned_node_id is not None and pool.node != owned_node_id:
+                continue
             if pool.pool not in budgets:
                 raise ValidationError(
                     f"runtime manifest pool {pool.pool} has no live observation"
                 )
             demand[pool.pool] = pool.preparation_peak_bytes
+        if not demand:
+            raise ValidationError("runtime manifest has no physical pools owned by this node")
         return demand
 
     def reserve(
@@ -150,6 +160,7 @@ class LocalAdmissionController:
         config: Config,
         manifest: RuntimeModelManifest,
         snapshot: dict[str, Any],
+        owned_node_id: str | None = None,
     ) -> dict[str, Any]:
         lease_id = text(lease_id, "lease_id")
         observation_id, runtime, reflected = _snapshot(
@@ -157,7 +168,9 @@ class LocalAdmissionController:
             snapshot,
             profile_name=manifest.profile,
         )
-        demand = self._validate_manifest_runtime(config, manifest, runtime)
+        demand = self._validate_manifest_runtime(
+            config, manifest, runtime, owned_node_id
+        )
 
         with self._lock:
             if lease_id in self._leases:
@@ -235,6 +248,7 @@ class LocalAdmissionController:
         config: Config,
         manifest: RuntimeModelManifest,
         snapshot: dict[str, Any],
+        owned_node_id: str | None = None,
     ) -> dict[str, Any]:
         lease_id = text(lease_id, "lease_id")
         observation_id, runtime, reflected = _snapshot(
@@ -242,7 +256,9 @@ class LocalAdmissionController:
             snapshot,
             profile_name=manifest.profile,
         )
-        demand = self._validate_manifest_runtime(config, manifest, runtime)
+        demand = self._validate_manifest_runtime(
+            config, manifest, runtime, owned_node_id
+        )
 
         with self._lock:
             lease = self._leases.get(lease_id)
