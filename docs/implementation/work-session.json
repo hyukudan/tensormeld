@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-mtls-remote-dispatch-e2e",
   "scope": "Run bounded RemoteAgentClient/RemoteAgentDispatcher calls end-to-end through the real ephemeral-certificate mTLS loopback channel, including host-local object resolution for reserve and request/response correlation.",
   "started_at": "2026-10-02T21:00:00+02:00",
   "expires_at": "2026-10-02T23:00:00+02:00",
   "base_commit": "bc3f2d36c1e900e551f388f248a0d141b7881778",
   "completion_condition": "Real mTLS remote-dispatch integration tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Exercise health/describe and a host-owned reserve call through the real mTLS loopback socket using RemoteAgentClient and RemoteAgentDispatcher, with manifests/snapshots pre-registered locally on the server.",
-  "instructions": "No LAN bind beyond loopback, tensor payloads, remote object injection, shell/executable dispatch, GPU qualification or distributed inference claim."
+  "next_step": "Run the same authenticated remote-dispatch contract across explicitly configured private-LAN endpoints in separate processes/machines before introducing tensor transport or a whole-block executable adapter.",
+  "instructions": "Completed as real loopback mTLS end-to-end control integration. The peer sends only object identities; manifest/snapshot data remains host-local. No LAN performance, tensor transport, CUDA/HIP qualification, Windows GPU execution or distributed inference claim is made."
 }
