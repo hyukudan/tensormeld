@@ -105,3 +105,15 @@ before running this integration suite.
 
 Hosted Windows/Linux CI validates portable software behavior only. Native GPU
 qualification remains a separate hardware job class.
+
+
+## Agent/enrollment tests
+
+Portable tests validate explicit enrollment identity, authenticated capability envelopes,
+constant-time HMAC verification, monotonic replay rejection, secret non-serialization,
+host-owned pool scoping, drain/disable behavior and the absence of a peer-supplied
+execution/shell API.
+
+The agent module opens no remote listener. HMAC-SHA256 uses Python's standard-library
+implementation; this slice is an authenticated envelope and host-authority primitive, not
+encrypted LAN transport. Mutual authenticated encryption remains a separate gate.

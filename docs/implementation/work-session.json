@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-secure-agent-enrollment",
   "scope": "Implement a cross-platform local agent/enrollment skeleton with explicit node identity, authenticated versioned capability envelopes, replay rejection, lifecycle state, and allowlisted host-control operations only; do not expose a remote listener before authenticated encrypted transport exists.",
   "started_at": "2026-10-02T14:48:00+02:00",
   "expires_at": "2026-10-02T16:48:00+02:00",
   "base_commit": "8d6167871c4724d72c0efb986ad02ae4d46f2024",
   "completion_condition": "Enrollment identity/capability envelope/lifecycle code, bounded replay-safe verification tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Build an offline/local agent skeleton using explicit enrollment material and authenticated capability envelopes, with no arbitrary execution surface and no remote listener.",
-  "instructions": "Use standard-library HMAC-SHA256 primitives rather than implementing cryptography. Secrets are injected at runtime and never serialized to repository/config/output. This slice does not claim secure LAN transport; mutual authenticated encryption remains the next gate."
+  "next_step": "Implement mutually authenticated encrypted private transport around the enrolled agent, keeping legacy/native workers loopback-only and preserving bounded message/replay semantics.",
+  "instructions": "Completed without opening a remote listener. Enrollment secrets are runtime-only and never serialized. Host agents reserve only their own node's physical pools. This does not claim secure LAN transport, CUDA/HIP qualification, Windows GPU execution, performance or distributed inference."
 }
