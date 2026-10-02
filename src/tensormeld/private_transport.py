@@ -17,7 +17,7 @@ import ssl
 import struct
 from typing import Any, Protocol
 
-from .agent import ALLOWED_OPERATIONS
+from .agent import ALLOWED_OPERATIONS, Enrollment
 from .schema import ValidationError, text
 
 CONTROL_PROTOCOL = "tensormeld/private-control-v1"
@@ -32,6 +32,25 @@ class TLSMaterial:
     ca_file: Path
     cert_file: Path
     key_file: Path
+
+
+@dataclass(frozen=True)
+class EnrolledPeerTLSBinding:
+    enrollment_id: str
+    node_id: str
+    certificate_sha256: str
+
+
+def bind_enrollment_to_peer_certificate(
+    enrollment: Enrollment,
+    *,
+    certificate_sha256: str,
+) -> EnrolledPeerTLSBinding:
+    return EnrolledPeerTLSBinding(
+        enrollment_id=enrollment.enrollment_id,
+        node_id=enrollment.node_id,
+        certificate_sha256=_sha256_hex(certificate_sha256, "certificate_sha256"),
+    )
 
 
 class TLSSocketLike(Protocol):
@@ -103,6 +122,8 @@ def validate_tls_peer(
     sock: TLSSocketLike,
     *,
     expected_peer_certificate_sha256: str,
+    expected_enrollment: Enrollment | None = None,
+    peer_binding: EnrolledPeerTLSBinding | None = None,
 ) -> dict[str, Any]:
     expected = _sha256_hex(
         expected_peer_certificate_sha256,
@@ -122,6 +143,15 @@ def validate_tls_peer(
     observed = hashlib.sha256(bytes(der)).hexdigest()
     if observed != expected:
         raise ValidationError("TLS peer certificate fingerprint mismatch")
+    if expected_enrollment is not None or peer_binding is not None:
+        if expected_enrollment is None or peer_binding is None:
+            raise ValidationError("TLS enrollment validation requires both enrollment and binding")
+        if (
+            peer_binding.enrollment_id != expected_enrollment.enrollment_id
+            or peer_binding.node_id != expected_enrollment.node_id
+            or peer_binding.certificate_sha256 != observed
+        ):
+            raise ValidationError("TLS peer certificate is not bound to expected enrollment")
     return {
         "transport": "tls",
         "tls_version": version,
