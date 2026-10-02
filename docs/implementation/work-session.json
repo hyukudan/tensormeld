@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-private-lan-remote-agent",
   "scope": "Implement explicit private-LAN endpoint policy plus bounded remote HostAgent control dispatch over the existing mTLS PrivateControlChannel, with enrolled peer identity, allowlisted operations, request/response correlation, and no tensor or arbitrary execution surface.",
   "started_at": "2026-10-02T18:22:00+02:00",
   "expires_at": "2026-10-02T20:22:00+02:00",
   "base_commit": "55f00d79ff96d4a5cc4b61a6fb3076ddaf260279",
   "completion_condition": "Endpoint policy, remote dispatch/client contract, portable tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Add explicit enrolled endpoint records restricted to private/loopback addresses, dispatch only existing HostAgent allowlisted operations, correlate bounded request/response IDs, and keep workers/native RPC loopback-only.",
-  "instructions": "No tensor payloads, arbitrary shell/executable/path dispatch, public endpoint policy, secrets, model downloads, GPU claims or distributed inference. This slice validates control-plane semantics; real multi-machine LAN integration remains separate."
+  "next_step": "Run the remote dispatch through the real mTLS integration path end-to-end, then move from loopback to an explicitly configured private-LAN endpoint before any tensor transport or executable adapter.",
+  "instructions": "Completed as bounded control-plane dispatch. Remote reserve/recheck resolves only locally registered objects by identity; no peer-supplied manifests, snapshots, paths, commands, binaries or tensor payloads are accepted. No multi-machine LAN or distributed-inference claim is made."
 }
