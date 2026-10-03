@@ -224,3 +224,25 @@ missing device readiness and missing node admission.
 This proves orchestration/lifecycle semantics only. The reference run explicitly reports
 `real_model_inference=false`; it does not execute GGUF tensors, CUDA/HIP kernels or
 distributed model inference.
+
+
+## Revision-pinned subprocess whole-block worker tests
+
+The first native-process foundation validates the exact launcher/program artifacts before
+launch, requires the accepted bundle's worker artifact and engine revision to match the
+process actually invoked, and constructs a closed argv shape with `shell=False`.
+
+Segment execution sends one bounded canonical JSON request over stdin. The request binds
+worker protocol, adapter/revision, accepted-bundle SHA, exact device/unit segment,
+launcher/program artifact fingerprints and a bounded base64 payload. The response must
+echo the exact request/segment/bundle/worker identities before its output is accepted.
+
+Portable CI executes a real subprocess on both Windows and Linux: the local Python
+interpreter is the hashed launcher and a separate hashed fixture program implements the
+worker protocol. Negative tests cover artifact mismatch, engine-revision mismatch,
+bundle mismatch, non-zero exit, response tampering and a worker attempting to self-claim
+`real_model_inference=true`.
+
+This proves the local process boundary and protocol, not GGUF/model inference. The fixture
+worker only transforms bytes and every accepted response remains
+`real_model_inference=false`.
