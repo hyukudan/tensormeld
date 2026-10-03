@@ -74,7 +74,7 @@ satisfy the real E2/E3 gates.
 
 ## M3 — First executable distributed inference
 
-- correctness-qualified revision-pinned llama.cpp worker implementation on top of the implemented placement shim and subprocess protocol;
+- real target-host revision-pinned llama.cpp trial plus E3 correctness qualification on top of the implemented placement/native-trial foundations;
 - real target-host llama.cpp capability probe and device binding;
 - real backend self-test and live adapter qualification;
 - runtime memory/admission manifest for exact model/workload;
@@ -105,15 +105,24 @@ Native subprocess foundation implemented:
 - real cross-platform subprocess execution using a fixture worker;
 - fail-closed request/response hash checks and rejection of worker self-claims of real inference.
 
-Model-aware llama.cpp placement foundation implemented:
+Model-aware llama.cpp qualification/execution placement foundation implemented:
 
 - exact `blk.N` unit naming and contiguous full-GGUF block coverage;
 - exact current native binding SHA and engine-device identity checks;
 - local primary buffer-type ownership only; RPC/remote devices fail closed;
 - generated anchored `--override-tensor` rules with `--fit off` and no user regex;
-- deterministic placement fingerprint bound to the accepted execution bundle and pinned llama.cpp revision.
+- deterministic post-E3 placement fingerprint bound to the accepted execution bundle and pinned llama.cpp revision;
+- separate pre-E3 qualification placement from exact planner candidate + representability + current native binding + complete GGUF block coverage.
 
-A real llama.cpp worker using this placement spec must still pass native E3 correctness before `real_model_inference=true` can exist.
+Native trial foundation implemented:
+
+- approved local llama-cli artifact SHA-256 and exact single-file GGUF SHA/size/name verification;
+- closed deterministic llama-cli argv using prompt, one-shot generation, seed 0, temperature 0, simple IO, no prompt echo/timings/color and the exact qualification placement fragment;
+- inherited `LLAMA_ARG_*` variables removed before subprocess launch;
+- injected runners cannot impersonate native-subprocess evidence;
+- successful process/stdout can produce trial evidence only and never self-promotes E3, `qualified`, `executable` or `real_model_inference`.
+
+A real target-host llama.cpp run must still pass explicit E3 correctness before `real_model_inference=true` can exist.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
