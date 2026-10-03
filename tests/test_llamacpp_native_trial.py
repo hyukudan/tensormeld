@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from tensormeld.adapter_contract import AdapterCapabilities
+from tensormeld.config_v2 import Config
 from tensormeld.llamacpp_native_trial import (
     approve_single_file_gguf,
     build_llamacpp_native_trial_spec,
@@ -14,12 +15,14 @@ from tensormeld.llamacpp_native_trial import (
 )
 from tensormeld.llamacpp_placement import (
     LlamaCppPlacementBinding,
-    translate_whole_blocks_to_llamacpp,
+    translate_candidate_for_llamacpp_qualification,
 )
 from tensormeld.model_manifest import ModelManifest
 from tensormeld.native_worker import approved_worker_artifact
+from tensormeld.planner_v2 import plan_v2
+from tensormeld.planning_contract import PlanningInput
 from tensormeld.schema import ValidationError
-from tensormeld.whole_block_execution import AcceptedExecutionBundle
+from test_planner_v2 import fixture
 
 PIN = "552f18f912a32ea86edf82e2b76431cb7131538d"
 FIXTURE_CLI = Path(__file__).parent / "fixtures" / "llamacpp_cli_fixture.py"
@@ -31,29 +34,6 @@ def sha256(path: Path) -> str:
         while chunk := f.read(1024 * 1024):
             h.update(chunk)
     return h.hexdigest()
-
-
-def adapter():
-    return AdapterCapabilities.parse({
-        "adapter_schema": "tensormeld/adapter-capabilities-v1",
-        "adapter_id": "llamacpp-native",
-        "engine": "llama.cpp",
-        "engine_revision": PIN,
-        "placement": {
-            "strategies": ["whole_blocks"],
-            "exact_owner_binding": True,
-            "explicit_unit_ranges": True,
-            "mixed_backends": True,
-            "remote_compute": False,
-            "coordinator_outside_compute": True,
-            "max_compute_devices": 4,
-            "max_compute_nodes": 1,
-            "max_segments": 8,
-        },
-        "route_modes": ["direct"],
-        "coordinator_nodes": ["n0"],
-        "devices": [{"id": "g0", "node": "n0", "backend": "cpu"}],
-    })
 
 
 def make_model(path: Path) -> ModelManifest:
@@ -76,51 +56,62 @@ def make_model(path: Path) -> ModelManifest:
     })
 
 
-def bundle(a, m):
-    return AcceptedExecutionBundle(
-        config_sha256="2" * 64,
-        profile="interactive",
-        planning_input_sha256="3" * 64,
-        plan_sha256="4" * 64,
-        representability_sha256="5" * 64,
-        adapter_id=a.adapter_id,
-        engine_revision=a.engine_revision,
-        adapter_capabilities_sha256=a.fingerprint,
-        model_manifest_sha256=m.manifest_sha256,
-        qualification_evidence_sha256="6" * 64,
-        runtime_manifest_sha256="7" * 64,
-        worker_artifact_sha256="8" * 64,
-        backend_readiness=(("g0", "9" * 64, "a" * 64),),
-        launch_leases=(("n0", "lease", "b" * 64),),
-        segments=(("g0", 0, 1),),
-        unit_ids=("blk.0",),
-        compute_devices=("g0",),
-        compute_nodes=("n0",),
-        bundle_sha256="c" * 64,
-    )
+def qualification_context(model: ModelManifest):
+    raw_config, raw_planning = fixture(count=1, units=1)
+    raw_config["profiles"]["interactive"]["model_manifest_ref"] = model.manifest_sha256
+    raw_planning["manifest_ref"] = model.manifest_sha256
+    raw_planning["units"][0]["id"] = "blk.0"
 
+    config = Config.parse(raw_config)
+    planning = PlanningInput.parse(raw_planning, config)
+    candidate = plan_v2(config, planning)["best"]
+    assert candidate is not None
 
-def placement(a, b, m):
+    device = config.devices[0]
+    adapter = AdapterCapabilities.parse({
+        "adapter_schema": "tensormeld/adapter-capabilities-v1",
+        "adapter_id": "llamacpp-native",
+        "engine": "llama.cpp",
+        "engine_revision": PIN,
+        "placement": {
+            "strategies": ["whole_blocks"],
+            "exact_owner_binding": True,
+            "explicit_unit_ranges": True,
+            "mixed_backends": True,
+            "remote_compute": False,
+            "coordinator_outside_compute": True,
+            "max_compute_devices": 4,
+            "max_compute_nodes": 1,
+            "max_segments": 8,
+        },
+        "route_modes": ["direct"],
+        "coordinator_nodes": [config.nodes[0].id],
+        "devices": [{
+            "id": device.id,
+            "node": device.node,
+            "backend": device.backend,
+        }],
+    })
     binding = LlamaCppPlacementBinding.parse({
         "placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1",
-        "adapter_id": a.adapter_id,
-        "adapter_capabilities_sha256": a.fingerprint,
+        "adapter_id": adapter.adapter_id,
+        "adapter_capabilities_sha256": adapter.fingerprint,
         "source_revision": PIN,
         "native_binding_sha256": "d" * 64,
         "devices": [{
-            "device_id": "g0",
+            "device_id": device.id,
             "engine_device_name": "CPU",
             "buffer_type": "CPU",
         }],
-    }, adapter=a)
+    }, adapter=adapter)
     bound = {
         "result_schema": "tensormeld/llamacpp-device-binding-result-v1",
-        "config_sha256": b.config_sha256,
+        "config_sha256": config.fingerprint,
         "binding_sha256": "d" * 64,
         "resolved_mappings": [{
-            "tensormeld_device_id": "g0",
+            "tensormeld_device_id": device.id,
             "engine_device_name": "CPU",
-            "backend_from_config": "cpu",
+            "backend_from_config": device.backend,
         }],
     }
     index = {
@@ -128,20 +119,23 @@ def placement(a, b, m):
         "architecture": "llama",
         "complete_shard_set": True,
         "tensor_count": 2,
-        "index_sha256": m.tensor_index_sha256,
+        "index_sha256": model.tensor_index_sha256,
         "files": [{"tensors": [
             {"name": "blk.0.attn_q.weight"},
             {"name": "blk.0.ffn_up.weight"},
         ]}],
     }
-    return translate_whole_blocks_to_llamacpp(
-        b,
-        adapter=a,
+    placement = translate_candidate_for_llamacpp_qualification(
+        config,
+        planning,
+        candidate,
+        adapter=adapter,
         binding=binding,
         bound_result=bound,
-        model=m,
+        model=model,
         gguf_index=index,
     )
+    return config, planning, candidate, adapter, placement
 
 
 class LlamaCppNativeTrialTests(unittest.TestCase):
@@ -151,9 +145,13 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
         self.gguf_path = self.root / "fixture.gguf"
         self.gguf_path.write_bytes(b"GGUF" + b"x" * 32)
         self.model = make_model(self.gguf_path)
-        self.adapter = adapter()
-        self.bundle = bundle(self.adapter, self.model)
-        self.placement = placement(self.adapter, self.bundle, self.model)
+        (
+            self.config,
+            self.planning,
+            self.candidate,
+            self.adapter,
+            self.placement,
+        ) = qualification_context(self.model)
         self.launcher = approved_worker_artifact(
             sys.executable,
             expected_sha256=sha256(Path(sys.executable)),
@@ -170,19 +168,23 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def spec(self):
-        # Fixture process is launched as python <fixture>; the production spec itself
-        # binds the approved CLI artifact path. The injected runner below adds the
-        # launcher only for the real portable subprocess test.
         return build_llamacpp_native_trial_spec(
-            bundle=self.bundle,
             model=self.model,
             placement=self.placement,
             llama_cli=self.program,
             gguf=self.gguf,
             prompt="TensorMeld trial",
-            context_tokens=128,
+            context_tokens=self.planning.context_tokens,
             predict_tokens=1,
         )
+
+    def test_pre_e3_candidate_bootstraps_native_trial_without_execution_bundle(self):
+        spec = self.spec()
+        self.assertEqual(spec.config_sha256, self.config.fingerprint)
+        self.assertEqual(spec.planning_input_sha256, self.planning.fingerprint)
+        self.assertEqual(spec.candidate_plan_sha256, self.candidate["plan_sha256"])
+        self.assertFalse(self.placement.as_record()["qualified"])
+        self.assertFalse(self.placement.as_record()["real_model_inference"])
 
     def test_closed_argv_contains_exact_model_and_placement(self):
         spec = self.spec()
@@ -191,6 +193,7 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
         self.assertIn("--override-tensor", spec.argv)
         self.assertIn("^blk\\.0\\..*=CPU", spec.argv)
         self.assertIn("--single-turn", spec.argv)
+        self.assertIn("--simple-io", spec.argv)
         self.assertNotIn("--rpc", spec.argv)
 
     def test_real_fixture_subprocess_exercises_closed_argv(self):
@@ -265,17 +268,15 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
     def test_prompt_and_token_bounds_fail_closed(self):
         with self.assertRaises(ValidationError):
             build_llamacpp_native_trial_spec(
-                bundle=self.bundle,
                 model=self.model,
                 placement=self.placement,
                 llama_cli=self.program,
                 gguf=self.gguf,
                 prompt="x" * 4097,
-                context_tokens=128,
+                context_tokens=self.planning.context_tokens,
             )
         with self.assertRaises(ValidationError):
             build_llamacpp_native_trial_spec(
-                bundle=self.bundle,
                 model=self.model,
                 placement=self.placement,
                 llama_cli=self.program,
