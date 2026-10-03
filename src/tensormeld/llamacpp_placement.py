@@ -1,0 +1,139 @@
+"""Strict model-aware placement translation for pinned llama.cpp.
+
+This module translates only TensorMeld whole-block units named exactly ``blk.N`` into
+pinned llama.cpp tensor-buffer override rules. It does not launch a model, infer tensor
+names beyond the documented ``blk.N...`` namespace, or approximate placement with
+tensor-split ratios.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+import hashlib
+import json
+import re
+from typing import Any
+
+from .adapter_contract import AdapterCapabilities
+from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
+from .schema import ValidationError, items, record, text, unique
+from .whole_block_execution import AcceptedExecutionBundle
+
+PLACEMENT_SCHEMA = "tensormeld/llamacpp-placement-binding-v1"
+TRANSLATION_SCHEMA = "tensormeld/llamacpp-whole-block-placement-v1"
+_MAX_DEVICES = 128
+_BLOCK_RE = re.compile(r"^blk\.(0|[1-9][0-9]*)$")
+_BUFT_RE = re.compile(r"^[A-Za-z0-9_.:\[\]()/+-]{1,128}$")
+
+
+def _canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class LlamaCppPlacementBinding:
+    adapter_id: str
+    adapter_capabilities_sha256: str
+    source_revision: str
+    buffer_types: tuple[tuple[str, str], ...]
+    fingerprint: str
+
+    @classmethod
+    def parse(cls, data: Any, *, adapter: AdapterCapabilities) -> "LlamaCppPlacementBinding":
+        r = record(data, "llama.cpp placement binding", {"placement_binding_schema", "adapter_id", "adapter_capabilities_sha256", "source_revision", "devices"})
+        if r["placement_binding_schema"] != PLACEMENT_SCHEMA:
+            raise ValidationError(f"placement_binding_schema: expected {PLACEMENT_SCHEMA}")
+        if r["adapter_id"] != adapter.adapter_id:
+            raise ValidationError("placement binding adapter_id mismatch")
+        if r["adapter_capabilities_sha256"] != adapter.fingerprint:
+            raise ValidationError("placement binding adapter fingerprint mismatch")
+        if r["source_revision"] != LLAMACPP_PINNED_COMMIT:
+            raise ValidationError("placement binding source revision mismatch")
+        exposed = {d.id for d in adapter.devices}
+        pairs: list[tuple[str, str]] = []
+        for i, raw in enumerate(items(r["devices"], "devices", _MAX_DEVICES, 1)):
+            d = record(raw, f"devices[{i}]", {"device_id", "buffer_type"})
+            device_id = text(d["device_id"], f"devices[{i}].device_id")
+            if device_id not in exposed:
+                raise ValidationError(f"devices[{i}]: device is not exposed by adapter")
+            buft = text(d["buffer_type"], f"devices[{i}].buffer_type")
+            if not _BUFT_RE.fullmatch(buft) or "," in buft or "=" in buft:
+                raise ValidationError(f"devices[{i}].buffer_type: unsupported buffer-type spelling")
+            pairs.append((device_id, buft))
+        unique([d for d, _ in pairs], "devices.device_id")
+        unique([b for _, b in pairs], "devices.buffer_type")
+        canonical = {"placement_binding_schema": PLACEMENT_SCHEMA, "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": LLAMACPP_PINNED_COMMIT, "devices": [{"device_id": d, "buffer_type": b} for d, b in sorted(pairs)]}
+        return cls(adapter.adapter_id, adapter.fingerprint, LLAMACPP_PINNED_COMMIT, tuple(sorted(pairs)), _canonical_sha256(canonical))
+
+    @property
+    def buffer_type_by_device(self) -> dict[str, str]:
+        return dict(self.buffer_types)
+
+
+@dataclass(frozen=True)
+class LlamaCppPlacementTranslation:
+    source_revision: str
+    accepted_bundle_sha256: str
+    placement_binding_sha256: str
+    block_owners: tuple[tuple[int, str, str], ...]
+    device_buffer_types: tuple[tuple[str, str], ...]
+    override_tensor_value: str
+    argv_fragment: tuple[str, ...]
+    fingerprint: str
+
+    def as_record(self) -> dict[str, Any]:
+        return {"translation_schema": TRANSLATION_SCHEMA, "source_revision": self.source_revision, "accepted_bundle_sha256": self.accepted_bundle_sha256, "placement_binding_sha256": self.placement_binding_sha256, "block_owners": [{"block_index": i, "device_id": d, "buffer_type": b} for i, d, b in self.block_owners], "device_buffer_types": [{"device_id": d, "buffer_type": b} for d, b in self.device_buffer_types], "override_tensor_value": self.override_tensor_value, "argv_fragment": list(self.argv_fragment), "real_model_inference": False, "fingerprint": self.fingerprint}
+
+
+def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapter: AdapterCapabilities, binding: LlamaCppPlacementBinding) -> LlamaCppPlacementTranslation:
+    if bundle.adapter_id != adapter.adapter_id:
+        raise ValidationError("accepted bundle adapter_id mismatch")
+    if bundle.engine_revision != adapter.engine_revision:
+        raise ValidationError("accepted bundle engine revision mismatch")
+    if bundle.adapter_capabilities_sha256 != adapter.fingerprint:
+        raise ValidationError("accepted bundle adapter fingerprint mismatch")
+    if binding.adapter_id != adapter.adapter_id or binding.adapter_capabilities_sha256 != adapter.fingerprint:
+        raise ValidationError("placement binding adapter identity mismatch")
+    if binding.source_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("placement binding source revision mismatch")
+
+    indices: list[int] = []
+    for unit_id in bundle.unit_ids:
+        match = _BLOCK_RE.fullmatch(unit_id)
+        if not match:
+            raise ValidationError("llama.cpp shim accepts only unit IDs named exactly blk.N")
+        indices.append(int(match.group(1)))
+    if len(indices) != len(set(indices)):
+        raise ValidationError("duplicate transformer block unit index")
+    if indices != list(range(indices[0], indices[0] + len(indices))):
+        raise ValidationError("llama.cpp shim requires contiguous ascending transformer blocks")
+
+    owner_by_unit: list[str | None] = [None] * len(bundle.unit_ids)
+    for device, first, last in bundle.segments:
+        if device not in bundle.compute_devices:
+            raise ValidationError("bundle segment references unknown compute device")
+        if not (0 <= first < last <= len(bundle.unit_ids)):
+            raise ValidationError("bundle segment range is invalid")
+        for pos in range(first, last):
+            if owner_by_unit[pos] is not None:
+                raise ValidationError("bundle segments overlap")
+            owner_by_unit[pos] = device
+    if any(owner is None for owner in owner_by_unit):
+        raise ValidationError("bundle segments do not cover every unit exactly once")
+
+    buft_by_device = binding.buffer_type_by_device
+    if set(bundle.compute_devices) != set(buft_by_device):
+        raise ValidationError("placement binding must cover exactly the bundle compute devices")
+
+    block_owners: list[tuple[int, str, str]] = []
+    overrides: list[str] = []
+    for pos, block_index in enumerate(indices):
+        device = owner_by_unit[pos]
+        assert device is not None
+        buft = buft_by_device[device]
+        block_owners.append((block_index, device, buft))
+        overrides.append(rf"^blk\.{block_index}\..*={buft}")
+
+    override_value = ",".join(overrides)
+    argv = ("--fit", "off", "--device", ",".join(buft_by_device[d] for d in bundle.compute_devices), "--override-tensor", override_value)
+    canonical = {"translation_schema": TRANSLATION_SCHEMA, "source_revision": LLAMACPP_PINNED_COMMIT, "accepted_bundle_sha256": bundle.bundle_sha256, "placement_binding_sha256": binding.fingerprint, "block_owners": [[i, d, b] for i, d, b in block_owners], "device_buffer_types": [[d, buft_by_device[d]] for d in bundle.compute_devices], "override_tensor_value": override_value, "argv_fragment": list(argv), "real_model_inference": False}
+    return LlamaCppPlacementTranslation(LLAMACPP_PINNED_COMMIT, bundle.bundle_sha256, binding.fingerprint, tuple(block_owners), tuple((d, buft_by_device[d]) for d in bundle.compute_devices), override_value, argv, _canonical_sha256(canonical))
