@@ -25,4 +25,4 @@ but the reference run always states `real_model_inference=false`.
 No GGUF model tensors, CUDA/HIP kernels, native worker, performance benchmark or
 distributed inference is executed by this validation.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #12, workflow `Portable Python tests`, run #127 (37120543892) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. This validates the accepted-bundle gates and deterministic reference execution lifecycle only; `real_model_inference=false` remains mandatory for this reference backend.
