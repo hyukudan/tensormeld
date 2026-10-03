@@ -9,10 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import ipaddress
-from typing import Any, Callable
+import socket
+import ssl
+from typing import Any
 
 from .agent import Enrollment, HostAgent
-from .private_transport import EnrolledPeerTLSBinding, PrivateControlChannel, _sha256_hex
+from .private_transport import (
+    EnrolledPeerTLSBinding,
+    PrivateControlChannel,
+    _sha256_hex,
+    validate_tls_peer,
+)
 from .runtime_model_manifest import RuntimeModelManifest
 from .schema import ValidationError, number, record, text
 
@@ -213,3 +220,102 @@ class RemoteAgentClient:
         if not isinstance(response["result"], dict):
             raise ValidationError("remote response result must be an object")
         return response["result"]
+
+
+
+class RemoteAgentConnection:
+    def __init__(self, tls_socket: ssl.SSLSocket, client: RemoteAgentClient) -> None:
+        self.tls_socket = tls_socket
+        self.client = client
+
+    def close(self) -> None:
+        self.tls_socket.close()
+
+    def __enter__(self) -> RemoteAgentClient:
+        return self.client
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.close()
+
+
+def connect_private_endpoint(
+    endpoint: PrivateEndpoint,
+    *,
+    context: ssl.SSLContext,
+    expected_enrollment: Enrollment,
+    peer_binding: EnrolledPeerTLSBinding,
+    connection_epoch: str,
+    timeout_s: float = 5.0,
+) -> RemoteAgentConnection:
+    validate_endpoint_binding(
+        endpoint, enrollment=expected_enrollment, binding=peer_binding
+    )
+    if not 0 < timeout_s <= 60:
+        raise ValidationError("timeout_s must be in (0, 60]")
+    raw = socket.create_connection((endpoint.address, endpoint.port), timeout=timeout_s)
+    raw.settimeout(timeout_s)
+    try:
+        tls_sock = context.wrap_socket(raw, server_hostname=endpoint.address)
+        validate_tls_peer(
+            tls_sock,
+            expected_peer_certificate_sha256=endpoint.certificate_sha256,
+            expected_enrollment=expected_enrollment,
+            peer_binding=peer_binding,
+        )
+        channel = PrivateControlChannel(
+            tls_sock,
+            expected_peer_certificate_sha256=endpoint.certificate_sha256,
+            connection_epoch=connection_epoch,
+        )
+        return RemoteAgentConnection(tls_sock, RemoteAgentClient(channel))
+    except BaseException:
+        raw.close()
+        raise
+
+
+def serve_private_endpoint_once(
+    endpoint: PrivateEndpoint,
+    *,
+    context: ssl.SSLContext,
+    agent: HostAgent,
+    registry: LocalObjectRegistry,
+    expected_peer_enrollment: Enrollment,
+    peer_binding: EnrolledPeerTLSBinding,
+    local_binding: EnrolledPeerTLSBinding,
+    connection_epoch: str,
+    request_count: int = 1,
+    timeout_s: float = 5.0,
+) -> None:
+    validate_endpoint_binding(
+        endpoint,
+        enrollment=agent.enrollment,
+        binding=local_binding,
+    )
+    if type(request_count) is not int or not 1 <= request_count <= 32:
+        raise ValidationError("request_count must be an integer in 1..32")
+    if not 0 < timeout_s <= 60:
+        raise ValidationError("timeout_s must be in (0, 60]")
+
+    dispatcher = RemoteAgentDispatcher(agent, registry)
+    with socket.socket(socket.AF_INET6 if ":" in endpoint.address else socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind((endpoint.address, endpoint.port))
+        listener.listen(1)
+        listener.settimeout(timeout_s)
+        raw, _ = listener.accept()
+        with raw:
+            raw.settimeout(timeout_s)
+            with context.wrap_socket(raw, server_side=True) as tls_sock:
+                validate_tls_peer(
+                    tls_sock,
+                    expected_peer_certificate_sha256=peer_binding.certificate_sha256,
+                    expected_enrollment=expected_peer_enrollment,
+                    peer_binding=peer_binding,
+                )
+                channel = PrivateControlChannel(
+                    tls_sock,
+                    expected_peer_certificate_sha256=peer_binding.certificate_sha256,
+                    connection_epoch=connection_epoch,
+                )
+                for _ in range(request_count):
+                    dispatcher.serve_one(channel)
