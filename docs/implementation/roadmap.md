@@ -34,7 +34,8 @@ Implemented transport foundation:
 - exact peer-certificate fingerprint bound to enrolled node identity before control exchange;
 - explicit private/loopback endpoint policy plus bounded remote agent method dispatch;
 - request/response correlation and local-object registry for reserve/recheck references;
-- end-to-end remote health/reserve dispatch through the real loopback mTLS channel.
+- end-to-end remote health/reserve dispatch through the real loopback mTLS channel;
+- explicit private endpoint connect/serve helpers validated across separate OS processes.
 
 Exit gate: two machines can establish a secure control relationship without exposing an
 arbitrary execution surface.
