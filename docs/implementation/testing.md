@@ -170,3 +170,15 @@ identities and creates the lease on the server-side HostAgent.
 
 This is still loopback-only integration. It does not establish multi-machine LAN
 reachability, tensor transport, GPU execution or distributed inference.
+
+
+## Separate-process private endpoint integration
+
+The dedicated Linux mTLS job now also starts the enrolled HostAgent server in a spawned
+OS process and connects from the parent process through an explicit `PrivateEndpoint`.
+The processes perform a real mutual TLS handshake, enrolled certificate pinning, remote
+health, and a host-local reserve operation.
+
+The manifest and admission snapshot are created and registered inside the server process.
+The client transmits only their identities. CI still binds the endpoint to 127.0.0.1, so
+this is process-isolation evidence rather than a physical multi-machine LAN test.
