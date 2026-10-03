@@ -218,27 +218,23 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
             execution_source="fixture-subprocess",
         )
         self.assertTrue(result["process_succeeded"])
-        self.assertTrue(result["model_output_observed"])
+        self.assertTrue(result["stdout_nonempty"])
         self.assertEqual(result["evidence_level"], "fixture")
         self.assertFalse(result["qualified"])
         self.assertFalse(result["real_model_inference"])
 
-    def test_native_success_still_does_not_self_qualify(self):
+    def test_injected_runner_cannot_impersonate_native_trial(self):
         spec = self.spec()
 
         def runner(argv, timeout):
             return 0, b"some-output", b""
 
-        result = run_llamacpp_native_trial(
-            spec,
-            runner=runner,
-            execution_source="native-subprocess",
-        )
-        self.assertEqual(result["evidence_level"], "E2.5")
-        self.assertTrue(result["process_succeeded"])
-        self.assertFalse(result["qualified"])
-        self.assertFalse(result["real_model_inference"])
-        self.assertFalse(result["executable"])
+        with self.assertRaises(ValidationError):
+            run_llamacpp_native_trial(
+                spec,
+                runner=runner,
+                execution_source="native-subprocess",
+            )
 
     def test_gguf_hash_and_size_are_verified_before_launch(self):
         self.gguf_path.write_bytes(b"GGUFtampered")
