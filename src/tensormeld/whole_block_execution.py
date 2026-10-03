@@ -36,6 +36,15 @@ EXECUTION_BUNDLE_SCHEMA = "tensormeld/accepted-execution-bundle-v1"
 MAX_INPUT_BYTES = 1024 * 1024
 
 
+def _sha256_hex(value: Any, where: str) -> str:
+    if not isinstance(value, str):
+        raise ValidationError(f"{where}: expected SHA-256 hex")
+    normalized = value.lower()
+    if len(normalized) != 64 or any(c not in "0123456789abcdef" for c in normalized):
+        raise ValidationError(f"{where}: expected SHA-256 hex")
+    return normalized
+
+
 def _canonical_sha256(value: Any) -> str:
     try:
         raw = json.dumps(
@@ -228,12 +237,16 @@ def accept_execution_bundle(
             raise ValidationError(
                 f"backend readiness gate is not satisfied for {device_id}"
             )
-        evidence_sha = text(result.get("evidence_sha256"), "evidence_sha256")
-        identity_sha = text(
+        if result.get("config_sha256") != config.fingerprint:
+            raise ValidationError(
+                f"backend readiness config mismatch for {device_id}"
+            )
+        evidence_sha = _sha256_hex(
+            result.get("evidence_sha256"), "evidence_sha256"
+        )
+        identity_sha = _sha256_hex(
             result.get("runtime_identity_sha256"), "runtime_identity_sha256"
         )
-        if len(evidence_sha) != 64 or len(identity_sha) != 64:
-            raise ValidationError("backend readiness fingerprints must be SHA-256 hex")
         readiness_by_device[device_id] = (evidence_sha, identity_sha)
     if tuple(sorted(readiness_by_device)) != candidate_devices:
         raise ValidationError(
@@ -256,10 +269,14 @@ def accept_execution_bundle(
             or admission.get("executable") is not False
         ):
             raise ValidationError(f"launch admission gate is not satisfied for {node_id}")
+        if admission.get("config_sha256") != config.fingerprint:
+            raise ValidationError(f"launch admission config mismatch for {node_id}")
+        if admission.get("runtime_manifest_sha256") != runtime_manifest.fingerprint:
+            raise ValidationError(
+                f"launch admission runtime manifest mismatch for {node_id}"
+            )
         lease_id = text(admission.get("lease_id"), "lease_id")
-        lease_sha = text(admission.get("lease_sha256"), "lease_sha256")
-        if len(lease_sha) != 64:
-            raise ValidationError("lease_sha256 must be SHA-256 hex")
+        lease_sha = _sha256_hex(admission.get("lease_sha256"), "lease_sha256")
         lease_by_node[node_id] = (lease_id, lease_sha)
     if tuple(sorted(lease_by_node)) != candidate_nodes:
         raise ValidationError(
