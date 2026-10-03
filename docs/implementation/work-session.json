@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-native-worker-launch",
-  "scope": "Implement the first strict revision-pinned llama.cpp native worker launch specification using an approved local llama executable, approved local GGUF files matching ModelManifest hashes, exact model-aware placement translation, closed argv, bounded stdout/stderr parsing, and no user-supplied launch arguments.",
-  "started_at": "2026-10-03T17:54:00+02:00",
-  "expires_at": "2026-10-03T19:54:00+02:00",
-  "base_commit": "bf8dd7b578dfa070f6d94ad768feaf1ae3920e9d",
-  "completion_condition": "Strict llama.cpp launch-spec/worker contract, local artifact verification, portable fixture-process tests, docs/ADR/validation/provenance updates and CI are committed.",
-  "next_step": "Implement the native E3 correctness evaluator for a real target-host llama.cpp trial: compare deterministic outputs against a reference contract, bind the resulting QualificationEvidence to exact binary/model/placement/workload/runtime identity, and only then permit a real-model worker path.",
-  "instructions": "Completed as a pre-E3 qualification-placement plus native-trial foundation. Portable CI executes a fixture CLI process only. No real llama.cpp GGUF run, CUDA/HIP kernel execution, model correctness, performance or distributed inference is claimed."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-native-e3-correctness",
+  "scope": "Implement native E3 correctness evaluation for revision-pinned llama.cpp trials using a deterministic reference contract, exact trial/model/placement/workload/runtime identities, and emission of existing QualificationEvidence only from genuine native-subprocess evidence.",
+  "started_at": "2026-10-03T21:10:00+02:00",
+  "expires_at": "2026-10-03T23:10:00+02:00",
+  "base_commit": "049853c8fcec3035304eb40ae310e26965269333",
+  "completion_condition": "Reference contract, strict E3 evaluator, fixture-vs-native provenance tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Compare exact deterministic output bytes/hashes from a native trial against an approved reference contract and emit QualificationEvidence E3 only when every identity and output contract matches.",
+  "instructions": "Portable CI uses synthetic/native-shaped records only; do not claim real llama.cpp/GPU/model correctness without a target-host native run. Injected or fixture subprocess evidence must never produce E3."
 }
