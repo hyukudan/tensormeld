@@ -15,6 +15,7 @@ from typing import Any
 
 from .adapter_contract import AdapterCapabilities
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
+from .llamacpp_selftest import BOUND_RESULT_SCHEMA
 from .schema import ValidationError, items, record, text, unique
 from .whole_block_execution import AcceptedExecutionBundle
 
@@ -34,12 +35,13 @@ class LlamaCppPlacementBinding:
     adapter_id: str
     adapter_capabilities_sha256: str
     source_revision: str
+    native_binding_sha256: str
     device_bindings: tuple[tuple[str, str, str], ...]
     fingerprint: str
 
     @classmethod
     def parse(cls, data: Any, *, adapter: AdapterCapabilities) -> "LlamaCppPlacementBinding":
-        r = record(data, "llama.cpp placement binding", {"placement_binding_schema", "adapter_id", "adapter_capabilities_sha256", "source_revision", "devices"})
+        r = record(data, "llama.cpp placement binding", {"placement_binding_schema", "adapter_id", "adapter_capabilities_sha256", "source_revision", "native_binding_sha256", "devices"})
         if r["placement_binding_schema"] != PLACEMENT_SCHEMA:
             raise ValidationError(f"placement_binding_schema: expected {PLACEMENT_SCHEMA}")
         if r["adapter_id"] != adapter.adapter_id:
@@ -48,8 +50,15 @@ class LlamaCppPlacementBinding:
             raise ValidationError("placement binding adapter fingerprint mismatch")
         if r["source_revision"] != LLAMACPP_PINNED_COMMIT:
             raise ValidationError("placement binding source revision mismatch")
+        native_binding_sha256 = text(
+            r["native_binding_sha256"], "native_binding_sha256"
+        ).lower()
+        if len(native_binding_sha256) != 64 or any(
+            ch not in "0123456789abcdef" for ch in native_binding_sha256
+        ):
+            raise ValidationError("native_binding_sha256: expected SHA-256 hex")
         exposed = {d.id for d in adapter.devices}
-        pairs: list[tuple[str, str]] = []
+        pairs: list[tuple[str, str, str]] = []
         for i, raw in enumerate(items(r["devices"], "devices", _MAX_DEVICES, 1)):
             d = record(raw, f"devices[{i}]", {"device_id", "engine_device_name", "buffer_type"})
             device_id = text(d["device_id"], f"devices[{i}].device_id")
@@ -67,8 +76,8 @@ class LlamaCppPlacementBinding:
         unique([d for d, _, _ in pairs], "devices.device_id")
         unique([e for _, e, _ in pairs], "devices.engine_device_name")
         unique([b for _, _, b in pairs], "devices.buffer_type")
-        canonical = {"placement_binding_schema": PLACEMENT_SCHEMA, "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": LLAMACPP_PINNED_COMMIT, "devices": [{"device_id": d, "engine_device_name": e, "buffer_type": b} for d, e, b in sorted(pairs)]}
-        return cls(adapter.adapter_id, adapter.fingerprint, LLAMACPP_PINNED_COMMIT, tuple(sorted(pairs)), _canonical_sha256(canonical))
+        canonical = {"placement_binding_schema": PLACEMENT_SCHEMA, "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": LLAMACPP_PINNED_COMMIT, "native_binding_sha256": native_binding_sha256, "devices": [{"device_id": d, "engine_device_name": e, "buffer_type": b} for d, e, b in sorted(pairs)]}
+        return cls(adapter.adapter_id, adapter.fingerprint, LLAMACPP_PINNED_COMMIT, native_binding_sha256, tuple(sorted(pairs)), _canonical_sha256(canonical))
 
     @property
     def engine_device_by_device(self) -> dict[str, str]:
@@ -94,7 +103,13 @@ class LlamaCppPlacementTranslation:
         return {"translation_schema": TRANSLATION_SCHEMA, "source_revision": self.source_revision, "accepted_bundle_sha256": self.accepted_bundle_sha256, "placement_binding_sha256": self.placement_binding_sha256, "block_owners": [{"block_index": i, "device_id": d, "buffer_type": b} for i, d, b in self.block_owners], "device_buffer_types": [{"device_id": d, "buffer_type": b} for d, b in self.device_buffer_types], "override_tensor_value": self.override_tensor_value, "argv_fragment": list(self.argv_fragment), "real_model_inference": False, "fingerprint": self.fingerprint}
 
 
-def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapter: AdapterCapabilities, binding: LlamaCppPlacementBinding) -> LlamaCppPlacementTranslation:
+def translate_whole_blocks_to_llamacpp(
+    bundle: AcceptedExecutionBundle,
+    *,
+    adapter: AdapterCapabilities,
+    binding: LlamaCppPlacementBinding,
+    bound_result: dict[str, Any],
+) -> LlamaCppPlacementTranslation:
     if len(bundle.compute_nodes) != 1:
         raise ValidationError("initial llama.cpp shim supports only one compute node")
     if bundle.adapter_id != adapter.adapter_id:
@@ -107,6 +122,29 @@ def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapt
         raise ValidationError("placement binding adapter identity mismatch")
     if binding.source_revision != LLAMACPP_PINNED_COMMIT:
         raise ValidationError("placement binding source revision mismatch")
+    if bound_result.get("result_schema") != BOUND_RESULT_SCHEMA:
+        raise ValidationError("current llama.cpp bound result schema mismatch")
+    if bound_result.get("config_sha256") != bundle.config_sha256:
+        raise ValidationError("current llama.cpp bound result config mismatch")
+    if bound_result.get("binding_sha256") != binding.native_binding_sha256:
+        raise ValidationError("placement binding native binding fingerprint mismatch")
+    mappings = bound_result.get("resolved_mappings")
+    if not isinstance(mappings, list):
+        raise ValidationError("current llama.cpp bound result mappings must be a list")
+    engine_by_bound_device = {}
+    for item in mappings:
+        if isinstance(item, dict):
+            device_id = item.get("tensormeld_device_id")
+            engine_name = item.get("engine_device_name")
+            if isinstance(device_id, str) and isinstance(engine_name, str):
+                if device_id in engine_by_bound_device:
+                    raise ValidationError("duplicate current native mapping for device")
+                engine_by_bound_device[device_id] = engine_name
+    if set(engine_by_bound_device) != set(bundle.compute_devices):
+        raise ValidationError("current native mappings must cover exactly the bundle compute devices")
+    for device_id, engine_name, _ in binding.device_bindings:
+        if engine_by_bound_device.get(device_id) != engine_name:
+            raise ValidationError("placement binding engine device differs from current native mapping")
 
     indices: list[int] = []
     for unit_id in bundle.unit_ids:
