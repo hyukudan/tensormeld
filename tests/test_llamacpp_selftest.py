@@ -111,6 +111,7 @@ class LlamaCppBackendSelfTestTests(unittest.TestCase):
         self.assertTrue(result["backend_initialized"])
         self.assertTrue(result["backend_executed"])
         self.assertEqual(result["evidence_level"], "E2")
+        self.assertEqual(result["node_id"], self.bound["node_id"])
         self.assertEqual(result["execution_source"], "injected-runner")
         self.assertEqual(result["passed_rows"], 1)
         self.assertEqual(

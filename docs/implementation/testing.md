@@ -182,3 +182,23 @@ health, and a host-local reserve operation.
 The manifest and admission snapshot are created and registered inside the server process.
 The client transmits only their identities. CI still binds the endpoint to 127.0.0.1, so
 this is process-isolation evidence rather than a physical multi-machine LAN test.
+
+
+## Live runtime identity / retained E2 invalidation tests
+
+A stable runtime identity binds worker artifact/build, host OS identity, driver/runtime
+identity, TensorMeld device identity, stable physical-device identity and a topology
+fingerprint. Transient values such as timestamps and free memory are deliberately excluded
+from the identity fingerprint.
+
+Retained backend-readiness evidence is now schema v2 and embeds that exact runtime
+identity. Portable tests verify deterministic identity fingerprints, duplicate-key/tamper
+rejection, node/device continuity, driver/topology invalidation and exact-match reuse.
+
+When a fresh bound device is still `observed` and all retained backend identities plus
+the current runtime identity match exactly, validation returns a copied runtime observation
+with only that device promoted to `ready`. It still returns
+`reservation_created=false`, `qualified=false` and `executable=false`.
+
+These tests use synthetic worker/driver/runtime strings. They do not prove any actual
+CUDA/HIP driver, GPU, OS-specific backend or performance qualification.

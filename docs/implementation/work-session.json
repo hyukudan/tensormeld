@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-live-runtime-identity",
   "scope": "Implement strict live worker/driver/runtime/topology identity and invalidation rules for retained backend E2 evidence, so historical readiness can be evaluated against exact current runtime identity without implying model qualification or execution admission.",
   "started_at": "2026-10-03T13:17:00+02:00",
   "expires_at": "2026-10-03T15:17:00+02:00",
   "base_commit": "b1b20f92d8a12fe1bcb8aafac522682b91dc8d1b",
   "completion_condition": "Runtime identity contract, retained-E2 applicability integration, portable positive/negative tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Bind retained E2 evidence to worker artifact/build, OS/runtime/driver and exact topology identity, then permit runtime-ready reuse only when every retained identity and current runtime identity matches exactly.",
-  "instructions": "Do not invent GPU/driver values; portable tests use fixtures. Matching retained E2 may restore only the narrow backend-ready fact, never model qualification, memory admission or executable distributed inference."
+  "next_step": "Capture a real target-host runtime identity alongside a native backend self-test/runtime manifest, then use that evidence tuple before beginning the first whole-block executable adapter.",
+  "instructions": "Completed with retained backend-readiness evidence schema v2. Exact live identity can reuse only the narrow backend-ready fact and returns a promoted runtime observation; no model qualification, memory reservation, executable flag, real GPU/driver claim or distributed inference follows."
 }
