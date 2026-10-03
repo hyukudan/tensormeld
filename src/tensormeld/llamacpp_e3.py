@@ -240,6 +240,7 @@ def evaluate_llamacpp_native_e3(
             "exact-placement",
             "exact-runtime-identity",
         ],
+        "candidate_plan_sha256": spec.candidate_plan_sha256,
         "placement_sha256": placement.fingerprint,
         "trial_spec_sha256": spec.spec_sha256,
         "correctness_contract_sha256": reference.fingerprint,
