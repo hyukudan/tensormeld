@@ -11,4 +11,4 @@ reserve; the resulting lease exists only inside the server process.
 The endpoint remains 127.0.0.1 in CI. This validates process separation and endpoint
 semantics, not a physical multi-machine private LAN.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #10, workflow `Portable Python tests`, run #104 (37104721574) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job exercising the separate-process private endpoint client/server path. Evidence remains loopback-only and does not establish a physical multi-machine LAN.
