@@ -33,4 +33,4 @@ and provenance mislabeling.
 No real llama.cpp GGUF is loaded in hosted CI. No CUDA/HIP backend, model correctness,
 performance or distributed inference is established.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #15, workflow `Portable Python tests`, run #168 (37135609787) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates the pre-E3 qualification-placement, closed argv, fixture subprocess, environment-scrubbing and provenance boundaries only; no real llama.cpp GGUF execution occurred.
