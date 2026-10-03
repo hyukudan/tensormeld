@@ -126,6 +126,7 @@ def setup_fixture():
         {
             "evidence_schema": "tensormeld/backend-readiness-evidence-v2",
             "evidence_sha256": f"{i + 1:064x}",
+            "config_sha256": cfg.fingerprint,
             "tensormeld_device_id": device,
             "identity_applicable": True,
             "backend_readiness_recorded": True,
@@ -146,6 +147,8 @@ def setup_fixture():
             "lease_id": f"lease-{node}",
             "node_id": node,
             "lease_sha256": f"{i + 201:064x}",
+            "config_sha256": cfg.fingerprint,
+            "runtime_manifest_sha256": runtime_manifest.fingerprint,
             "observation_id": f"obs-{node}",
             "reservation_created": True,
             "launch_authorized": True,
