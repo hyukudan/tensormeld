@@ -274,3 +274,30 @@ device list.
 These tests validate deterministic static placement translation only. They do not load a
 GGUF in llama.cpp, prove KV/compute placement, execute CUDA/HIP kernels, or establish
 model correctness/performance.
+
+
+## Pre-E3 llama.cpp qualification placement and native trial tests
+
+TensorMeld now has a pre-E3 placement path specifically to avoid a qualification
+bootstrap cycle. The path starts from an exact planner candidate, recomputes its canonical
+plan hash, reruns adapter representability, verifies the current native device binding and
+complete GGUF block coverage, then produces the same closed llama.cpp placement fragment
+without requiring an AcceptedExecutionBundle.
+
+The native trial layer accepts only one exact local GGUF file in this first increment.
+Its file name, size and SHA-256 must match the ModelManifest. The llama-cli artifact is
+also pre-approved by SHA-256.
+
+The generated argv is closed and includes the exact GGUF path and placement fragment plus
+bounded deterministic trial controls: context size, predict count, fixed prompt argument,
+seed 0, temperature 0, simple IO, single-turn, no prompt display, no timings and color off.
+No caller-supplied extra argv or remote RPC is supported.
+
+The default subprocess runner strips inherited `LLAMA_ARG_*` variables so environment
+configuration cannot silently override the generated command line. Portable CI uses a
+fixture CLI process to verify the real subprocess boundary. An injected runner cannot be
+labeled `native-subprocess`.
+
+A successful native process with stdout is at most trial evidence (reported as E2.5 here);
+it remains `qualified=false`, `real_model_inference=false` and
+`executable=false` until a separate native E3 correctness evaluator exists.
