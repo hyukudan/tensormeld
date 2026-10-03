@@ -22,7 +22,8 @@ the pre-alpha status or qualify any execution path.
 - successful narrow E2 readiness can promote only that bound device to runtime `ready`;
 - native-only retained E2 backend-readiness records with deterministic fingerprints;
 - exact config/probe/binding/test-artifact/device/backend applicability checks for retained E2;
-- retained E2 evidence never restores `ready` without a live runtime recheck;
+- retained E2 v2 records bind stable worker/OS/driver/runtime/device/topology identity;
+- exact current runtime identity plus fresh binding can reuse only the narrow retained E2 backend-ready fact;
 - strict runtime model/operator/memory manifests tied to exact config/model/profile/workload/adapter identities;
 - runtime memory is represented once per physical pool with resident/state/workspace/preparation peaks;
 - operator coverage is explicit per device and cannot self-promote qualification/execution;
@@ -65,13 +66,14 @@ fixture provenance and do not claim native runtime measurements. Injected-runner
 self-test results remain rejected from retained hardware evidence.
 
 No real llama.cpp CUDA/HIP `test-backend-ops` execution or real native runtime-model
-manifest has been recorded by TensorMeld in this development environment.
+manifest has been recorded by TensorMeld in this development environment. Runtime-identity
+CI uses fixtures and therefore proves invalidation/control semantics, not real driver or
+GPU identity capture.
 
 ## Not tested / not implemented
 
 - real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
 - real native-adapter model/operator/memory manifest capture on target hardware;
-- live worker/driver/topology identity needed to safely reuse retained E2 readiness;
 - native Windows GPU inference;
 - native CUDA/HIP/distributed inference;
 - retained hardware/backend E2-E5 evidence from real target devices;
