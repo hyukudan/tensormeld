@@ -281,6 +281,7 @@ def serve_private_endpoint_once(
     registry: LocalObjectRegistry,
     expected_peer_enrollment: Enrollment,
     peer_binding: EnrolledPeerTLSBinding,
+    local_binding: EnrolledPeerTLSBinding,
     connection_epoch: str,
     request_count: int = 1,
     timeout_s: float = 5.0,
@@ -288,14 +289,8 @@ def serve_private_endpoint_once(
     validate_endpoint_binding(
         endpoint,
         enrollment=agent.enrollment,
-        binding=bind_local := EnrolledPeerTLSBinding(
-            agent.enrollment.enrollment_id,
-            agent.enrollment.node_id,
-            endpoint.certificate_sha256,
-        ),
+        binding=local_binding,
     )
-    if bind_local.certificate_sha256 != endpoint.certificate_sha256:
-        raise ValidationError("local endpoint certificate binding mismatch")
     if type(request_count) is not int or not 1 <= request_count <= 32:
         raise ValidationError("request_count must be an integer in 1..32")
     if not 0 < timeout_s <= 60:
