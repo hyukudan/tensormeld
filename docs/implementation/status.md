@@ -54,6 +54,9 @@ the pre-alpha status or qualify any execution path.
 - initial llama.cpp placement shim is single-node/local-device only and rejects RPC devices, non-primary buffers, partial block coverage and caller-supplied patterns;
 - pre-E3 llama.cpp qualification placement translates an exact representable planner candidate without requiring an AcceptedExecutionBundle, avoiding E3 bootstrap circularity;
 - strict llama.cpp native trial spec binds approved llama-cli/GGUF SHA-256 identities, qualification placement, deterministic prompt/context/predict controls and scrubbed `LLAMA_ARG_*` environment;
+- QualificationEvidence v2 binds E3 to candidate plan, placement, trial spec, correctness contract and exact runtime-identity fingerprints while preserving v1 parsing compatibility;
+- native llama.cpp E3 correctness evaluator requires genuine `native-subprocess` trial provenance, exact stdout SHA-256 match to an approved reference contract and exact runtime worker/device identity before emitting E3;
+- AcceptedExecutionBundle now requires E3 v2 applicability to the same plan and same runtime identities as current backend-readiness evidence;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -83,7 +86,7 @@ GPU identity capture.
 - real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
 - real native-adapter model/operator/memory manifest capture on target hardware;
 - native Windows GPU inference;
-- native CUDA/HIP/distributed inference and a correctness-qualified llama.cpp worker using the new placement shim;
+- native CUDA/HIP/distributed inference on real target hardware; the correctness evaluator exists but no real target-host E3 has yet been recorded;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
 
