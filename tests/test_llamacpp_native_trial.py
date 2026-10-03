@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch, Mock
 
+import tensormeld.llamacpp_native_trial as trial_mod
 from tensormeld.adapter_contract import AdapterCapabilities
 from tensormeld.config_v2 import Config
 from tensormeld.llamacpp_native_trial import (
@@ -260,6 +263,22 @@ class LlamaCppNativeTrialTests(unittest.TestCase):
         }
         with self.assertRaises(ValidationError):
             approve_single_file_gguf(ModelManifest.parse(raw), self.gguf_path)
+
+    def test_default_runner_scrubs_llama_arg_environment(self):
+        spec = self.spec()
+        old = os.environ.get("LLAMA_ARG_TEMPERATURE")
+        os.environ["LLAMA_ARG_TEMPERATURE"] = "99"
+        try:
+            completed = Mock(returncode=0, stdout=b"", stderr=b"")
+            with patch.object(trial_mod.subprocess, "run", return_value=completed) as run:
+                trial_mod._default_runner(spec.argv, 1.0)
+            env = run.call_args.kwargs["env"]
+            self.assertNotIn("LLAMA_ARG_TEMPERATURE", env)
+        finally:
+            if old is None:
+                os.environ.pop("LLAMA_ARG_TEMPERATURE", None)
+            else:
+                os.environ["LLAMA_ARG_TEMPERATURE"] = old
 
     def test_prompt_and_token_bounds_fail_closed(self):
         with self.assertRaises(ValidationError):
