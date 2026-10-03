@@ -46,6 +46,8 @@ the pre-alpha status or qualify any execution path.
 - remote reserve/recheck accepts only locally registered manifest/snapshot identities, never peer-supplied paths or payload objects;
 - real loopback mTLS integration now exercises RemoteAgentClient/Dispatcher end-to-end, including host-local reserve;
 - explicit private endpoint client/server helpers run the authenticated control stack across separate OS processes;
+- immutable accepted-execution bundles combine exact plan integrity, adapter representability, E3 model qualification, runtime manifest identity, per-device backend readiness and per-node launch admission;
+- first bounded whole-block executable reference session iterates exact plan segments with cancel/release lifecycle;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -75,7 +77,7 @@ GPU identity capture.
 - real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
 - real native-adapter model/operator/memory manifest capture on target hardware;
 - native Windows GPU inference;
-- native CUDA/HIP/distributed inference;
+- native CUDA/HIP/distributed inference and a native whole-block model backend;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
 

@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-whole-block-executable-adapter",
   "scope": "Implement the first bounded whole-block executable adapter reference path behind an immutable accepted execution bundle that requires exact plan, adapter representability, runtime-ready backend evidence, runtime manifest identity and launch-admitted leases before execution.",
   "started_at": "2026-10-03T13:20:00+02:00",
   "expires_at": "2026-10-03T15:20:00+02:00",
   "base_commit": "bfeb27a850d115d68ec849dd00450acb02885065",
   "completion_condition": "Accepted execution bundle, bounded reference whole-block adapter lifecycle/cancel/release path, portable execution tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Wire existing plan/adapter/manifest/readiness/lease outputs into one immutable execution gate, then execute a deterministic local fixture whole-block backend to prove lifecycle semantics without claiming model inference.",
-  "instructions": "No real model inference, tensor network transport, arbitrary executable launch, CUDA/HIP performance or distributed-inference claim. Do not bypass any existing gate."
+  "next_step": "Replace the deterministic reference backend with the first revision-pinned native whole-block backend behind the same accepted bundle, then run real model correctness tests before any distributed-inference claim.",
+  "instructions": "Completed as an actual executable reference path only. The accepted bundle is the first artifact with execution_authorized=true after all existing gates pass, but every portable run reports real_model_inference=false. No native model, CUDA/HIP, performance or distributed-inference claim is made."
 }

@@ -202,3 +202,25 @@ with only that device promoted to `ready`. It still returns
 
 These tests use synthetic worker/driver/runtime strings. They do not prove any actual
 CUDA/HIP driver, GPU, OS-specific backend or performance qualification.
+
+
+## Accepted execution bundle and reference whole-block adapter tests
+
+The first executable reference path recomputes the planner candidate hash using the same
+canonical identity as the planner, reruns exact adapter representability, requires an
+applicable E3+ model qualification record, checks the qualification worker artifact
+against the runtime manifest, requires one current backend-ready proof per compute device,
+and one launch-admitted lease per compute node.
+
+Launch-admission outputs now carry node, config and runtime-manifest identities; retained
+backend-readiness applicability exposes config/device/runtime-identity fingerprints. The
+execution bundle rejects cross-config or cross-manifest mixing.
+
+Portable tests exercise an actual reference session that iterates the immutable whole-block
+segments in order through a deterministic in-process backend, plus cancellation and
+deterministic release. Negative tests cover plan tampering, wrong E3 worker identity,
+missing device readiness and missing node admission.
+
+This proves orchestration/lifecycle semantics only. The reference run explicitly reports
+`real_model_inference=false`; it does not execute GGUF tensors, CUDA/HIP kernels or
+distributed model inference.
