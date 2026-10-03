@@ -138,6 +138,7 @@ def _validate_native_self_test(result: dict[str, Any]) -> dict[str, Any]:
             )
 
     config_sha = _sha256_hex(result.get("config_sha256"), "config_sha256")
+    node_id = _nonempty_text(result.get("node_id"), "node_id")
     test_sha = _sha256_hex(
         result.get("test_artifact_sha256"), "test_artifact_sha256"
     )
@@ -198,6 +199,7 @@ def _validate_native_self_test(result: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "config_sha256": config_sha,
+        "node_id": node_id,
         "test_artifact_sha256": test_sha,
         "probe_artifact_sha256": probe_sha,
         "binding_sha256": binding_sha,
@@ -220,6 +222,10 @@ def retain_llamacpp_backend_evidence(
 ) -> dict[str, Any]:
     """Create a deterministic retained record from one genuine native self-test result."""
     checked = _validate_native_self_test(self_test_result)
+    if runtime_identity.node_id != checked["node_id"]:
+        raise ValidationError(
+            "runtime identity applies to a different node than the native self-test"
+        )
     if runtime_identity.tensormeld_device_id != checked["tensormeld_device_id"]:
         raise ValidationError(
             "runtime identity applies to a different TensorMeld device"
@@ -234,6 +240,7 @@ def retain_llamacpp_backend_evidence(
         "probe_artifact_sha256": checked["probe_artifact_sha256"],
         "binding_sha256": checked["binding_sha256"],
         "config_sha256": checked["config_sha256"],
+        "node_id": checked["node_id"],
         "tensormeld_device_id": checked["tensormeld_device_id"],
         "engine_device_name": checked["engine_device_name"],
         "backend": checked["backend"],
@@ -269,6 +276,8 @@ def _validate_evidence_record(value: Any) -> dict[str, Any]:
         "probe_artifact_sha256",
         "binding_sha256",
         "config_sha256",
+        "node_id",
+        "node_id",
         "tensormeld_device_id",
         "engine_device_name",
         "backend",
@@ -362,6 +371,10 @@ def _validate_evidence_record(value: Any) -> dict[str, Any]:
         raise ValidationError(
             "backend readiness evidence: runtime identity fingerprint mismatch"
         )
+    if retained_runtime_identity.node_id != value["node_id"]:
+        raise ValidationError(
+            "backend readiness evidence: runtime identity node mismatch"
+        )
     if retained_runtime_identity.tensormeld_device_id != value["tensormeld_device_id"]:
         raise ValidationError(
             "backend readiness evidence: runtime identity device mismatch"
@@ -411,6 +424,10 @@ def validate_llamacpp_backend_evidence(
     if value["config_sha256"] != config.fingerprint:
         raise ValidationError(
             "retained E2 evidence does not apply to current config"
+        )
+    if value["node_id"] != current_runtime_identity.node_id:
+        raise ValidationError(
+            "retained E2 evidence applies to a different node"
         )
     if value["tensormeld_device_id"] != tensormeld_device_id:
         raise ValidationError(
