@@ -32,8 +32,8 @@
       "commit": "552f18f912a32ea86edf82e2b76431cb7131538d",
       "license": "MIT",
       "adoption": "native-adapter-source-and-test-tool",
-      "integration_target": "tests/test-backend-ops.cpp",
-      "status": "trusted-local probe, explicit device binding and strict backend-self-test adapter implemented; pinned interface re-reviewed for execution integration; upstream placement/RPC facilities exist but no generic stable TensorMeld whole-block-unit ABI is assumed; a model-aware shim remains required; no real native GPU binary executed in this environment",
+      "integration_target": "--device + --override-tensor placement interface at pinned revision",
+      "status": "trusted-local probe, explicit device binding, strict backend self-test and static model-aware whole-block tensor-placement translator implemented; translator uses exact blk.N GGUF tensor coverage and current device binding; no real GGUF/model execution by the shim yet",
       "notice": "licenses/ggml-MIT.txt"
     },
     {
@@ -42,7 +42,7 @@
       "commit": "f072119325817083ba9ee1011ea5be985371e2b0",
       "license": "MIT",
       "adoption": "native-adapter-candidate",
-      "status": "revision/root license and current launch/RPC/override interface reviewed; fork demonstrates model-specific placement and multi-host RPC, but TensorMeld does not assume its model-specific tensor overrides are a generic whole-block ABI; no CUDA/Windows/interoperability qualification performed here",
+      "status": "revision/root license and placement/RPC interface reviewed as a future compatibility target; current TensorMeld model-aware shim targets the pinned upstream llama.cpp placement contract only and does not enable halo-hybrid-specific overrides or remote RPC",
       "notice": "licenses/ggml-MIT.txt"
     }
   ]

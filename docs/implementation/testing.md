@@ -246,3 +246,31 @@ bundle mismatch, non-zero exit, response tampering and a worker attempting to se
 This proves the local process boundary and protocol, not GGUF/model inference. The fixture
 worker only transforms bytes and every accepted response remains
 `real_model_inference=false`.
+
+
+## Pinned llama.cpp model-aware placement shim tests
+
+The initial model-aware shim is intentionally narrower than llama.cpp itself. It accepts
+only single-node accepted bundles whose unit IDs are exactly contiguous `blk.N`
+transformer blocks.
+
+The shim consumes a complete `gguf-index-v1` already produced by the pinned upstream
+GGUF reader. The index fingerprint, architecture and tensor count must match the exact
+ModelManifest, and every real tensor name under `blk.*` is inspected to derive the
+complete block set. The accepted bundle must cover that block set exactly: missing,
+extra, reordered, duplicate or malformed block namespaces fail closed.
+
+Placement binding separately records the current native device-binding SHA, exact
+llama.cpp engine device name and primary buffer type for every compute device. The
+translator verifies those engine names against the fresh bound result. The first shim
+allows only one compute node and rejects llama.cpp RPC devices and non-primary buffer
+types so it cannot bypass TensorMeld's authenticated remote-control boundary.
+
+For each real block, TensorMeld generates its own anchored
+`^blk\.N\..*=<buffer>` override. User regexes never enter the translator. The
+generated placement fragment disables auto-fit and uses the exact approved local engine
+device list.
+
+These tests validate deterministic static placement translation only. They do not load a
+GGUF in llama.cpp, prove KV/compute placement, execute CUDA/HIP kernels, or establish
+model correctness/performance.

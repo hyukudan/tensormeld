@@ -74,7 +74,7 @@ satisfy the real E2/E3 gates.
 
 ## M3 — First executable distributed inference
 
-- model-aware revision-pinned native adapter implementation on top of the implemented subprocess worker protocol;
+- correctness-qualified revision-pinned llama.cpp worker implementation on top of the implemented placement shim and subprocess protocol;
 - real target-host llama.cpp capability probe and device binding;
 - real backend self-test and live adapter qualification;
 - runtime memory/admission manifest for exact model/workload;
@@ -105,7 +105,15 @@ Native subprocess foundation implemented:
 - real cross-platform subprocess execution using a fixture worker;
 - fail-closed request/response hash checks and rejection of worker self-claims of real inference.
 
-A model-aware llama.cpp/llama-halo-hybrid shim remains required before `real_model_inference=true` can exist.
+Model-aware llama.cpp placement foundation implemented:
+
+- exact `blk.N` unit naming and contiguous full-GGUF block coverage;
+- exact current native binding SHA and engine-device identity checks;
+- local primary buffer-type ownership only; RPC/remote devices fail closed;
+- generated anchored `--override-tensor` rules with `--fit off` and no user regex;
+- deterministic placement fingerprint bound to the accepted execution bundle and pinned llama.cpp revision.
+
+A real llama.cpp worker using this placement spec must still pass native E3 correctness before `real_model_inference=true` can exist.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
