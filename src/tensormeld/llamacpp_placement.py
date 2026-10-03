@@ -13,10 +13,13 @@ import json
 import re
 from typing import Any
 
-from .adapter_contract import AdapterCapabilities
+from .adapter_contract import AdapterCapabilities, validate_candidate_representability
+from .config_v2 import Config
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
 from .llamacpp_selftest import BOUND_RESULT_SCHEMA
 from .model_manifest import ModelManifest
+from .planning_contract import PlanningInput
+from .plan_identity import validate_candidate_hash
 from .schema import ValidationError, items, record, text, unique
 from .whole_block_execution import AcceptedExecutionBundle
 
@@ -245,3 +248,247 @@ def translate_whole_blocks_to_llamacpp(
     argv = ("--fit", "off", "--device", ",".join(engine_by_device[d] for d in bundle.compute_devices), "--override-tensor", override_value)
     canonical = {"translation_schema": TRANSLATION_SCHEMA, "source_revision": LLAMACPP_PINNED_COMMIT, "accepted_bundle_sha256": bundle.bundle_sha256, "placement_binding_sha256": binding.fingerprint, "block_owners": [[i, d, b] for i, d, b in block_owners], "engine_devices": [[d, engine_by_device[d]] for d in bundle.compute_devices], "device_buffer_types": [[d, buft_by_device[d]] for d in bundle.compute_devices], "override_tensor_value": override_value, "argv_fragment": list(argv), "real_model_inference": False}
     return LlamaCppPlacementTranslation(LLAMACPP_PINNED_COMMIT, bundle.bundle_sha256, binding.fingerprint, tuple(block_owners), tuple((d, buft_by_device[d]) for d in bundle.compute_devices), override_value, argv, _canonical_sha256(canonical))
+
+
+QUALIFICATION_TRANSLATION_SCHEMA = "tensormeld/llamacpp-qualification-placement-v1"
+
+
+@dataclass(frozen=True)
+class LlamaCppQualificationPlacement:
+    source_revision: str
+    config_sha256: str
+    planning_input_sha256: str
+    candidate_plan_sha256: str
+    model_manifest_sha256: str
+    placement_binding_sha256: str
+    block_owners: tuple[tuple[int, str, str], ...]
+    device_buffer_types: tuple[tuple[str, str], ...]
+    override_tensor_value: str
+    argv_fragment: tuple[str, ...]
+    fingerprint: str
+
+    def as_record(self) -> dict[str, Any]:
+        return {
+            "translation_schema": QUALIFICATION_TRANSLATION_SCHEMA,
+            "source_revision": self.source_revision,
+            "config_sha256": self.config_sha256,
+            "planning_input_sha256": self.planning_input_sha256,
+            "candidate_plan_sha256": self.candidate_plan_sha256,
+            "model_manifest_sha256": self.model_manifest_sha256,
+            "placement_binding_sha256": self.placement_binding_sha256,
+            "block_owners": [
+                {
+                    "block_index": i,
+                    "device_id": d,
+                    "buffer_type": b,
+                }
+                for i, d, b in self.block_owners
+            ],
+            "device_buffer_types": [
+                {"device_id": d, "buffer_type": b}
+                for d, b in self.device_buffer_types
+            ],
+            "override_tensor_value": self.override_tensor_value,
+            "argv_fragment": list(self.argv_fragment),
+            "qualified": False,
+            "real_model_inference": False,
+            "fingerprint": self.fingerprint,
+        }
+
+
+def translate_candidate_for_llamacpp_qualification(
+    config: Config,
+    planning: PlanningInput,
+    candidate: dict[str, Any],
+    *,
+    adapter: AdapterCapabilities,
+    binding: LlamaCppPlacementBinding,
+    bound_result: dict[str, Any],
+    model: ModelManifest,
+    gguf_index: dict[str, Any],
+    profile_name: str | None = None,
+) -> LlamaCppQualificationPlacement:
+    profile_name = profile_name or config.installation.default_profile
+    profile = config.profile_map.get(profile_name)
+    if profile is None:
+        raise ValidationError("qualification placement profile is absent from config")
+    if planning.manifest_ref != model.manifest_sha256:
+        raise ValidationError("planning input model identity does not match ModelManifest")
+    if profile.model_manifest_ref != model.manifest_sha256:
+        raise ValidationError("profile model identity does not match ModelManifest")
+    plan_sha = validate_candidate_hash(config, planning, profile_name, candidate)
+    representability = validate_candidate_representability(
+        config, planning, candidate, adapter
+    )
+    if (
+        representability.get("status") != "REPRESENTABLE"
+        or representability.get("exact") is not True
+    ):
+        raise ValidationError("qualification candidate is not exactly representable")
+    if adapter.engine != "llama.cpp":
+        raise ValidationError("qualification placement requires a llama.cpp adapter")
+    if adapter.engine_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("qualification adapter source revision mismatch")
+    if len(candidate.get("compute_nodes", [])) != 1:
+        raise ValidationError("initial llama.cpp qualification shim supports one compute node")
+    if binding.adapter_id != adapter.adapter_id:
+        raise ValidationError("qualification placement binding adapter mismatch")
+    if binding.adapter_capabilities_sha256 != adapter.fingerprint:
+        raise ValidationError("qualification placement binding fingerprint mismatch")
+    if binding.source_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("qualification placement binding revision mismatch")
+    if bound_result.get("result_schema") != BOUND_RESULT_SCHEMA:
+        raise ValidationError("qualification bound result schema mismatch")
+    if bound_result.get("config_sha256") != config.fingerprint:
+        raise ValidationError("qualification bound result config mismatch")
+    if bound_result.get("binding_sha256") != binding.native_binding_sha256:
+        raise ValidationError("qualification native binding fingerprint mismatch")
+
+    mappings = bound_result.get("resolved_mappings")
+    if not isinstance(mappings, list):
+        raise ValidationError("qualification native mappings must be a list")
+    current_engine: dict[str, str] = {}
+    current_backend: dict[str, Any] = {}
+    for raw in mappings:
+        if not isinstance(raw, dict):
+            continue
+        device_id = raw.get("tensormeld_device_id")
+        engine_name = raw.get("engine_device_name")
+        if isinstance(device_id, str) and isinstance(engine_name, str):
+            if device_id in current_engine:
+                raise ValidationError("duplicate qualification native device mapping")
+            current_engine[device_id] = engine_name
+            current_backend[device_id] = raw.get("backend_from_config")
+
+    compute_devices = tuple(candidate.get("compute_devices", []))
+    if set(current_engine) != set(compute_devices):
+        raise ValidationError("qualification native mappings must cover candidate devices")
+    adapter_devices = {d.id: d for d in adapter.devices}
+    for device_id, engine_name, _ in binding.device_bindings:
+        if device_id not in compute_devices:
+            raise ValidationError("qualification placement binding includes unused device")
+        if current_engine.get(device_id) != engine_name:
+            raise ValidationError("qualification engine device differs from current mapping")
+        if current_backend.get(device_id) != adapter_devices[device_id].backend:
+            raise ValidationError("qualification backend differs from adapter device")
+
+    if gguf_index.get("index_schema") != "tensormeld/gguf-index-v1":
+        raise ValidationError("qualification GGUF index schema mismatch")
+    if gguf_index.get("complete_shard_set") is not True:
+        raise ValidationError("qualification requires complete GGUF shard index")
+    if gguf_index.get("index_sha256") != model.tensor_index_sha256:
+        raise ValidationError("qualification GGUF index identity mismatch")
+    if gguf_index.get("architecture") != model.architecture:
+        raise ValidationError("qualification GGUF architecture mismatch")
+    if gguf_index.get("tensor_count") != model.tensor_count:
+        raise ValidationError("qualification GGUF tensor count mismatch")
+
+    actual_blocks: set[int] = set()
+    files = gguf_index.get("files")
+    if not isinstance(files, list) or not files:
+        raise ValidationError("qualification GGUF index files must be non-empty")
+    for shard in files:
+        tensors = shard.get("tensors") if isinstance(shard, dict) else None
+        if not isinstance(tensors, list):
+            raise ValidationError("qualification GGUF tensors must be a list")
+        for tensor in tensors:
+            name = tensor.get("name") if isinstance(tensor, dict) else None
+            if not isinstance(name, str):
+                raise ValidationError("qualification GGUF tensor name is invalid")
+            if name.startswith("blk."):
+                match = re.match(r"^blk\.(0|[1-9][0-9]*)\.", name)
+                if not match:
+                    raise ValidationError("unsupported qualification blk.* tensor namespace")
+                actual_blocks.add(int(match.group(1)))
+    if not actual_blocks:
+        raise ValidationError("qualification GGUF contains no transformer blocks")
+    actual_sorted = sorted(actual_blocks)
+    if actual_sorted != list(range(actual_sorted[-1] + 1)):
+        raise ValidationError("qualification GGUF blocks are not contiguous from zero")
+
+    unit_ids = tuple(candidate.get("unit_ids", []))
+    indices: list[int] = []
+    for unit_id in unit_ids:
+        match = _BLOCK_RE.fullmatch(unit_id)
+        if not match:
+            raise ValidationError("qualification shim accepts only unit IDs named blk.N")
+        indices.append(int(match.group(1)))
+    if indices != actual_sorted:
+        raise ValidationError(
+            "qualification candidate must cover exactly every real GGUF transformer block"
+        )
+
+    owner_by_unit: list[str | None] = [None] * len(unit_ids)
+    segments = candidate.get("segments")
+    if not isinstance(segments, list):
+        raise ValidationError("qualification candidate segments must be a list")
+    for raw in segments:
+        if not isinstance(raw, dict):
+            raise ValidationError("qualification segment must be an object")
+        device = raw.get("device")
+        first = raw.get("first_unit")
+        last = raw.get("last_unit_exclusive")
+        if (
+            device not in compute_devices
+            or type(first) is not int
+            or type(last) is not int
+            or not (0 <= first < last <= len(unit_ids))
+        ):
+            raise ValidationError("qualification segment is invalid")
+        for pos in range(first, last):
+            if owner_by_unit[pos] is not None:
+                raise ValidationError("qualification segments overlap")
+            owner_by_unit[pos] = device
+    if any(owner is None for owner in owner_by_unit):
+        raise ValidationError("qualification segments do not cover all blocks")
+
+    engine_by_device = binding.engine_device_by_device
+    buft_by_device = binding.buffer_type_by_device
+    if set(compute_devices) != set(engine_by_device):
+        raise ValidationError("qualification placement binding must cover exact devices")
+
+    block_owners: list[tuple[int, str, str]] = []
+    overrides: list[str] = []
+    for pos, block_index in enumerate(indices):
+        device = owner_by_unit[pos]
+        assert device is not None
+        buft = buft_by_device[device]
+        block_owners.append((block_index, device, buft))
+        overrides.append(rf"^blk\.{block_index}\..*={buft}")
+    override_value = ",".join(overrides)
+    argv = (
+        "--fit",
+        "off",
+        "--device",
+        ",".join(engine_by_device[d] for d in compute_devices),
+        "--override-tensor",
+        override_value,
+    )
+    canonical = {
+        "translation_schema": QUALIFICATION_TRANSLATION_SCHEMA,
+        "source_revision": LLAMACPP_PINNED_COMMIT,
+        "config_sha256": config.fingerprint,
+        "planning_input_sha256": planning.fingerprint,
+        "candidate_plan_sha256": plan_sha,
+        "model_manifest_sha256": model.manifest_sha256,
+        "placement_binding_sha256": binding.fingerprint,
+        "block_owners": [[i, d, b] for i, d, b in block_owners],
+        "device_buffer_types": [[d, buft_by_device[d]] for d in compute_devices],
+        "override_tensor_value": override_value,
+        "argv_fragment": list(argv),
+        "qualified": False,
+        "real_model_inference": False,
+    }
+    return LlamaCppQualificationPlacement(
+        LLAMACPP_PINNED_COMMIT,
+        config.fingerprint,
+        planning.fingerprint,
+        plan_sha,
+        model.manifest_sha256,
+        binding.fingerprint,
+        tuple(block_owners),
+        tuple((d, buft_by_device[d]) for d in compute_devices),
+        override_value,
+        argv,
+        _canonical_sha256(canonical),
+    )
