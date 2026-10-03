@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-llamacpp-model-aware-shim",
   "scope": "Implement the first strict model-aware llama.cpp-family shim for whole-block ownership, limited to contiguous transformer block unit IDs that can be translated exactly to pinned engine tensor-override placement controls. Reject unsupported model/unit shapes rather than approximating.",
   "started_at": "2026-10-03T14:15:00+02:00",
   "expires_at": "2026-10-03T16:15:00+02:00",
   "base_commit": "ec5d5fdd7d84371859db37001ccb1780b08b788c",
   "completion_condition": "Pinned upstream control mapping, strict translator/shim contract, portable parser/argv tests, docs/ADR/validation/provenance updates and CI are committed.",
-  "next_step": "Inspect pinned llama.cpp tensor-override and device-placement interfaces, implement only exact blk.N whole-block translations, and keep real_model_inference=false until a real GGUF/native correctness run exists.",
-  "instructions": "No approximation, no model-family guessing beyond validated unit naming, no unpinned flags, no arbitrary regex supplied by users, no model downloads, and no CUDA/HIP/performance/distributed-inference claim."
+  "next_step": "Implement a revision-pinned llama.cpp worker program that consumes the deterministic placement translation plus an approved local GGUF path, then run native full-model E3 correctness before permitting real_model_inference=true.",
+  "instructions": "Completed as a static placement translator only. It is single-node/local-device, rejects llama.cpp RPC and partial GGUF block coverage, and generates its own tensor override patterns. No GGUF was loaded and no CUDA/HIP/model inference/performance/distributed-inference claim is made."
 }
