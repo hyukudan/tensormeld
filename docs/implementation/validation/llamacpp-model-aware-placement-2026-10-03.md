@@ -44,4 +44,4 @@ non-primary buffers, incomplete real GGUF block coverage, index mismatch and mal
 No GGUF is loaded by llama.cpp in this validation. No real model correctness, CUDA/HIP
 kernel execution, KV/compute placement, performance or distributed inference is claimed.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #14, workflow `Portable Python tests`, run #154 (37122453461) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. The preceding run #152 found one stale test expectation after RPC removal; the expectation was corrected before the successful run. This remains static placement translation evidence only; no GGUF was loaded by llama.cpp.
