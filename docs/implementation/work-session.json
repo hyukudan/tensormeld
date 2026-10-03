@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-multiprocess-private-endpoint",
-  "scope": "Validate the enrolled private endpoint and remote HostAgent control stack across separate OS processes using real mTLS, explicit PrivateEndpoint records, bounded dispatch, and host-local object authority.",
-  "started_at": "2026-10-03T08:56:00+02:00",
-  "expires_at": "2026-10-03T10:56:00+02:00",
-  "base_commit": "a1f3449576ca8d6180cfaf2fc4503eab3381baff",
-  "completion_condition": "Private endpoint client/server helpers, real separate-process mTLS remote-dispatch integration, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Run the same endpoint/server/client contract on two explicitly configured private-LAN hosts, then add live worker/driver/topology identity before any whole-block executable adapter.",
-  "instructions": "Completed as separate-process loopback integration. The server owns and resolves its manifests/snapshots locally. No physical multi-machine LAN, tensor transport, worker execution, CUDA/HIP qualification, performance or distributed inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-live-runtime-identity",
+  "scope": "Implement strict live worker/driver/runtime/topology identity and invalidation rules for retained backend E2 evidence, so historical readiness can be evaluated against exact current runtime identity without implying model qualification or execution admission.",
+  "started_at": "2026-10-03T13:17:00+02:00",
+  "expires_at": "2026-10-03T15:17:00+02:00",
+  "base_commit": "b1b20f92d8a12fe1bcb8aafac522682b91dc8d1b",
+  "completion_condition": "Runtime identity contract, retained-E2 applicability integration, portable positive/negative tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Bind retained E2 evidence to worker artifact/build, OS/runtime/driver and exact topology identity, then permit runtime-ready reuse only when every retained identity and current runtime identity matches exactly.",
+  "instructions": "Do not invent GPU/driver values; portable tests use fixtures. Matching retained E2 may restore only the narrow backend-ready fact, never model qualification, memory admission or executable distributed inference."
 }
