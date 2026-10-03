@@ -47,6 +47,7 @@ class QualificationEvidence:
     result: str
     observed_at: str
     tests: tuple[str, ...]
+    candidate_plan_sha256: str | None
     placement_sha256: str | None
     trial_spec_sha256: str | None
     correctness_contract_sha256: str | None
@@ -65,15 +66,18 @@ class QualificationEvidence:
             "result", "observed_at", "tests",
         }
         v2_fields = base_fields | {
-            "placement_sha256", "trial_spec_sha256",
+            "candidate_plan_sha256", "placement_sha256", "trial_spec_sha256",
             "correctness_contract_sha256", "runtime_identity_sha256",
         }
         if schema == "tensormeld/qualification-evidence-v1":
             r = record(data, "qualification evidence", base_fields)
-            placement_sha = trial_sha = correctness_sha = None
+            candidate_plan_sha = placement_sha = trial_sha = correctness_sha = None
             runtime_ids = None
         elif schema == "tensormeld/qualification-evidence-v2":
             r = record(data, "qualification evidence", v2_fields)
+            candidate_plan_sha = _sha256(
+                r["candidate_plan_sha256"], "candidate_plan_sha256"
+            )
             placement_sha = _sha256(r["placement_sha256"], "placement_sha256")
             trial_sha = _sha256(r["trial_spec_sha256"], "trial_spec_sha256")
             correctness_sha = _sha256(
@@ -149,6 +153,7 @@ class QualificationEvidence:
         }
         if schema.endswith("-v2"):
             canonical.update({
+                "candidate_plan_sha256": candidate_plan_sha,
                 "placement_sha256": placement_sha,
                 "trial_spec_sha256": trial_sha,
                 "correctness_contract_sha256": correctness_sha,
@@ -162,7 +167,7 @@ class QualificationEvidence:
             canonical["adapter_capabilities_sha256"], canonical["engine_revision"],
             canonical["worker_artifact_sha256"], canonical["model_manifest_sha256"],
             canonical["config_sha256"], device_ids, workload, result,
-            canonical["observed_at"], tests, placement_sha, trial_sha,
+            canonical["observed_at"], tests, candidate_plan_sha, placement_sha, trial_sha,
             correctness_sha, runtime_ids, digest,
         )
 
@@ -172,6 +177,9 @@ def evidence_applies(
     model: ModelManifest, config_sha256: str,
     device_ids: list[str] | tuple[str, ...], context_tokens: int,
     max_output_tokens: int, concurrency: int, minimum_level: str = "E3",
+    candidate_plan_sha256: str | None = None,
+    runtime_identity_sha256: list[str] | tuple[str, ...] | None = None,
+    require_v2: bool = False,
 ) -> dict[str, Any]:
     if minimum_level not in EVIDENCE_LEVELS:
         raise ValidationError("minimum_level: expected E0..E5")
@@ -207,6 +215,17 @@ def evidence_applies(
     for ok, code in checks:
         if not ok:
             reasons.append(code)
+    if require_v2:
+        if evidence.candidate_plan_sha256 is None:
+            reasons.append("EVIDENCE_V2_REQUIRED")
+        if candidate_plan_sha256 is None:
+            reasons.append("EXPECTED_PLAN_ID_REQUIRED")
+        elif evidence.candidate_plan_sha256 != candidate_plan_sha256:
+            reasons.append("PLAN_ID_MISMATCH")
+        if runtime_identity_sha256 is None:
+            reasons.append("EXPECTED_RUNTIME_ID_REQUIRED")
+        elif evidence.runtime_identity_sha256 != tuple(runtime_identity_sha256):
+            reasons.append("RUNTIME_IDENTITY_MISMATCH")
     return {
         "result_schema": "tensormeld/qualification-applicability-v1",
         "evidence_id": evidence.evidence_id,
