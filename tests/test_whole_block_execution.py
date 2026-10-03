@@ -256,7 +256,11 @@ class WholeBlockExecutionTests(unittest.TestCase):
             "model_manifest_sha256": args[4].manifest_sha256,
             "config_sha256": args[0].fingerprint,
             "device_ids": list(args[2]["compute_devices"]),
-            "workload": args[6].workload,
+            "workload": {
+                "context_tokens": args[6].workload["context_tokens"],
+                "max_output_tokens": args[6].workload["max_output_tokens"],
+                "concurrency": args[6].workload["concurrency"],
+            },
             "result": "passed",
             "observed_at": "2026-10-03T10:00:00Z",
             "tests": ["fixture"],
