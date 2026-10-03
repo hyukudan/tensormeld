@@ -50,6 +50,8 @@ the pre-alpha status or qualify any execution path.
 - first bounded whole-block executable reference session iterates exact plan segments with cancel/release lifecycle;
 - revision-pinned local subprocess worker foundation validates launcher/program SHA-256, engine revision, accepted-bundle identity and fixed no-shell argv;
 - bounded native-worker JSON protocol binds request, segment, device/unit ownership and payload identity across a real subprocess boundary;
+- pinned llama.cpp model-aware placement shim maps exact `blk.N` units to generated `--override-tensor` rules only after current native device binding and complete GGUF tensor-index checks;
+- initial llama.cpp placement shim is single-node/local-device only and rejects RPC devices, non-primary buffers, partial block coverage and caller-supplied patterns;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -79,7 +81,7 @@ GPU identity capture.
 - real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
 - real native-adapter model/operator/memory manifest capture on target hardware;
 - native Windows GPU inference;
-- native CUDA/HIP/distributed inference and a model-aware llama.cpp/llama-halo-hybrid whole-block shim;
+- native CUDA/HIP/distributed inference and a correctness-qualified llama.cpp worker using the new placement shim;
 - retained hardware/backend E2-E5 evidence from real target devices;
 - expert/tensor/phase placement, multirail, GUI/API.
 
