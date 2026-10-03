@@ -132,6 +132,13 @@ class NativeSubprocessWholeBlockBackend:
             raise ValidationError(
                 "worker artifact identity does not match accepted bundle"
             )
+        launched_worker_sha = (
+            program.sha256 if program is not None else executable.sha256
+        )
+        if launched_worker_sha != worker_sha:
+            raise ValidationError(
+                "approved launched worker artifact does not match bundle worker identity"
+            )
         if not 0.1 <= timeout_s <= 120:
             raise ValidationError("timeout_s must be within 0.1..120 seconds")
         self.bundle = bundle
