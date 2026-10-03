@@ -40,4 +40,4 @@ changes, plan/spec/placement tampering and workload mismatch.
 No real llama.cpp binary, GGUF inference, CUDA/HIP kernel or physical GPU is executed by
 this validation.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #16, workflow `Portable Python tests`, run #178 (37147238835) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates E3 evaluator semantics and QualificationEvidence v2 compatibility using synthetic/native-shaped records only; it is not target-host llama.cpp/GPU correctness evidence.
