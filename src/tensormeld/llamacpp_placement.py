@@ -34,7 +34,7 @@ class LlamaCppPlacementBinding:
     adapter_id: str
     adapter_capabilities_sha256: str
     source_revision: str
-    buffer_types: tuple[tuple[str, str], ...]
+    device_bindings: tuple[tuple[str, str, str], ...]
     fingerprint: str
 
     @classmethod
@@ -51,22 +51,32 @@ class LlamaCppPlacementBinding:
         exposed = {d.id for d in adapter.devices}
         pairs: list[tuple[str, str]] = []
         for i, raw in enumerate(items(r["devices"], "devices", _MAX_DEVICES, 1)):
-            d = record(raw, f"devices[{i}]", {"device_id", "buffer_type"})
+            d = record(raw, f"devices[{i}]", {"device_id", "engine_device_name", "buffer_type"})
             device_id = text(d["device_id"], f"devices[{i}].device_id")
             if device_id not in exposed:
                 raise ValidationError(f"devices[{i}]: device is not exposed by adapter")
+            engine_name = text(d["engine_device_name"], f"devices[{i}].engine_device_name")
+            if "," in engine_name or "=" in engine_name or not _BUFT_RE.fullmatch(engine_name):
+                raise ValidationError(f"devices[{i}].engine_device_name: unsupported spelling")
             buft = text(d["buffer_type"], f"devices[{i}].buffer_type")
             if not _BUFT_RE.fullmatch(buft) or "," in buft or "=" in buft:
                 raise ValidationError(f"devices[{i}].buffer_type: unsupported buffer-type spelling")
-            pairs.append((device_id, buft))
-        unique([d for d, _ in pairs], "devices.device_id")
-        unique([b for _, b in pairs], "devices.buffer_type")
-        canonical = {"placement_binding_schema": PLACEMENT_SCHEMA, "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": LLAMACPP_PINNED_COMMIT, "devices": [{"device_id": d, "buffer_type": b} for d, b in sorted(pairs)]}
+            if engine_name.startswith("RPC") or buft.startswith("RPC"):
+                raise ValidationError("remote llama.cpp RPC devices are not permitted by this local shim")
+            pairs.append((device_id, engine_name, buft))
+        unique([d for d, _, _ in pairs], "devices.device_id")
+        unique([e for _, e, _ in pairs], "devices.engine_device_name")
+        unique([b for _, _, b in pairs], "devices.buffer_type")
+        canonical = {"placement_binding_schema": PLACEMENT_SCHEMA, "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": LLAMACPP_PINNED_COMMIT, "devices": [{"device_id": d, "engine_device_name": e, "buffer_type": b} for d, e, b in sorted(pairs)]}
         return cls(adapter.adapter_id, adapter.fingerprint, LLAMACPP_PINNED_COMMIT, tuple(sorted(pairs)), _canonical_sha256(canonical))
 
     @property
+    def engine_device_by_device(self) -> dict[str, str]:
+        return {d: e for d, e, _ in self.device_bindings}
+
+    @property
     def buffer_type_by_device(self) -> dict[str, str]:
-        return dict(self.buffer_types)
+        return {d: b for d, _, b in self.device_bindings}
 
 
 @dataclass(frozen=True)
@@ -85,6 +95,8 @@ class LlamaCppPlacementTranslation:
 
 
 def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapter: AdapterCapabilities, binding: LlamaCppPlacementBinding) -> LlamaCppPlacementTranslation:
+    if len(bundle.compute_nodes) != 1:
+        raise ValidationError("initial llama.cpp shim supports only one compute node")
     if bundle.adapter_id != adapter.adapter_id:
         raise ValidationError("accepted bundle adapter_id mismatch")
     if bundle.engine_revision != adapter.engine_revision:
@@ -120,6 +132,7 @@ def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapt
     if any(owner is None for owner in owner_by_unit):
         raise ValidationError("bundle segments do not cover every unit exactly once")
 
+    engine_by_device = binding.engine_device_by_device
     buft_by_device = binding.buffer_type_by_device
     if set(bundle.compute_devices) != set(buft_by_device):
         raise ValidationError("placement binding must cover exactly the bundle compute devices")
@@ -134,6 +147,6 @@ def translate_whole_blocks_to_llamacpp(bundle: AcceptedExecutionBundle, *, adapt
         overrides.append(rf"^blk\.{block_index}\..*={buft}")
 
     override_value = ",".join(overrides)
-    argv = ("--fit", "off", "--device", ",".join(buft_by_device[d] for d in bundle.compute_devices), "--override-tensor", override_value)
-    canonical = {"translation_schema": TRANSLATION_SCHEMA, "source_revision": LLAMACPP_PINNED_COMMIT, "accepted_bundle_sha256": bundle.bundle_sha256, "placement_binding_sha256": binding.fingerprint, "block_owners": [[i, d, b] for i, d, b in block_owners], "device_buffer_types": [[d, buft_by_device[d]] for d in bundle.compute_devices], "override_tensor_value": override_value, "argv_fragment": list(argv), "real_model_inference": False}
+    argv = ("--fit", "off", "--device", ",".join(engine_by_device[d] for d in bundle.compute_devices), "--override-tensor", override_value)
+    canonical = {"translation_schema": TRANSLATION_SCHEMA, "source_revision": LLAMACPP_PINNED_COMMIT, "accepted_bundle_sha256": bundle.bundle_sha256, "placement_binding_sha256": binding.fingerprint, "block_owners": [[i, d, b] for i, d, b in block_owners], "engine_devices": [[d, engine_by_device[d]] for d in bundle.compute_devices], "device_buffer_types": [[d, buft_by_device[d]] for d in bundle.compute_devices], "override_tensor_value": override_value, "argv_fragment": list(argv), "real_model_inference": False}
     return LlamaCppPlacementTranslation(LLAMACPP_PINNED_COMMIT, bundle.bundle_sha256, binding.fingerprint, tuple(block_owners), tuple((d, buft_by_device[d]) for d in bundle.compute_devices), override_value, argv, _canonical_sha256(canonical))
