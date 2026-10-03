@@ -261,6 +261,9 @@ def self_test_llamacpp_backend(
     engine_name, backend_from_config, observation = _validate_bound_target(
         config, bound_result, tensormeld_device_id
     )
+    node_id = bound_result.get("node_id")
+    if not isinstance(node_id, str) or not node_id.strip():
+        raise ValidationError("bound result has no node identity")
 
     argv = (
         str(path),
@@ -332,6 +335,7 @@ def self_test_llamacpp_backend(
         "probe_artifact_sha256": bound_result["probe_artifact_sha256"],
         "binding_sha256": bound_result["binding_sha256"],
         "config_sha256": config.fingerprint,
+        "node_id": node_id,
         "tensormeld_device_id": tensormeld_device_id,
         "engine_device_name": engine_name,
         "backend_from_config": backend_from_config,
