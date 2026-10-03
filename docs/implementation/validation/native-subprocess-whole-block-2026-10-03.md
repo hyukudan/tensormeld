@@ -36,4 +36,4 @@ required before a llama.cpp-family worker can implement this protocol.
 No GGUF tensor execution, real model correctness, CUDA/HIP kernel execution, performance
 measurement or distributed inference is established by this validation.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #13, workflow `Portable Python tests`, run #139 (37121130652) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. The new native-worker tests execute a real subprocess on Windows/Linux, but the worker is still a deterministic fixture and `real_model_inference=false` remains mandatory.
