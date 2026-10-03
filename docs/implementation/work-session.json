@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-model-aware-shim",
-  "scope": "Implement the first strict model-aware llama.cpp-family shim for whole-block ownership, limited to contiguous transformer block unit IDs that can be translated exactly to pinned engine tensor-override placement controls. Reject unsupported model/unit shapes rather than approximating.",
-  "started_at": "2026-10-03T14:15:00+02:00",
-  "expires_at": "2026-10-03T16:15:00+02:00",
-  "base_commit": "ec5d5fdd7d84371859db37001ccb1780b08b788c",
-  "completion_condition": "Pinned upstream control mapping, strict translator/shim contract, portable parser/argv tests, docs/ADR/validation/provenance updates and CI are committed.",
-  "next_step": "Implement a revision-pinned llama.cpp worker program that consumes the deterministic placement translation plus an approved local GGUF path, then run native full-model E3 correctness before permitting real_model_inference=true.",
-  "instructions": "Completed as a static placement translator only. It is single-node/local-device, rejects llama.cpp RPC and partial GGUF block coverage, and generates its own tensor override patterns. No GGUF was loaded and no CUDA/HIP/model inference/performance/distributed-inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-native-worker-launch",
+  "scope": "Implement the first strict revision-pinned llama.cpp native worker launch specification using an approved local llama executable, approved local GGUF files matching ModelManifest hashes, exact model-aware placement translation, closed argv, bounded stdout/stderr parsing, and no user-supplied launch arguments.",
+  "started_at": "2026-10-03T17:54:00+02:00",
+  "expires_at": "2026-10-03T19:54:00+02:00",
+  "base_commit": "bf8dd7b578dfa070f6d94ad768feaf1ae3920e9d",
+  "completion_condition": "Strict llama.cpp launch-spec/worker contract, local artifact verification, portable fixture-process tests, docs/ADR/validation/provenance updates and CI are committed.",
+  "next_step": "Bind an approved llama.cpp executable and exact local GGUF shard set to the accepted bundle/placement translation, generate a closed deterministic CLI invocation, and keep native correctness/real_model_inference disabled until a real target-host E3 run.",
+  "instructions": "No model downloads, no arbitrary argv/env, no remote RPC, no CUDA/HIP/performance/distributed-inference claim. Portable CI may use a fixture executable only and must not claim llama.cpp model execution."
 }
