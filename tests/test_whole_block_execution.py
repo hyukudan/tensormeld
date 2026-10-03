@@ -102,7 +102,7 @@ def setup_fixture():
     }, config=cfg, model=m, adapter=adapter)
 
     qualification = QualificationEvidence.parse({
-        "qualification_schema": "tensormeld/qualification-evidence-v1",
+        "qualification_schema": "tensormeld/qualification-evidence-v2",
         "evidence_id": "fixture-e3",
         "level": "E3",
         "adapter_id": adapter.adapter_id,
@@ -120,6 +120,13 @@ def setup_fixture():
         "result": "passed",
         "observed_at": "2026-10-03T10:00:00Z",
         "tests": ["fixture-full-model-correctness"],
+        "candidate_plan_sha256": candidate["plan_sha256"],
+        "placement_sha256": "d" * 64,
+        "trial_spec_sha256": "e" * 64,
+        "correctness_contract_sha256": "1" * 64,
+        "runtime_identity_sha256": [
+            f"{i + 101:064x}" for i, _ in enumerate(candidate["compute_devices"])
+        ],
     })
 
     readiness = [

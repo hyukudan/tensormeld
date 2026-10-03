@@ -301,3 +301,34 @@ labeled `native-subprocess`.
 A successful native process with stdout is at most trial evidence (reported as E2.5 here);
 it remains `qualified=false`, `real_model_inference=false` and
 `executable=false` until a separate native E3 correctness evaluator exists.
+
+
+## Native llama.cpp E3 correctness evaluator tests
+
+The E3 evaluator consumes a pre-E3 native trial specification, its retained trial result,
+an approved deterministic reference contract and stable runtime identities for every
+placement device.
+
+Only `execution_source=native-subprocess`, exit code zero and the exact retained trial
+identities are accepted. Fixture/injected trial provenance fails closed. The reference
+contract binds the exact trial-spec SHA, llama-cli SHA, ModelManifest SHA, placement SHA,
+expected raw stdout SHA-256 and exact tested workload.
+
+QualificationEvidence v2 extends the existing evidence contract with:
+- candidate-plan SHA-256;
+- placement SHA-256;
+- trial-spec SHA-256;
+- correctness-contract SHA-256;
+- ordered runtime-identity SHA-256 values.
+
+V1 parsing remains supported for historical/general evidence, but AcceptedExecutionBundle
+now requires v2 for executable E3 authorization and compares the E3 plan/runtime identities
+against the exact candidate and current per-device backend-readiness identities.
+
+Portable tests intentionally use native-shaped synthetic records rather than claiming a
+native target-host run. They cover exact E3 emission, plan/runtime applicability,
+fixture/injected provenance rejection, wrong stdout contract, worker/device identity
+changes, trial/spec/placement tampering and workload mismatch.
+
+A passing portable E3 test proves evaluator semantics only. It is not evidence that
+llama.cpp, a GGUF model, CUDA/HIP kernels or a real GPU executed in hosted CI.
