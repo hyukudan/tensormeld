@@ -23,8 +23,9 @@ from .llamacpp_selftest import (
     UPSTREAM_TARGET,
 )
 from .schema import MAX_INPUT_BYTES, ValidationError, _no_duplicates
+from .runtime_identity import RuntimeIdentity
 
-EVIDENCE_SCHEMA = "tensormeld/backend-readiness-evidence-v1"
+EVIDENCE_SCHEMA = "tensormeld/backend-readiness-evidence-v2"
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _INVALIDATION_KEYS = (
     "config_sha256",
@@ -35,6 +36,7 @@ _INVALIDATION_KEYS = (
     "tensormeld_device_id",
     "engine_device_name",
     "backend",
+    "runtime_identity_sha256",
 )
 
 
@@ -211,9 +213,15 @@ def _validate_native_self_test(result: dict[str, Any]) -> dict[str, Any]:
 
 def retain_llamacpp_backend_evidence(
     self_test_result: dict[str, Any],
+    *,
+    runtime_identity: RuntimeIdentity,
 ) -> dict[str, Any]:
     """Create a deterministic retained record from one genuine native self-test result."""
     checked = _validate_native_self_test(self_test_result)
+    if runtime_identity.tensormeld_device_id != checked["tensormeld_device_id"]:
+        raise ValidationError(
+            "runtime identity applies to a different TensorMeld device"
+        )
     payload = {
         "evidence_schema": EVIDENCE_SCHEMA,
         "engine": "llama.cpp",
@@ -227,6 +235,8 @@ def retain_llamacpp_backend_evidence(
         "tensormeld_device_id": checked["tensormeld_device_id"],
         "engine_device_name": checked["engine_device_name"],
         "backend": checked["backend"],
+        "runtime_identity": runtime_identity.as_record(),
+        "runtime_identity_sha256": runtime_identity.identity_sha256,
         "operation": SELF_TEST_OPERATION,
         "result_rows": checked["result_rows"],
         "supported_rows": checked["supported_rows"],
@@ -260,6 +270,8 @@ def _validate_evidence_record(value: Any) -> dict[str, Any]:
         "tensormeld_device_id",
         "engine_device_name",
         "backend",
+        "runtime_identity",
+        "runtime_identity_sha256",
         "operation",
         "result_rows",
         "supported_rows",
@@ -324,6 +336,7 @@ def _validate_evidence_record(value: Any) -> dict[str, Any]:
         "probe_artifact_sha256",
         "binding_sha256",
         "config_sha256",
+        "runtime_identity_sha256",
         "retained_self_test_sha256",
         "evidence_sha256",
     ):
@@ -334,6 +347,23 @@ def _validate_evidence_record(value: Any) -> dict[str, Any]:
         "backend",
     ):
         _nonempty_text(value[key], key)
+    runtime_identity_raw = value["runtime_identity"]
+    if not isinstance(runtime_identity_raw, dict):
+        raise ValidationError("backend readiness evidence: runtime_identity must be an object")
+    runtime_identity_payload = dict(runtime_identity_raw)
+    recorded_runtime_identity_sha = runtime_identity_payload.pop("identity_sha256", None)
+    retained_runtime_identity = RuntimeIdentity.parse(runtime_identity_payload)
+    if (
+        recorded_runtime_identity_sha != retained_runtime_identity.identity_sha256
+        or value["runtime_identity_sha256"] != retained_runtime_identity.identity_sha256
+    ):
+        raise ValidationError(
+            "backend readiness evidence: runtime identity fingerprint mismatch"
+        )
+    if retained_runtime_identity.tensormeld_device_id != value["tensormeld_device_id"]:
+        raise ValidationError(
+            "backend readiness evidence: runtime identity device mismatch"
+        )
     result_rows = _positive_int(value["result_rows"], "result_rows")
     supported_rows = _positive_int(value["supported_rows"], "supported_rows")
     passed_rows = _positive_int(value["passed_rows"], "passed_rows")
@@ -372,8 +402,9 @@ def validate_llamacpp_backend_evidence(
     bound_result: dict[str, Any],
     expected_test_artifact_sha256: str,
     tensormeld_device_id: str,
+    current_runtime_identity: RuntimeIdentity,
 ) -> dict[str, Any]:
-    """Validate exact retained identities without restoring runtime readiness."""
+    """Validate exact retained identities including stable live runtime identity."""
     value = _validate_evidence_record(evidence)
     if value["config_sha256"] != config.fingerprint:
         raise ValidationError(
@@ -457,20 +488,34 @@ def validate_llamacpp_backend_evidence(
             "fresh runtime observation backend mismatch"
         )
 
+    retained_identity_record = value["runtime_identity"]
+    retained_identity_payload = dict(retained_identity_record)
+    retained_identity_payload.pop("identity_sha256", None)
+    retained_identity = RuntimeIdentity.parse(retained_identity_payload)
+    if current_runtime_identity.tensormeld_device_id != tensormeld_device_id:
+        raise ValidationError(
+            "current runtime identity applies to a different TensorMeld device"
+        )
+    if retained_identity.identity_sha256 != current_runtime_identity.identity_sha256:
+        raise ValidationError(
+            "retained E2 evidence live runtime identity mismatch"
+        )
+
     return {
         "evidence_schema": EVIDENCE_SCHEMA,
         "evidence_sha256": value["evidence_sha256"],
         "identity_applicable": True,
         "backend_readiness_recorded": True,
-        "requires_live_runtime_recheck": True,
-        "runtime_ready": False,
+        "runtime_identity_sha256": current_runtime_identity.identity_sha256,
+        "requires_live_runtime_recheck": False,
+        "runtime_ready": True,
         "reservation_created": False,
         "qualified": False,
         "executable": False,
         "reason": (
-            "Exact retained identities match, but live worker/driver/topology "
-            "invalidation inputs are not yet part of this contract; rerun the native "
-            "self-test before promoting runtime readiness."
+            "Exact retained backend and stable live runtime identities match. "
+            "Only the narrow backend-ready fact is reusable; model qualification "
+            "and execution admission remain separate."
         ),
     }
 
