@@ -128,6 +128,8 @@ class NativeSubprocessWholeBlockBackend:
         )
         if bundle.adapter_id != adapter_id:
             raise ValidationError("worker adapter_id does not match accepted bundle")
+        if bundle.engine_revision != engine_revision:
+            raise ValidationError("worker engine revision does not match accepted bundle")
         if bundle.worker_artifact_sha256 != worker_sha:
             raise ValidationError(
                 "worker artifact identity does not match accepted bundle"
@@ -142,6 +144,7 @@ class NativeSubprocessWholeBlockBackend:
         if not 0.1 <= timeout_s <= 120:
             raise ValidationError("timeout_s must be within 0.1..120 seconds")
         self.bundle = bundle
+        self.bundle_sha256 = bundle.bundle_sha256
         self.adapter_id = adapter_id
         self.engine_revision = engine_revision
         self.worker_artifact_sha256 = worker_sha
