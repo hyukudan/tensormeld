@@ -47,19 +47,51 @@ class QualificationEvidence:
     result: str
     observed_at: str
     tests: tuple[str, ...]
+    placement_sha256: str | None
+    trial_spec_sha256: str | None
+    correctness_contract_sha256: str | None
+    runtime_identity_sha256: tuple[str, ...] | None
     evidence_sha256: str
 
     @classmethod
     def parse(cls, data: Any) -> "QualificationEvidence":
-        r = record(data, "qualification evidence", {
+        if not isinstance(data, dict):
+            raise ValidationError("qualification evidence: expected object")
+        schema = data.get("qualification_schema")
+        base_fields = {
             "qualification_schema", "evidence_id", "level", "adapter_id",
             "adapter_capabilities_sha256", "engine_revision", "worker_artifact_sha256",
             "model_manifest_sha256", "config_sha256", "device_ids", "workload",
             "result", "observed_at", "tests",
-        })
-        if r["qualification_schema"] != "tensormeld/qualification-evidence-v1":
+        }
+        v2_fields = base_fields | {
+            "placement_sha256", "trial_spec_sha256",
+            "correctness_contract_sha256", "runtime_identity_sha256",
+        }
+        if schema == "tensormeld/qualification-evidence-v1":
+            r = record(data, "qualification evidence", base_fields)
+            placement_sha = trial_sha = correctness_sha = None
+            runtime_ids = None
+        elif schema == "tensormeld/qualification-evidence-v2":
+            r = record(data, "qualification evidence", v2_fields)
+            placement_sha = _sha256(r["placement_sha256"], "placement_sha256")
+            trial_sha = _sha256(r["trial_spec_sha256"], "trial_spec_sha256")
+            correctness_sha = _sha256(
+                r["correctness_contract_sha256"], "correctness_contract_sha256"
+            )
+            runtime_ids = tuple(
+                _sha256(x, "runtime_identity_sha256[]")
+                for x in items(
+                    r["runtime_identity_sha256"],
+                    "runtime_identity_sha256",
+                    MAX_EVIDENCE_DEVICES,
+                    1,
+                )
+            )
+            unique(list(runtime_ids), "runtime_identity_sha256")
+        else:
             raise ValidationError(
-                "qualification_schema: expected tensormeld/qualification-evidence-v1"
+                "qualification_schema: expected tensormeld/qualification-evidence-v1 or v2"
             )
         level = text(r["level"], "level")
         if level not in EVIDENCE_LEVELS:
@@ -94,7 +126,7 @@ class QualificationEvidence:
         if workload["max_output_tokens"] > workload["context_tokens"]:
             raise ValidationError("workload.max_output_tokens exceeds context_tokens")
         canonical = {
-            "qualification_schema": r["qualification_schema"],
+            "qualification_schema": schema,
             "evidence_id": text(r["evidence_id"], "evidence_id"),
             "level": level,
             "adapter_id": text(r["adapter_id"], "adapter_id"),
@@ -115,6 +147,13 @@ class QualificationEvidence:
             "observed_at": _timestamp(r["observed_at"], "observed_at"),
             "tests": list(tests),
         }
+        if schema.endswith("-v2"):
+            canonical.update({
+                "placement_sha256": placement_sha,
+                "trial_spec_sha256": trial_sha,
+                "correctness_contract_sha256": correctness_sha,
+                "runtime_identity_sha256": list(runtime_ids or ()),
+            })
         digest = hashlib.sha256(
             json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
@@ -123,7 +162,8 @@ class QualificationEvidence:
             canonical["adapter_capabilities_sha256"], canonical["engine_revision"],
             canonical["worker_artifact_sha256"], canonical["model_manifest_sha256"],
             canonical["config_sha256"], device_ids, workload, result,
-            canonical["observed_at"], tests, digest,
+            canonical["observed_at"], tests, placement_sha, trial_sha,
+            correctness_sha, runtime_ids, digest,
         )
 
 
