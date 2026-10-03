@@ -161,6 +161,22 @@ class LlamaCppPlacementTests(unittest.TestCase):
             with self.subTest(buft=buft), self.assertRaises(ValidationError):
                 LlamaCppPlacementBinding.parse(raw, adapter=a)
 
+    def test_non_primary_device_buffer_is_rejected(self):
+        a = adapter()
+        raw = {
+            "placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1",
+            "adapter_id": a.adapter_id,
+            "adapter_capabilities_sha256": a.fingerprint,
+            "source_revision": PIN,
+            "native_binding_sha256": "0" * 64,
+            "devices": [
+                {"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "CPU"},
+                {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"},
+            ],
+        }
+        with self.assertRaises(ValidationError):
+            LlamaCppPlacementBinding.parse(raw, adapter=a)
+
     def test_wrong_revision_or_adapter_identity_is_rejected(self):
         a = adapter()
         raw = {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": "0" * 40, "native_binding_sha256": "0" * 64, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}]}
