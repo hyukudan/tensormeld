@@ -191,7 +191,7 @@ def evaluate_llamacpp_native_e3(
     if reference.workload != expected_workload:
         raise ValidationError("native E3 reference workload mismatch")
 
-    device_ids = tuple(dict.fromkeys(d for _, d, _ in placement.block_owners))
+    device_ids = tuple(sorted({d for _, d, _ in placement.block_owners}))
     identities = tuple(runtime_identities)
     if not identities:
         raise ValidationError("native E3 requires runtime identities")
