@@ -87,6 +87,7 @@ class AcceptedExecutionBundle:
     plan_sha256: str
     representability_sha256: str
     adapter_id: str
+    engine_revision: str
     adapter_capabilities_sha256: str
     model_manifest_sha256: str
     qualification_evidence_sha256: str
@@ -109,6 +110,7 @@ class AcceptedExecutionBundle:
             "plan_sha256": self.plan_sha256,
             "representability_sha256": self.representability_sha256,
             "adapter_id": self.adapter_id,
+            "engine_revision": self.engine_revision,
             "adapter_capabilities_sha256": self.adapter_capabilities_sha256,
             "model_manifest_sha256": self.model_manifest_sha256,
             "qualification_evidence_sha256": self.qualification_evidence_sha256,
@@ -300,6 +302,7 @@ def accept_execution_bundle(
         "plan_sha256": plan_sha,
         "representability_sha256": representability["report_sha256"],
         "adapter_id": adapter.adapter_id,
+        "engine_revision": adapter.engine_revision,
         "adapter_capabilities_sha256": adapter.fingerprint,
         "model_manifest_sha256": model.manifest_sha256,
         "qualification_evidence_sha256": qualification_evidence.evidence_sha256,
@@ -328,6 +331,7 @@ def accept_execution_bundle(
         plan_sha,
         representability["report_sha256"],
         adapter.adapter_id,
+        adapter.engine_revision,
         adapter.fingerprint,
         model.manifest_sha256,
         qualification_evidence.evidence_sha256,
@@ -365,6 +369,11 @@ class ReferenceWholeBlockSession:
         bundle: AcceptedExecutionBundle,
         backend: WholeBlockBackend,
     ) -> None:
+        backend_bundle_sha = getattr(backend, "bundle_sha256", None)
+        if backend_bundle_sha is not None and backend_bundle_sha != bundle.bundle_sha256:
+            raise ValidationError(
+                "backend accepted-bundle identity does not match session bundle"
+            )
         self.bundle = bundle
         self.backend = backend
         self._lock = Lock()
