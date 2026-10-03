@@ -87,6 +87,7 @@ def bound_result(binding_sha: str = BINDING_SHA) -> dict:
         "config_sha256": CONFIG_SHA,
         "probe_artifact_sha256": PROBE_SHA,
         "binding_sha256": binding_sha,
+        "node_id": "node-a",
         "resolved_mappings": [
             {
                 "tensormeld_device_id": "gpu0",
@@ -124,6 +125,11 @@ class BackendReadinessEvidenceTests(unittest.TestCase):
         self.assertTrue(applicability["identity_applicable"])
         self.assertFalse(applicability["requires_live_runtime_recheck"])
         self.assertTrue(applicability["runtime_ready"])
+        self.assertEqual(
+            applicability["runtime_observation"]["devices"]["gpu0"]["state"],
+            "ready",
+        )
+        self.assertFalse(applicability["runtime_observation"]["qualified"])
         self.assertFalse(applicability["reservation_created"])
         self.assertFalse(applicability["executable"])
 
@@ -206,6 +212,23 @@ class BackendReadinessEvidenceTests(unittest.TestCase):
             retain_llamacpp_backend_evidence(
                 self_test_result(),
                 runtime_identity=runtime_identity(tensormeld_device_id="gpu1"),
+            )
+
+
+    def test_runtime_identity_node_must_match_current_binding(self):
+        evidence = retain_llamacpp_backend_evidence(
+            self_test_result(), runtime_identity=runtime_identity()
+        )
+        current = bound_result()
+        current["node_id"] = "node-b"
+        with self.assertRaises(ValidationError):
+            validate_llamacpp_backend_evidence(
+                evidence,
+                config=SimpleNamespace(fingerprint=CONFIG_SHA),
+                bound_result=current,
+                expected_test_artifact_sha256=TEST_SHA,
+                tensormeld_device_id="gpu0",
+                current_runtime_identity=runtime_identity(),
             )
 
 
