@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-native-subprocess-whole-block",
-  "scope": "Implement the first revision-pinned native subprocess whole-block backend foundation behind AcceptedExecutionBundle: trusted-local executable SHA/revision identity, fixed argv/no shell, bounded JSON request/response protocol, exact segment/unit identity, timeout/cancel/error handling, and no arbitrary executable or path injection.",
-  "started_at": "2026-10-03T13:45:00+02:00",
-  "expires_at": "2026-10-03T15:45:00+02:00",
-  "base_commit": "9dc1e6bf5f7bbbec9a108e4eacb2bfe5a5a880c0",
-  "completion_condition": "Native subprocess backend contract, real subprocess integration tests, docs/ADR/validation/provenance updates and CI evidence are committed.",
-  "next_step": "Implement the first model-aware shim for the pinned llama.cpp family behind the strict subprocess worker protocol, translating exact TensorMeld whole-block ownership only where the pinned engine exposes an equivalent placement control; then run real E3 correctness before allowing real_model_inference=true.",
-  "instructions": "Completed as a real subprocess/protocol foundation only. Portable tests execute a fixture worker process on Windows/Linux. No GGUF tensors, CUDA/HIP kernels, real model correctness, performance or distributed inference is claimed."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-model-aware-shim",
+  "scope": "Implement the first strict model-aware llama.cpp-family shim for whole-block ownership, limited to contiguous transformer block unit IDs that can be translated exactly to pinned engine tensor-override placement controls. Reject unsupported model/unit shapes rather than approximating.",
+  "started_at": "2026-10-03T14:15:00+02:00",
+  "expires_at": "2026-10-03T16:15:00+02:00",
+  "base_commit": "ec5d5fdd7d84371859db37001ccb1780b08b788c",
+  "completion_condition": "Pinned upstream control mapping, strict translator/shim contract, portable parser/argv tests, docs/ADR/validation/provenance updates and CI are committed.",
+  "next_step": "Inspect pinned llama.cpp tensor-override and device-placement interfaces, implement only exact blk.N whole-block translations, and keep real_model_inference=false until a real GGUF/native correctness run exists.",
+  "instructions": "No approximation, no model-family guessing beyond validated unit naming, no unpinned flags, no arbitrary regex supplied by users, no model downloads, and no CUDA/HIP/performance/distributed-inference claim."
 }
