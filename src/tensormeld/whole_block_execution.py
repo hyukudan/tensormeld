@@ -236,6 +236,28 @@ def accept_execution_bundle(
             "backend readiness must cover exactly the candidate compute devices"
         )
 
+    exact_qualification = evidence_applies(
+        qualification_evidence,
+        adapter=adapter,
+        model=model,
+        config_sha256=config.fingerprint,
+        device_ids=list(candidate_devices),
+        context_tokens=runtime_manifest.workload["context_tokens"],
+        max_output_tokens=runtime_manifest.workload["max_output_tokens"],
+        concurrency=runtime_manifest.workload["concurrency"],
+        minimum_level="E3",
+        candidate_plan_sha256=plan_sha,
+        runtime_identity_sha256=[
+            readiness_by_device[device][1] for device in candidate_devices
+        ],
+        require_v2=True,
+    )
+    if not exact_qualification["applies"]:
+        raise ValidationError(
+            f"E3 v2 exact plan/runtime qualification does not apply: "
+            f"{exact_qualification['reasons']}"
+        )
+
     lease_by_node: dict[str, tuple[str, str]] = {}
     for admission in launch_admissions:
         if not isinstance(admission, dict):
