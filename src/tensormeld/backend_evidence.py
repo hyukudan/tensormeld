@@ -534,6 +534,7 @@ def validate_llamacpp_backend_evidence(
         "evidence_sha256": value["evidence_sha256"],
         "identity_applicable": True,
         "backend_readiness_recorded": True,
+        "tensormeld_device_id": tensormeld_device_id,
         "runtime_identity_sha256": current_runtime_identity.identity_sha256,
         "requires_live_runtime_recheck": False,
         "runtime_ready": True,
