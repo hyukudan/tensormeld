@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-whole-block-executable-adapter",
-  "scope": "Implement the first bounded whole-block executable adapter reference path behind an immutable accepted execution bundle that requires exact plan, adapter representability, runtime-ready backend evidence, runtime manifest identity and launch-admitted leases before execution.",
-  "started_at": "2026-10-03T13:20:00+02:00",
-  "expires_at": "2026-10-03T15:20:00+02:00",
-  "base_commit": "bfeb27a850d115d68ec849dd00450acb02885065",
-  "completion_condition": "Accepted execution bundle, bounded reference whole-block adapter lifecycle/cancel/release path, portable execution tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Replace the deterministic reference backend with the first revision-pinned native whole-block backend behind the same accepted bundle, then run real model correctness tests before any distributed-inference claim.",
-  "instructions": "Completed as an actual executable reference path only. The accepted bundle is the first artifact with execution_authorized=true after all existing gates pass, but every portable run reports real_model_inference=false. No native model, CUDA/HIP, performance or distributed-inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-native-subprocess-whole-block",
+  "scope": "Implement the first revision-pinned native subprocess whole-block backend foundation behind AcceptedExecutionBundle: trusted-local executable SHA/revision identity, fixed argv/no shell, bounded JSON request/response protocol, exact segment/unit identity, timeout/cancel/error handling, and no arbitrary executable or path injection.",
+  "started_at": "2026-10-03T13:45:00+02:00",
+  "expires_at": "2026-10-03T15:45:00+02:00",
+  "base_commit": "9dc1e6bf5f7bbbec9a108e4eacb2bfe5a5a880c0",
+  "completion_condition": "Native subprocess backend contract, real subprocess integration tests, docs/ADR/validation/provenance updates and CI evidence are committed.",
+  "next_step": "Add a strict local worker protocol that can later be implemented by a llama.cpp/llama-halo-hybrid shim without exposing shell/argv injection or inventing unsupported upstream whole-block flags.",
+  "instructions": "Do not claim GGUF/model inference. Portable tests may execute a fixture subprocess; real_model_inference remains false until a revision-pinned model backend is connected and correctness-qualified."
 }
