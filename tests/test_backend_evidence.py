@@ -51,6 +51,7 @@ def self_test_result(source: str = "native-subprocess") -> dict:
         "probe_artifact_sha256": PROBE_SHA,
         "binding_sha256": BINDING_SHA,
         "config_sha256": CONFIG_SHA,
+        "node_id": "node-a",
         "tensormeld_device_id": "gpu0",
         "engine_device_name": "CUDA0",
         "backend_from_config": "cuda",
