@@ -32,8 +32,8 @@
       "commit": "552f18f912a32ea86edf82e2b76431cb7131538d",
       "license": "MIT",
       "adoption": "native-adapter-source-and-test-tool",
-      "integration_target": "--device + --override-tensor placement interface at pinned revision",
-      "status": "trusted-local probe, explicit device binding, strict backend self-test and static model-aware whole-block tensor-placement translator implemented; translator uses exact blk.N GGUF tensor coverage and current device binding; no real GGUF/model execution by the shim yet",
+      "integration_target": "--device + --override-tensor placement and deterministic llama-cli trial interface at pinned revision",
+      "status": "trusted-local probe, explicit device binding, strict backend self-test, pre/post-E3 whole-block placement translation, and closed native-trial launch specification implemented; portable CI uses a fixture CLI and no real GGUF has yet been executed by llama.cpp",
       "notice": "licenses/ggml-MIT.txt"
     },
     {

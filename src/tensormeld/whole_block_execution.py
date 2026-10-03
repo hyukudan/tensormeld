@@ -28,6 +28,7 @@ from .adapter_contract import AdapterCapabilities, validate_candidate_representa
 from .config_v2 import Config
 from .model_manifest import ModelManifest
 from .planning_contract import PlanningInput
+from .plan_identity import validate_candidate_hash
 from .qualification import QualificationEvidence, evidence_applies
 from .runtime_model_manifest import RuntimeModelManifest
 from .schema import ValidationError, text
@@ -57,26 +58,6 @@ def _canonical_sha256(value: Any) -> str:
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValidationError("execution bundle contains non-canonical data") from exc
     return hashlib.sha256(raw).hexdigest()
-
-
-def _candidate_hash(
-    config: Config,
-    planning: PlanningInput,
-    profile_name: str,
-    candidate: dict[str, Any],
-) -> str:
-    core = dict(candidate)
-    supplied = core.pop("plan_sha256", None)
-    identity = {
-        "config": config.fingerprint,
-        "planning": planning.fingerprint,
-        "profile": profile_name,
-        "plan": core,
-    }
-    expected = _canonical_sha256(identity)
-    if supplied != expected:
-        raise ValidationError("candidate plan_sha256 does not match candidate contents")
-    return expected
 
 
 @dataclass(frozen=True)
@@ -166,7 +147,7 @@ def accept_execution_bundle(
     if profile is None:
         raise ValidationError("runtime manifest profile is absent from config")
 
-    plan_sha = _candidate_hash(
+    plan_sha = validate_candidate_hash(
         config, planning, runtime_manifest.profile, candidate
     )
     representability = validate_candidate_representability(

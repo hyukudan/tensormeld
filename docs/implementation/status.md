@@ -52,6 +52,8 @@ the pre-alpha status or qualify any execution path.
 - bounded native-worker JSON protocol binds request, segment, device/unit ownership and payload identity across a real subprocess boundary;
 - pinned llama.cpp model-aware placement shim maps exact `blk.N` units to generated `--override-tensor` rules only after current native device binding and complete GGUF tensor-index checks;
 - initial llama.cpp placement shim is single-node/local-device only and rejects RPC devices, non-primary buffers, partial block coverage and caller-supplied patterns;
+- pre-E3 llama.cpp qualification placement translates an exact representable planner candidate without requiring an AcceptedExecutionBundle, avoiding E3 bootstrap circularity;
+- strict llama.cpp native trial spec binds approved llama-cli/GGUF SHA-256 identities, qualification placement, deterministic prompt/context/predict controls and scrubbed `LLAMA_ARG_*` environment;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
@@ -71,7 +73,7 @@ harmless fixtures or synthetic records where appropriate. Runtime-manifest tests
 fixture provenance and do not claim native runtime measurements. Injected-runner
 self-test results remain rejected from retained hardware evidence.
 
-No real llama.cpp CUDA/HIP `test-backend-ops` execution or real native runtime-model
+No real llama.cpp CUDA/HIP `test-backend-ops` execution, real llama-cli GGUF trial, or real native runtime-model
 manifest has been recorded by TensorMeld in this development environment. Runtime-identity
 CI uses fixtures and therefore proves invalidation/control semantics, not real driver or
 GPU identity capture.
