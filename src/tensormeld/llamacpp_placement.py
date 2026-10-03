@@ -16,6 +16,7 @@ from typing import Any
 from .adapter_contract import AdapterCapabilities
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
 from .llamacpp_selftest import BOUND_RESULT_SCHEMA
+from .model_manifest import ModelManifest
 from .schema import ValidationError, items, record, text, unique
 from .whole_block_execution import AcceptedExecutionBundle
 
@@ -109,7 +110,22 @@ def translate_whole_blocks_to_llamacpp(
     adapter: AdapterCapabilities,
     binding: LlamaCppPlacementBinding,
     bound_result: dict[str, Any],
+    model: ModelManifest,
+    gguf_index: dict[str, Any],
 ) -> LlamaCppPlacementTranslation:
+    if model.manifest_sha256 != bundle.model_manifest_sha256:
+        raise ValidationError("model manifest does not match accepted bundle")
+    if gguf_index.get("index_schema") != "tensormeld/gguf-index-v1":
+        raise ValidationError("gguf index schema mismatch")
+    if gguf_index.get("complete_shard_set") is not True:
+        raise ValidationError("llama.cpp shim requires a complete GGUF shard index")
+    if gguf_index.get("index_sha256") != model.tensor_index_sha256:
+        raise ValidationError("GGUF tensor index identity does not match model manifest")
+    if gguf_index.get("architecture") != model.architecture:
+        raise ValidationError("GGUF architecture does not match model manifest")
+    if gguf_index.get("tensor_count") != model.tensor_count:
+        raise ValidationError("GGUF tensor count does not match model manifest")
+
     if len(bundle.compute_nodes) != 1:
         raise ValidationError("initial llama.cpp shim supports only one compute node")
     if bundle.adapter_id != adapter.adapter_id:
@@ -146,6 +162,31 @@ def translate_whole_blocks_to_llamacpp(
         if engine_by_bound_device.get(device_id) != engine_name:
             raise ValidationError("placement binding engine device differs from current native mapping")
 
+    actual_block_indices: set[int] = set()
+    files = gguf_index.get("files")
+    if not isinstance(files, list) or not files:
+        raise ValidationError("GGUF index files must be a non-empty list")
+    for shard in files:
+        tensors = shard.get("tensors") if isinstance(shard, dict) else None
+        if not isinstance(tensors, list):
+            raise ValidationError("GGUF shard tensors must be a list")
+        for tensor in tensors:
+            name = tensor.get("name") if isinstance(tensor, dict) else None
+            if not isinstance(name, str):
+                raise ValidationError("GGUF tensor name is invalid")
+            if name.startswith("blk."):
+                match = re.match(r"^blk\.(0|[1-9][0-9]*)\.", name)
+                if not match:
+                    raise ValidationError(
+                        "GGUF contains an unsupported blk.* tensor namespace"
+                    )
+                actual_block_indices.add(int(match.group(1)))
+    if not actual_block_indices:
+        raise ValidationError("GGUF index contains no transformer block tensors")
+    actual_sorted = sorted(actual_block_indices)
+    if actual_sorted != list(range(actual_sorted[-1] + 1)):
+        raise ValidationError("GGUF transformer block indices are not contiguous from zero")
+
     indices: list[int] = []
     for unit_id in bundle.unit_ids:
         match = _BLOCK_RE.fullmatch(unit_id)
@@ -156,6 +197,10 @@ def translate_whole_blocks_to_llamacpp(
         raise ValidationError("duplicate transformer block unit index")
     if indices != list(range(indices[0], indices[0] + len(indices))):
         raise ValidationError("llama.cpp shim requires contiguous ascending transformer blocks")
+    if indices != actual_sorted:
+        raise ValidationError(
+            "accepted bundle must cover exactly every transformer block in the GGUF index"
+        )
 
     owner_by_unit: list[str | None] = [None] * len(bundle.unit_ids)
     for device, first, last in bundle.segments:
