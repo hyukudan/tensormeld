@@ -45,6 +45,8 @@ class LlamaCppPlacementBinding:
         r = record(data, "llama.cpp placement binding", {"placement_binding_schema", "adapter_id", "adapter_capabilities_sha256", "source_revision", "native_binding_sha256", "devices"})
         if r["placement_binding_schema"] != PLACEMENT_SCHEMA:
             raise ValidationError(f"placement_binding_schema: expected {PLACEMENT_SCHEMA}")
+        if adapter.engine != "llama.cpp":
+            raise ValidationError("placement binding requires a llama.cpp adapter")
         if r["adapter_id"] != adapter.adapter_id:
             raise ValidationError("placement binding adapter_id mismatch")
         if r["adapter_capabilities_sha256"] != adapter.fingerprint:
@@ -73,6 +75,10 @@ class LlamaCppPlacementBinding:
                 raise ValidationError(f"devices[{i}].buffer_type: unsupported buffer-type spelling")
             if engine_name.startswith("RPC") or buft.startswith("RPC"):
                 raise ValidationError("remote llama.cpp RPC devices are not permitted by this local shim")
+            if buft != engine_name:
+                raise ValidationError(
+                    "initial local llama.cpp shim requires the primary device buffer type"
+                )
             pairs.append((device_id, engine_name, buft))
         unique([d for d, _, _ in pairs], "devices.device_id")
         unique([e for _, e, _ in pairs], "devices.engine_device_name")
@@ -148,19 +154,25 @@ def translate_whole_blocks_to_llamacpp(
     if not isinstance(mappings, list):
         raise ValidationError("current llama.cpp bound result mappings must be a list")
     engine_by_bound_device = {}
+    backend_by_bound_device = {}
     for item in mappings:
         if isinstance(item, dict):
             device_id = item.get("tensormeld_device_id")
             engine_name = item.get("engine_device_name")
+            backend = item.get("backend_from_config")
             if isinstance(device_id, str) and isinstance(engine_name, str):
                 if device_id in engine_by_bound_device:
                     raise ValidationError("duplicate current native mapping for device")
                 engine_by_bound_device[device_id] = engine_name
+                backend_by_bound_device[device_id] = backend
     if set(engine_by_bound_device) != set(bundle.compute_devices):
         raise ValidationError("current native mappings must cover exactly the bundle compute devices")
+    adapter_devices = {device.id: device for device in adapter.devices}
     for device_id, engine_name, _ in binding.device_bindings:
         if engine_by_bound_device.get(device_id) != engine_name:
             raise ValidationError("placement binding engine device differs from current native mapping")
+        if backend_by_bound_device.get(device_id) != adapter_devices[device_id].backend:
+            raise ValidationError("current native mapping backend differs from adapter device")
 
     actual_block_indices: set[int] = set()
     files = gguf_index.get("files")
