@@ -180,5 +180,24 @@ class NativeSubprocessWholeBlockTests(unittest.TestCase):
             )
 
 
+    def test_engine_revision_must_match_bundle(self):
+        with self.assertRaises(ValidationError):
+            NativeSubprocessWholeBlockBackend(
+                bundle=bundle(self.worker_sha),
+                adapter_id="fixture-native",
+                engine_revision="other-revision",
+                worker_artifact_sha256=self.worker_sha,
+                executable=self.executable,
+                program=self.program,
+            )
+
+    def test_session_rejects_backend_bound_to_another_bundle(self):
+        backend = self.backend()
+        other = bundle(self.worker_sha)
+        object.__setattr__(other, "bundle_sha256", "d" * 64)
+        with self.assertRaises(ValidationError):
+            ReferenceWholeBlockSession(other, backend)
+
+
 if __name__ == "__main__":
     unittest.main()
