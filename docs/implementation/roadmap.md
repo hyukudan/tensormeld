@@ -56,7 +56,8 @@ Implemented:
 - pinned upstream `test-backend-ops` readiness contract with target-execution proof;
 - narrow observed → ready promotion after strict E2 backend self-test evidence;
 - native-only retained E2 backend-readiness record with exact identity fingerprints;
-- conservative retained-E2 applicability that still requires a live runtime recheck;
+- retained E2 v2 records bound to stable worker/OS/driver/runtime/device/topology identity;
+- exact live identity reuse of the narrow backend-ready fact after a fresh binding;
 - exact runtime model/operator/memory manifest contract;
 - per-device operator declarations plus one memory record per physical pool;
 - fixture/native-adapter provenance separation and non-executable CLI validation;
@@ -65,7 +66,6 @@ Implemented:
 
 Next:
 
-- live worker/driver/topology identity and invalidation rules for retained evidence;
 - real target-host backend-readiness/runtime-manifest records;
 - directional path profiling and evidence provenance.
 
