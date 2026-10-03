@@ -31,8 +31,30 @@ def binding(a=None):
         "adapter_id": a.adapter_id,
         "adapter_capabilities_sha256": a.fingerprint,
         "source_revision": PIN,
+        "native_binding_sha256": "0" * 64,
         "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}],
     }, adapter=a)
+
+
+def bound_result(a=None):
+    a = a or adapter()
+    return {
+        "result_schema": "tensormeld/llamacpp-device-binding-result-v1",
+        "config_sha256": "1" * 64,
+        "binding_sha256": "0" * 64,
+        "resolved_mappings": [
+            {
+                "tensormeld_device_id": "g0",
+                "engine_device_name": "ROCm0",
+                "backend_from_config": "hip",
+            },
+            {
+                "tensormeld_device_id": "g1",
+                "engine_device_name": "ROCm1",
+                "backend_from_config": "hip",
+            },
+        ],
+    }
 
 
 def bundle(a=None):
@@ -63,7 +85,7 @@ def bundle(a=None):
 class LlamaCppPlacementTests(unittest.TestCase):
     def test_exact_blocks_translate_to_anchored_tensor_overrides(self):
         a = adapter()
-        result = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a))
+        result = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a), bound_result=bound_result(a))
         self.assertEqual(result.block_owners, ((0, "g0", "ROCm0"), (1, "g0", "ROCm0"), (2, "g1", "ROCm1"), (3, "g1", "ROCm1")))
         self.assertEqual(result.argv_fragment[:4], ("--fit", "off", "--device", "ROCm0,RPC0[10.0.0.2:50052]"))
         self.assertIn(r"^blk\.0\..*=ROCm0", result.override_tensor_value)
@@ -74,37 +96,37 @@ class LlamaCppPlacementTests(unittest.TestCase):
         a = adapter()
         bad = replace(bundle(a), unit_ids=("blk.0", "embedding", "blk.2", "blk.3"))
         with self.assertRaises(ValidationError):
-            translate_whole_blocks_to_llamacpp(bad, adapter=a, binding=binding(a))
+            translate_whole_blocks_to_llamacpp(bad, adapter=a, binding=binding(a), bound_result=bound_result(a))
 
     def test_gap_or_reordered_blocks_is_rejected(self):
         a = adapter()
         for ids in (("blk.0", "blk.2", "blk.3", "blk.4"), ("blk.1", "blk.0", "blk.2", "blk.3")):
             with self.subTest(ids=ids):
                 with self.assertRaises(ValidationError):
-                    translate_whole_blocks_to_llamacpp(replace(bundle(a), unit_ids=ids), adapter=a, binding=binding(a))
+                    translate_whole_blocks_to_llamacpp(replace(bundle(a), unit_ids=ids), adapter=a, binding=binding(a), bound_result=bound_result(a))
 
     def test_overlap_or_missing_segment_coverage_is_rejected(self):
         a = adapter()
         for segments in (("overlap", (("g0", 0, 3), ("g1", 2, 4))), ("missing", (("g0", 0, 2), ("g1", 3, 4)))):
             with self.subTest(kind=segments[0]), self.assertRaises(ValidationError):
-                translate_whole_blocks_to_llamacpp(replace(bundle(a), segments=segments[1]), adapter=a, binding=binding(a))
+                translate_whole_blocks_to_llamacpp(replace(bundle(a), segments=segments[1]), adapter=a, binding=binding(a), bound_result=bound_result(a))
 
     def test_binding_must_cover_exact_compute_devices(self):
         a = adapter()
-        one = LlamaCppPlacementBinding.parse({"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": PIN, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}]}, adapter=a)
+        one = LlamaCppPlacementBinding.parse({"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": PIN, "native_binding_sha256": "0" * 64, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}]}, adapter=a)
         with self.assertRaises(ValidationError):
-            translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=one)
+            translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=one, bound_result=bound_result(a))
 
     def test_user_like_regex_or_delimiter_is_not_allowed_as_buffer_type(self):
         a = adapter()
         for buft in ("ROCm0,CPU", "x=y", ".*"):
-            raw = {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": PIN, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": buft}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}]}
+            raw = {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": PIN, "native_binding_sha256": "0" * 64, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": buft}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}]}
             with self.subTest(buft=buft), self.assertRaises(ValidationError):
                 LlamaCppPlacementBinding.parse(raw, adapter=a)
 
     def test_wrong_revision_or_adapter_identity_is_rejected(self):
         a = adapter()
-        raw = {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": "0" * 40, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}]}
+        raw = {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1", "adapter_id": a.adapter_id, "adapter_capabilities_sha256": a.fingerprint, "source_revision": "0" * 40, "native_binding_sha256": "0" * 64, "devices": [{"device_id": "g0", "engine_device_name": "ROCm0", "buffer_type": "ROCm0"}, {"device_id": "g1", "engine_device_name": "ROCm1", "buffer_type": "ROCm1"}]}
         with self.assertRaises(ValidationError):
             LlamaCppPlacementBinding.parse(raw, adapter=a)
 
@@ -127,11 +149,29 @@ class LlamaCppPlacementTests(unittest.TestCase):
         a = adapter()
         bad = replace(bundle(a), compute_nodes=("n0", "n1"))
         with self.assertRaises(ValidationError):
-            translate_whole_blocks_to_llamacpp(bad, adapter=a, binding=binding(a))
+            translate_whole_blocks_to_llamacpp(bad, adapter=a, binding=binding(a), bound_result=bound_result(a))
+
+    def test_native_mapping_identity_must_match(self):
+        a = adapter()
+        current = bound_result(a)
+        current["resolved_mappings"][1]["engine_device_name"] = "ROCm9"
+        with self.assertRaises(ValidationError):
+            translate_whole_blocks_to_llamacpp(
+                bundle(a), adapter=a, binding=binding(a), bound_result=current
+            )
+
+    def test_native_binding_fingerprint_must_match(self):
+        a = adapter()
+        current = bound_result(a)
+        current["binding_sha256"] = "1" * 64
+        with self.assertRaises(ValidationError):
+            translate_whole_blocks_to_llamacpp(
+                bundle(a), adapter=a, binding=binding(a), bound_result=current
+            )
 
     def test_translation_is_deterministic(self):
         a = adapter()
-        x = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a))
+        x = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a), bound_result=bound_result(a))
         y = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a))
         self.assertEqual(x, y)
 
