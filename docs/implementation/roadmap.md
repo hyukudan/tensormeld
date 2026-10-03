@@ -74,7 +74,7 @@ satisfy the real E2/E3 gates.
 
 ## M3 — First executable distributed inference
 
-- real target-host revision-pinned llama.cpp trial plus E3 correctness qualification on top of the implemented placement/native-trial foundations;
+- real target-host revision-pinned llama.cpp trial plus recording of the implemented E3 correctness contract on target hardware;
 - real target-host llama.cpp capability probe and device binding;
 - real backend self-test and live adapter qualification;
 - runtime memory/admission manifest for exact model/workload;
@@ -122,7 +122,15 @@ Native trial foundation implemented:
 - injected runners cannot impersonate native-subprocess evidence;
 - successful process/stdout can produce trial evidence only and never self-promotes E3, `qualified`, `executable` or `real_model_inference`.
 
-A real target-host llama.cpp run must still pass explicit E3 correctness before `real_model_inference=true` can exist.
+Native E3 correctness foundation implemented:
+
+- approved deterministic reference contract bound to exact trial spec, llama-cli SHA, model, placement and workload;
+- native-subprocess-only evaluator with exact stdout SHA-256 comparison;
+- exact runtime worker/device identity coverage;
+- QualificationEvidence v2 carrying candidate-plan, placement, trial, reference and runtime fingerprints;
+- execution admission requires the E3 v2 plan/runtime identities to match current readiness.
+
+A real target-host llama.cpp run must still produce and record this E3 evidence before production `real_model_inference=true` can be claimed.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
