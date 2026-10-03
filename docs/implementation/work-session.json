@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-mtls-remote-dispatch-e2e",
-  "scope": "Run bounded RemoteAgentClient/RemoteAgentDispatcher calls end-to-end through the real ephemeral-certificate mTLS loopback channel, including host-local object resolution for reserve and request/response correlation.",
-  "started_at": "2026-10-02T21:00:00+02:00",
-  "expires_at": "2026-10-02T23:00:00+02:00",
-  "base_commit": "bc3f2d36c1e900e551f388f248a0d141b7881778",
-  "completion_condition": "Real mTLS remote-dispatch integration tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Run the same authenticated remote-dispatch contract across explicitly configured private-LAN endpoints in separate processes/machines before introducing tensor transport or a whole-block executable adapter.",
-  "instructions": "Completed as real loopback mTLS end-to-end control integration. The peer sends only object identities; manifest/snapshot data remains host-local. No LAN performance, tensor transport, CUDA/HIP qualification, Windows GPU execution or distributed inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-multiprocess-private-endpoint",
+  "scope": "Validate the enrolled private endpoint and remote HostAgent control stack across separate OS processes using real mTLS, explicit PrivateEndpoint records, bounded dispatch, and host-local object authority.",
+  "started_at": "2026-10-03T08:56:00+02:00",
+  "expires_at": "2026-10-03T10:56:00+02:00",
+  "base_commit": "a1f3449576ca8d6180cfaf2fc4503eab3381baff",
+  "completion_condition": "Private endpoint client/server helpers, real separate-process mTLS remote-dispatch integration, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Add explicit private endpoint connect/serve helpers and run RemoteAgentClient/Dispatcher in separate processes over real mTLS loopback, keeping manifests/snapshots local to the server process.",
+  "instructions": "The CI endpoint remains loopback only. No claim of physical multi-machine LAN, tensor transport, worker execution, CUDA/HIP qualification, performance or distributed inference."
 }
