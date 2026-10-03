@@ -44,6 +44,7 @@ the pre-alpha status or qualify any execution path.
 - bounded remote HostAgent dispatch over the private control channel with request correlation;
 - remote reserve/recheck accepts only locally registered manifest/snapshot identities, never peer-supplied paths or payload objects;
 - real loopback mTLS integration now exercises RemoteAgentClient/Dispatcher end-to-end, including host-local reserve;
+- explicit private endpoint client/server helpers run the authenticated control stack across separate OS processes;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
