@@ -1,6 +1,6 @@
 {
   "schema": "tensormeld/third-party-v1",
-  "reviewed_on": "2026-10-01",
+  "reviewed_on": "2026-10-03",
   "vendored_source": false,
   "fully_resolved_dependency_lock": false,
   "components": [
@@ -33,7 +33,7 @@
       "license": "MIT",
       "adoption": "native-adapter-source-and-test-tool",
       "integration_target": "tests/test-backend-ops.cpp",
-      "status": "trusted-local probe, explicit device binding and strict backend-self-test adapter implemented; portable self-test coverage uses fixtures/injected runners; no real native GPU binary executed in this environment",
+      "status": "trusted-local probe, explicit device binding and strict backend-self-test adapter implemented; pinned interface re-reviewed for execution integration; upstream placement/RPC facilities exist but no generic stable TensorMeld whole-block-unit ABI is assumed; a model-aware shim remains required; no real native GPU binary executed in this environment",
       "notice": "licenses/ggml-MIT.txt"
     },
     {
@@ -42,7 +42,7 @@
       "commit": "f072119325817083ba9ee1011ea5be985371e2b0",
       "license": "MIT",
       "adoption": "native-adapter-candidate",
-      "status": "revision and root license checked; CUDA/Windows/interoperability not qualified",
+      "status": "revision/root license and current launch/RPC/override interface reviewed; fork demonstrates model-specific placement and multi-host RPC, but TensorMeld does not assume its model-specific tensor overrides are a generic whole-block ABI; no CUDA/Windows/interoperability qualification performed here",
       "notice": "licenses/ggml-MIT.txt"
     }
   ]
