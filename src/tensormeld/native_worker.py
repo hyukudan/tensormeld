@@ -92,7 +92,6 @@ def _default_runner(
         completed = subprocess.run(
             list(argv),
             input=stdin,
-            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=False,
@@ -118,8 +117,7 @@ class NativeSubprocessWholeBlockBackend:
         engine_revision: str,
         worker_artifact_sha256: str,
         executable: WorkerArtifact,
-        fixed_argv_tail: tuple[str, ...] = (),
-        support_artifacts: tuple[WorkerArtifact, ...] = (),
+        program: WorkerArtifact | None = None,
         timeout_s: float = DEFAULT_TIMEOUT_S,
         runner: Runner | None = None,
     ) -> None:
@@ -136,17 +134,12 @@ class NativeSubprocessWholeBlockBackend:
             )
         if not 0.1 <= timeout_s <= 120:
             raise ValidationError("timeout_s must be within 0.1..120 seconds")
-        if any(not isinstance(arg, str) or not arg for arg in fixed_argv_tail):
-            raise ValidationError("fixed worker argv tail must contain nonempty strings")
-        if len(fixed_argv_tail) > 8:
-            raise ValidationError("fixed worker argv tail exceeds bound")
         self.bundle = bundle
         self.adapter_id = adapter_id
         self.engine_revision = engine_revision
         self.worker_artifact_sha256 = worker_sha
         self.executable = executable
-        self.fixed_argv_tail = tuple(fixed_argv_tail)
-        self.support_artifacts = tuple(support_artifacts)
+        self.program = program
         self.timeout_s = timeout_s
         self.runner = runner or _default_runner
 
@@ -179,10 +172,10 @@ class NativeSubprocessWholeBlockBackend:
             }),
             **segment,
             "payload_b64": base64.b64encode(payload).decode("ascii"),
-            "support_artifacts": [
-                {"sha256": artifact.sha256}
-                for artifact in self.support_artifacts
-            ],
+            "launcher_artifact_sha256": self.executable.sha256,
+            "program_artifact_sha256": (
+                self.program.sha256 if self.program is not None else None
+            ),
             "real_model_inference": False,
         }
         return request
@@ -213,7 +206,11 @@ class NativeSubprocessWholeBlockBackend:
         if len(encoded) > MAX_WORKER_OUTPUT_BYTES:
             raise ValidationError("native worker request exceeds bounded protocol size")
 
-        argv = (str(self.executable.path), *self.fixed_argv_tail)
+        argv = (
+            (str(self.executable.path), str(self.program.path), "--tensormeld-worker-v1")
+            if self.program is not None
+            else (str(self.executable.path), "--tensormeld-worker-v1")
+        )
         rc, stdout, stderr = self.runner(argv, encoded, self.timeout_s)
         if len(stdout) + len(stderr) > MAX_WORKER_OUTPUT_BYTES:
             raise ValidationError("native worker output exceeds bounded protocol size")
