@@ -1,13 +1,15 @@
 """Retained, identity-bound backend-readiness evidence.
 
 A retained record proves only that a native backend self-test ran successfully for an
-exact set of TensorMeld/llama.cpp identities. It does not restore runtime readiness,
-reserve memory, qualify a model, or authorize inference after a process/environment
-change. Live worker/driver/topology invalidation inputs are deliberately still required
-before retained evidence can participate in execution admission.
+exact set of TensorMeld/llama.cpp identities. Version 2 also binds a stable live runtime
+identity covering worker build, OS, driver/runtime, physical device and topology.
+
+An exact current identity match may restore only the narrow runtime backend-ready fact.
+It still does not reserve memory, qualify a model, or authorize inference.
 """
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -492,6 +494,10 @@ def validate_llamacpp_backend_evidence(
     retained_identity_payload = dict(retained_identity_record)
     retained_identity_payload.pop("identity_sha256", None)
     retained_identity = RuntimeIdentity.parse(retained_identity_payload)
+    if bound_result.get("node_id") != current_runtime_identity.node_id:
+        raise ValidationError(
+            "current runtime identity node does not match bound result"
+        )
     if current_runtime_identity.tensormeld_device_id != tensormeld_device_id:
         raise ValidationError(
             "current runtime identity applies to a different TensorMeld device"
@@ -501,6 +507,11 @@ def validate_llamacpp_backend_evidence(
             "retained E2 evidence live runtime identity mismatch"
         )
 
+    promoted_observation = deepcopy(current)
+    promoted_observation["devices"][tensormeld_device_id]["state"] = "ready"
+    promoted_observation["qualified"] = False
+    promoted_observation["executable"] = False
+
     return {
         "evidence_schema": EVIDENCE_SCHEMA,
         "evidence_sha256": value["evidence_sha256"],
@@ -509,6 +520,7 @@ def validate_llamacpp_backend_evidence(
         "runtime_identity_sha256": current_runtime_identity.identity_sha256,
         "requires_live_runtime_recheck": False,
         "runtime_ready": True,
+        "runtime_observation": promoted_observation,
         "reservation_created": False,
         "qualified": False,
         "executable": False,
