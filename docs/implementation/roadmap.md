@@ -80,14 +80,23 @@ satisfy the real E2/E3 gates.
 - runtime memory/admission manifest for exact model/workload;
 - atomic/leased resource admission and launch-time recheck;
 - secure enrolled agent and authenticated private transport;
-- whole-block executable adapter across one or more nodes;
+- native whole-block executable adapter across one or more nodes;
 - immutable accepted plan;
 - stable local streaming API;
-- cancellation and deterministic release;
+- cancellation and deterministic release for native sessions;
 - reference correctness suite;
 - same-model comparisons: local vs companion vs distributed.
 
-Exit gate: a model larger than the entrypoint GPU can execute through a verified plan.
+Reference execution foundation implemented:
+
+- immutable accepted-execution bundle that recomputes planner integrity and adapter representability;
+- exact E3 qualification applicability and worker-artifact match;
+- exact per-device backend-ready proofs and per-node launch-admitted leases;
+- bounded reference whole-block session with deterministic fixture backend, cancellation and release.
+
+The reference path deliberately reports `real_model_inference=false`; the native backend remains required.
+
+Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
 ## M4 — Planner quality and product UX
 
