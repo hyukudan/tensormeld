@@ -1,7 +1,7 @@
 """Strict revision-pinned llama.cpp native trial runner.
 
 This module binds an approved local llama-cli artifact, one exact local GGUF file, the
-accepted execution bundle and the deterministic llama.cpp placement translation into a
+pre-E3 qualification placement and the deterministic llama.cpp placement translation into a
 closed subprocess argv.
 
 The runner can execute a real local process, but its result is only trial evidence.
@@ -210,6 +210,10 @@ def run_llamacpp_native_trial(
     execution_source = text(execution_source, "execution_source")
     if execution_source not in {"native-subprocess", "fixture-subprocess", "injected-runner"}:
         raise ValidationError("unsupported execution_source")
+    if runner is not None and execution_source == "native-subprocess":
+        raise ValidationError(
+            "injected runner cannot be labeled as native-subprocess evidence"
+        )
     actual_runner = runner or _default_runner
     rc, stdout, stderr = actual_runner(spec.argv, timeout_s)
     if len(stdout) + len(stderr) > MAX_STDIO_BYTES:
@@ -232,7 +236,7 @@ def run_llamacpp_native_trial(
         "stdout_bytes": len(stdout),
         "stderr_bytes": len(stderr),
         "process_succeeded": rc == 0,
-        "model_output_observed": rc == 0 and bool(stdout),
+        "stdout_nonempty": rc == 0 and bool(stdout),
         "evidence_level": "E2.5" if execution_source == "native-subprocess" and rc == 0 else "fixture",
         "qualified": False,
         "real_model_inference": False,
@@ -240,6 +244,7 @@ def run_llamacpp_native_trial(
         "warnings": [
             "A successful native trial is not E3 model correctness qualification.",
             "stdout presence alone is not proof of semantically correct model output.",
+            "Injected runners cannot be labeled as native-subprocess evidence.",
         ],
     }
     return result
