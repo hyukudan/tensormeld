@@ -124,7 +124,7 @@ class LlamaCppPlacementTests(unittest.TestCase):
         a = adapter()
         result = translate_whole_blocks_to_llamacpp(bundle(a), adapter=a, binding=binding(a), bound_result=bound_result(a), model=model(), gguf_index=gguf_index())
         self.assertEqual(result.block_owners, ((0, "g0", "ROCm0"), (1, "g0", "ROCm0"), (2, "g1", "ROCm1"), (3, "g1", "ROCm1")))
-        self.assertEqual(result.argv_fragment[:4], ("--fit", "off", "--device", "ROCm0,RPC0[10.0.0.2:50052]"))
+        self.assertEqual(result.argv_fragment[:4], ("--fit", "off", "--device", "ROCm0,ROCm1"))
         self.assertIn(r"^blk\.0\..*=ROCm0", result.override_tensor_value)
         self.assertIn(r"^blk\.3\..*=ROCm1", result.override_tensor_value)
         self.assertFalse(result.as_record()["real_model_inference"])
