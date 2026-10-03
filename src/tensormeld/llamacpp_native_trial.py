@@ -15,12 +15,11 @@ from pathlib import Path
 import subprocess
 from typing import Any, Callable, Sequence
 
-from .llamacpp_placement import LlamaCppPlacementTranslation
+from .llamacpp_placement import LlamaCppQualificationPlacement
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
 from .model_manifest import ModelManifest
 from .native_worker import WorkerArtifact, approved_worker_artifact
 from .schema import ValidationError, text
-from .whole_block_execution import AcceptedExecutionBundle
 
 TRIAL_SCHEMA = "tensormeld/llamacpp-native-trial-v1"
 MAX_PROMPT_CHARS = 4096
@@ -76,7 +75,9 @@ class LlamaCppNativeTrialSpec:
     llama_cli_sha256: str
     model_manifest_sha256: str
     gguf_sha256: str
-    accepted_bundle_sha256: str
+    config_sha256: str
+    planning_input_sha256: str
+    candidate_plan_sha256: str
     placement_sha256: str
     prompt: str
     context_tokens: int
@@ -87,23 +88,18 @@ class LlamaCppNativeTrialSpec:
 
 def build_llamacpp_native_trial_spec(
     *,
-    bundle: AcceptedExecutionBundle,
     model: ModelManifest,
-    placement: LlamaCppPlacementTranslation,
+    placement: LlamaCppQualificationPlacement,
     llama_cli: WorkerArtifact,
     gguf: ApprovedGGUF,
     prompt: str,
     context_tokens: int,
     predict_tokens: int = 1,
 ) -> LlamaCppNativeTrialSpec:
-    if bundle.engine_revision != LLAMACPP_PINNED_COMMIT:
-        raise ValidationError("accepted bundle is not pinned to the required llama.cpp revision")
     if placement.source_revision != LLAMACPP_PINNED_COMMIT:
-        raise ValidationError("placement translation source revision mismatch")
-    if placement.accepted_bundle_sha256 != bundle.bundle_sha256:
-        raise ValidationError("placement translation belongs to another accepted bundle")
-    if model.manifest_sha256 != bundle.model_manifest_sha256:
-        raise ValidationError("model manifest does not match accepted bundle")
+        raise ValidationError("qualification placement source revision mismatch")
+    if model.manifest_sha256 != placement.model_manifest_sha256:
+        raise ValidationError("model manifest does not match qualification placement")
     if gguf.sha256 != model.files[0].sha256:
         raise ValidationError("approved GGUF identity does not match model manifest")
     prompt = text(prompt, "prompt")
@@ -142,7 +138,9 @@ def build_llamacpp_native_trial_spec(
         "llama_cli_sha256": llama_cli.sha256,
         "model_manifest_sha256": model.manifest_sha256,
         "gguf_sha256": gguf.sha256,
-        "accepted_bundle_sha256": bundle.bundle_sha256,
+        "config_sha256": placement.config_sha256,
+        "planning_input_sha256": placement.planning_input_sha256,
+        "candidate_plan_sha256": placement.candidate_plan_sha256,
         "placement_sha256": placement.fingerprint,
         "prompt": prompt,
         "context_tokens": context_tokens,
@@ -163,7 +161,9 @@ def build_llamacpp_native_trial_spec(
         llama_cli.sha256,
         model.manifest_sha256,
         gguf.sha256,
-        bundle.bundle_sha256,
+        placement.config_sha256,
+        placement.planning_input_sha256,
+        placement.candidate_plan_sha256,
         placement.fingerprint,
         prompt,
         context_tokens,
@@ -185,7 +185,11 @@ def _default_runner(argv: Sequence[str], timeout_s: float) -> tuple[int, bytes, 
             shell=False,
             timeout=timeout_s,
             check=False,
-            env=None,
+            env={
+                key: value
+                for key, value in __import__("os").environ.items()
+                if not key.startswith("LLAMA_ARG_")
+            },
         )
     except subprocess.TimeoutExpired as exc:
         raise ValidationError(
@@ -217,7 +221,9 @@ def run_llamacpp_native_trial(
         "llama_cli_sha256": spec.llama_cli_sha256,
         "model_manifest_sha256": spec.model_manifest_sha256,
         "gguf_sha256": spec.gguf_sha256,
-        "accepted_bundle_sha256": spec.accepted_bundle_sha256,
+        "config_sha256": spec.config_sha256,
+        "planning_input_sha256": spec.planning_input_sha256,
+        "candidate_plan_sha256": spec.candidate_plan_sha256,
         "placement_sha256": spec.placement_sha256,
         "execution_source": execution_source,
         "exit_code": rc,
