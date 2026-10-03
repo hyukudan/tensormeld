@@ -34,6 +34,7 @@ def bundle(worker_sha: str) -> AcceptedExecutionBundle:
         plan_sha256="3" * 64,
         representability_sha256="4" * 64,
         adapter_id="fixture-native",
+        engine_revision="fixture-revision",
         adapter_capabilities_sha256="5" * 64,
         model_manifest_sha256="6" * 64,
         qualification_evidence_sha256="7" * 64,
