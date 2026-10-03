@@ -26,4 +26,4 @@ tampering, driver identity change and exact-match runtime-ready promotion.
 All worker/driver/runtime/topology values in portable tests are fixtures. No real GPU,
 CUDA/HIP driver, Windows GPU backend, performance or distributed inference is qualified.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #11, workflow `Portable Python tests`, run #116 (37119396744) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates fixture-based runtime-identity/invalidation semantics only; it does not establish any real GPU, driver/runtime or topology identity.
