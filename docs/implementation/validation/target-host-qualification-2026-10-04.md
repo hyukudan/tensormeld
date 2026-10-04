@@ -41,4 +41,4 @@ and incomplete E2 coverage.
 No subprocess is launched by the orchestrator. No physical GPU, real llama.cpp model
 correctness, native memory measurement or distributed inference is established.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #17, workflow `Portable Python tests`, run #182 (37225661220) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates cross-artifact qualification-chain semantics using native-shaped fixture records only; it does not establish real target-host E2/E3, native memory measurement or GPU/model execution.
