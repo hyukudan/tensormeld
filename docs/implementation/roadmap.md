@@ -66,7 +66,7 @@ Implemented:
 
 Next:
 
-- real target-host backend-readiness/runtime-manifest records;
+- real target-host backend-readiness/runtime-manifest records using the implemented handoff-bound collector;
 - directional path profiling and evidence provenance.
 
 No real native GPU backend has yet been qualified by TensorMeld; portable fixtures do not
@@ -140,7 +140,18 @@ Target-host qualification handoff foundation implemented:
 - emit exact runtime-manifest requirements while keeping reservation/launch/executable false;
 - surface an explicit E3-vs-profile workload mismatch instead of silently widening qualification.
 
-A real target-host run must still provide genuine native artifacts and measured runtime manifest data before admission/execution.
+Native runtime-manifest collection foundation implemented:
+
+- runtime measurement bound to exact qualification handoff/worker/config/model/adapter/runtime identities;
+- operator requirements are a separate handoff-bound contract and cannot be self-declared by measurement observations;
+- exact profile workload required;
+- one runtime identity per compute device;
+- at least each compute device's physical pool measured, with no duplicate shared-pool records;
+- existing RuntimeModelManifest parser remains the canonical capacity/operator invariant gate;
+- native manifest provenance requires both measurement and operator-requirement provenance to be native;
+- collector remains non-reserving/non-executable and only reports whether inputs are admission-ready.
+
+A real target-host run must still supply genuine native measurements and then enter fresh runtime observation/reservation/launch-recheck gates before execution.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
