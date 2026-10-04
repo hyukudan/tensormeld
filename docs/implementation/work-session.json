@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-target-host-qualification-orchestrator",
   "scope": "Implement a fail-closed target-host qualification orchestrator that validates and chains existing probe/binding/E2/runtime-identity/pre-E3-placement/native-trial/E3 artifacts into exact runtime-manifest/admission inputs without launching native commands or converting fixtures into hardware evidence.",
   "started_at": "2026-10-04T20:41:00+02:00",
   "expires_at": "2026-10-04T22:41:00+02:00",
   "base_commit": "e53d5ee4287a11d4e168122df880486f8064bea1",
   "completion_condition": "Qualification-chain state contract, strict cross-artifact identity validation, runtime-manifest/admission handoff package, portable tests, docs/ADR/validation and CI are committed.",
-  "next_step": "Validate all retained/native artifacts against one config/model/plan/runtime identity tuple and emit a deterministic target-host handoff package that still requires native runtime-manifest measurement and launch admission.",
-  "instructions": "No subprocess launches, no model downloads, no synthetic-to-native promotion, no automatic E3/reference creation, and no GPU/model/performance/distributed-inference claims. Fixtures remain fixtures."
+  "next_step": "Run this qualification chain on a real target host, then feed native operator/memory measurements matching the handoff into RuntimeModelManifest and LocalAdmissionController before constructing AcceptedExecutionBundle.",
+  "instructions": "Completed as a pure validator/assembler. It runs no subprocesses and performs no hardware measurement. Portable tests use fixtures/native-shaped records and do not constitute real E2/E3 or GPU evidence."
 }

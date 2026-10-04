@@ -57,6 +57,7 @@ the pre-alpha status or qualify any execution path.
 - QualificationEvidence v2 binds E3 to candidate plan, placement, trial spec, correctness contract and exact runtime-identity fingerprints while preserving v1 parsing compatibility;
 - native llama.cpp E3 correctness evaluator requires genuine `native-subprocess` trial provenance, exact stdout SHA-256 match to an approved reference contract and exact runtime worker/device identity before emitting E3;
 - AcceptedExecutionBundle now requires E3 v2 applicability to the same plan and same runtime identities as current backend-readiness evidence;
+- target-host qualification orchestrator recomputes current probe/binding and pre-E3 placement, validates retained E2 for every compute device, reruns E3 evaluation, combines ready-state observations and emits a deterministic non-executable runtime-manifest/admission handoff;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.

@@ -332,3 +332,33 @@ changes, trial/spec/placement tampering and workload mismatch.
 
 A passing portable E3 test proves evaluator semantics only. It is not evidence that
 llama.cpp, a GGUF model, CUDA/HIP kernels or a real GPU executed in hosted CI.
+
+
+## Target-host qualification-chain tests
+
+The target-host orchestrator launches nothing. It receives already-produced probe,
+binding, retained backend E2, runtime identity, pre-E3 placement, native-trial and
+correctness-reference artifacts and recomputes/validates their relationships.
+
+The supplied bound result is compared against a freshly recomputed
+`bind_llamacpp_probe` result, and the pre-E3 placement is independently regenerated
+from Config, PlanningInput, planner candidate, adapter, current native binding and complete
+GGUF index.
+
+Every compute device must have exact retained E2 evidence, expected test artifact identity
+and current RuntimeIdentity. Each E2 record is revalidated and its narrow
+`observed -> ready` promotion is combined into one runtime observation.
+
+The orchestrator reruns E3 correctness evaluation from the retained native trial and
+reference contract rather than trusting a supplied "qualified" flag. Its output is a
+deterministic handoff containing exact runtime-manifest identity requirements and a
+combined ready observation, but always keeps reservation, launch authorization and
+execution false.
+
+The handoff explicitly compares the E3-tested workload against the target profile workload.
+A narrower E3 trial is reported as a mismatch; it is never silently widened into profile
+qualification.
+
+Portable tests use native-shaped fixtures only and cover stale bound records, changed
+runtime identity, fixture trial provenance, probe/trial binary mismatch and incomplete E2
+coverage. This is orchestration-contract evidence, not real target-host qualification.
