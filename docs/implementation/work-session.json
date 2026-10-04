@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-native-runtime-manifest-collector",
   "scope": "Implement a strict native runtime manifest collector that consumes a validated target-host qualification handoff plus native operator/memory measurements bound to the same worker/runtime identities, and emits the exact RuntimeModelManifest required for admission without reserving or executing anything.",
   "started_at": "2026-10-04T20:45:00+02:00",
   "expires_at": "2026-10-04T22:45:00+02:00",
   "base_commit": "11b6b085e376561eb6f5319841edcce061407eea",
   "completion_condition": "Native measurement contract, handoff-bound runtime manifest collector, strict identity/invariant tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Bind native operator coverage and physical-pool memory measurements to the exact qualification handoff, validate worker/runtime identities and produce RuntimeModelManifest with provenance native-adapter.",
-  "instructions": "No measurement subprocesses, no synthetic-to-native promotion, no inferred memory, no duplicated shared pools, no reservation/launch/execution claim. Fixture measurements stay fixtures."
+  "next_step": "On a real target host, collect native operator requirements plus operator/memory observations for the exact qualification handoff, produce a native-adapter RuntimeModelManifest, then feed it with a fresh runtime observation into LocalAdmissionController reserve/launch_recheck.",
+  "instructions": "Completed as a pure collector/validator. It performs no measurement or subprocess launch, creates no reservation and makes no execution claim. Portable tests use fixture/mixed provenance only."
 }
