@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import replace
 import unittest
 
 from tensormeld.native_runtime_collector import (
@@ -103,20 +104,10 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
         )
 
     def test_missing_compute_device_pool_is_rejected(self):
-        raw = self.measurement_raw()
-        raw["physical_pool_memory"] = [{
-            "pool_ref": next(
-                p.id for p in self.fixture.config.pools if p.id != self.pool.id
-            ),
-            "node": next(
-                p.node for p in self.fixture.config.pools if p.id != self.pool.id
-            ),
-            "resident_bytes": 1,
-            "state_bytes": 0,
-            "workspace_peak_bytes": 0,
-            "preparation_peak_bytes": 1,
-        }]
-        measurement = NativeRuntimeMeasurement.parse(raw, handoff=self.handoff)
+        measurement = replace(
+            self.parse_measurement(),
+            physical_pool_memory=(),
+        )
         with self.assertRaises(ValidationError):
             collect_native_runtime_manifest(
                 config=self.fixture.config,
@@ -124,6 +115,7 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
                 adapter=self.fixture.adapter,
                 handoff=self.handoff,
                 measurement=measurement,
+                operator_requirements=self.operator_requirements(),
             )
 
     def test_runtime_identity_mismatch_is_rejected_at_measurement_parse(self):
@@ -150,6 +142,21 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
         )
         self.assertFalse(result.manifest.operator_coverage_complete)
         self.assertFalse(result.record["admission_ready_inputs"])
+
+    def test_operator_requirements_are_independent_and_handoff_bound(self):
+        raw = {
+            "operator_requirements_schema": "tensormeld/runtime-operator-requirements-v1",
+            "requirements_source": "fixture",
+            "handoff_sha256": self.handoff.fingerprint,
+            "model_manifest_sha256": self.fixture.model.manifest_sha256,
+            "candidate_plan_sha256": "0" * 64,
+            "placement_sha256": self.handoff.record["placement_sha256"],
+            "required_operators": ["ADD"],
+            "qualified": False,
+            "executable": False,
+        }
+        with self.assertRaises(ValidationError):
+            RuntimeOperatorRequirements.parse(raw, handoff=self.handoff)
 
     def test_workload_must_match_handoff_profile_exactly(self):
         raw = self.measurement_raw()
