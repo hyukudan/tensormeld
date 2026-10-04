@@ -33,4 +33,4 @@ A successful result reports:
 
 No inference process is launched by this orchestration layer.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #19, workflow `Portable Python tests`, run #203 (37228884230) passed all 7 jobs after one earlier run exposed a collection-provenance consistency gap. The fix now requires the collection record's `runtime_manifest_provenance` to equal the parsed manifest provenance. Linux and Windows Python 3.11/3.13, optional-adapter integration on both operating systems, and the dedicated real-mTLS-loopback job all passed.
