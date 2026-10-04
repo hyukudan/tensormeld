@@ -386,6 +386,36 @@ class NativeRuntimeManifestCollection:
         return self.record["collector_sha256"]
 
 
+def validate_native_runtime_collection(
+    collection: NativeRuntimeManifestCollection,
+) -> dict[str, Any]:
+    if not isinstance(collection, NativeRuntimeManifestCollection):
+        raise ValidationError("expected NativeRuntimeManifestCollection")
+    record = collection.record
+    if not isinstance(record, dict):
+        raise ValidationError("runtime collection record must be an object")
+    if record.get("collector_schema") != COLLECTOR_SCHEMA:
+        raise ValidationError(f"collector_schema: expected {COLLECTOR_SCHEMA}")
+    supplied = record.get("collector_sha256")
+    if not isinstance(supplied, str):
+        raise ValidationError("runtime collection has no fingerprint")
+    core = dict(record)
+    core.pop("collector_sha256", None)
+    if _canonical_sha256(core) != supplied:
+        raise ValidationError("runtime collection fingerprint mismatch")
+    if record.get("runtime_manifest_sha256") != collection.manifest.fingerprint:
+        raise ValidationError("runtime collection manifest fingerprint mismatch")
+    if record.get("runtime_manifest_provenance") != collection.manifest.provenance:
+        raise ValidationError("runtime collection manifest provenance mismatch")
+    if (
+        record.get("reservation_created") is not False
+        or record.get("launch_authorized") is not False
+        or record.get("executable") is not False
+    ):
+        raise ValidationError("runtime collection cannot self-promote execution")
+    return record
+
+
 def collect_native_runtime_manifest(
     *,
     config: Config,
