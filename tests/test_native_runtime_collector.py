@@ -5,6 +5,7 @@ import unittest
 
 from tensormeld.native_runtime_collector import (
     NativeRuntimeMeasurement,
+    RuntimeOperatorRequirements,
     collect_native_runtime_manifest,
 )
 from tensormeld.schema import ValidationError
@@ -39,7 +40,6 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             "engine_revision": self.fixture.adapter.engine_revision,
             "worker_artifact_sha256": self.fixture.spec.llama_cli_sha256,
             "workload": dict(self.req["required_workload"]),
-            "required_operators": ["ADD"],
             "devices": [{
                 "id": self.device.id,
                 "node": self.device.node,
@@ -68,6 +68,19 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             handoff=self.handoff,
         )
 
+    def operator_requirements(self, *, source="fixture", required=("ADD",)):
+        return RuntimeOperatorRequirements.parse({
+            "operator_requirements_schema": "tensormeld/runtime-operator-requirements-v1",
+            "requirements_source": source,
+            "handoff_sha256": self.handoff.fingerprint,
+            "model_manifest_sha256": self.fixture.model.manifest_sha256,
+            "candidate_plan_sha256": self.handoff.record["candidate_plan_sha256"],
+            "placement_sha256": self.handoff.record["placement_sha256"],
+            "required_operators": list(required),
+            "qualified": False,
+            "executable": False,
+        }, handoff=self.handoff)
+
     def test_fixture_measurement_builds_non_executable_runtime_manifest(self):
         measurement = self.parse_measurement()
         result = collect_native_runtime_manifest(
@@ -76,6 +89,7 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             adapter=self.fixture.adapter,
             handoff=self.handoff,
             measurement=measurement,
+            operator_requirements=self.operator_requirements(),
         )
         self.assertEqual(result.manifest.provenance, "fixture")
         self.assertTrue(result.manifest.operator_coverage_complete)
@@ -123,15 +137,16 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             self.parse_measurement(worker_artifact_sha256="0" * 64)
 
     def test_incomplete_operator_coverage_remains_non_admission_ready(self):
-        raw = self.measurement_raw()
-        raw["required_operators"] = ["ADD", "MUL"]
-        measurement = NativeRuntimeMeasurement.parse(raw, handoff=self.handoff)
+        measurement = self.parse_measurement()
         result = collect_native_runtime_manifest(
             config=self.fixture.config,
             model=self.fixture.model,
             adapter=self.fixture.adapter,
             handoff=self.handoff,
             measurement=measurement,
+            operator_requirements=self.operator_requirements(
+                required=("ADD", "MUL")
+            ),
         )
         self.assertFalse(result.manifest.operator_coverage_complete)
         self.assertFalse(result.record["admission_ready_inputs"])
@@ -172,6 +187,9 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             adapter=self.fixture.adapter,
             handoff=self.handoff,
             measurement=measurement,
+            operator_requirements=self.operator_requirements(
+                source="native-adapter"
+            ),
         )
         self.assertEqual(result.manifest.provenance, "native-adapter")
         self.assertTrue(result.manifest.operator_coverage_complete)
