@@ -78,7 +78,7 @@ satisfy the real E2/E3 gates.
 - real target-host llama.cpp capability probe and device binding;
 - real backend self-test and live adapter qualification;
 - runtime memory/admission manifest for exact model/workload;
-- atomic/leased resource admission and launch-time recheck;
+- atomic/leased resource admission and launch-time recheck on real target hardware using the implemented admission orchestrator;
 - secure enrolled agent and authenticated private transport;
 - native whole-block executable adapter across one or more nodes;
 - immutable accepted plan;
@@ -151,7 +151,17 @@ Native runtime-manifest collection foundation implemented:
 - native manifest provenance requires both measurement and operator-requirement provenance to be native;
 - collector remains non-reserving/non-executable and only reports whether inputs are admission-ready.
 
-A real target-host run must still supply genuine native measurements and then enter fresh runtime observation/reservation/launch-recheck gates before execution.
+Target-host admission orchestration foundation implemented:
+
+- require intact admission-ready native runtime-manifest collection;
+- one explicit compute-node authority for the current llama.cpp local shim;
+- reserve exact physical-pool preparation peaks;
+- require a distinct second runtime observation for launch recheck;
+- rollback lease on launch rejection or later bundle-construction failure;
+- construct AcceptedExecutionBundle only from the same plan/E3/readiness/manifest tuple;
+- keep inference_started=false even after execution authorization.
+
+A real target-host run must still provide genuine native artifacts/measurements and then explicitly start the native worker from the accepted bundle.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
