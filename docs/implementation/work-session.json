@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-native-e3-correctness",
-  "scope": "Implement native E3 correctness evaluation for revision-pinned llama.cpp trials using a deterministic reference contract, exact trial/model/placement/workload/runtime identities, and emission of existing QualificationEvidence only from genuine native-subprocess evidence.",
-  "started_at": "2026-10-03T21:10:00+02:00",
-  "expires_at": "2026-10-03T23:10:00+02:00",
-  "base_commit": "049853c8fcec3035304eb40ae310e26965269333",
-  "completion_condition": "Reference contract, strict E3 evaluator, fixture-vs-native provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Run the pinned llama.cpp trial on an actual target host, retain its native trial result and runtime identities, approve a deterministic reference output, emit real E3 v2 evidence, then build the exact runtime manifest/admission bundle for the same workload.",
-  "instructions": "Completed as evaluator/control-plane functionality. Portable tests use native-shaped synthetic records; no real llama.cpp/GGUF/GPU execution or target-host E3 claim is made by CI."
+  "status": "active",
+  "owner": "chatgpt-target-host-qualification-orchestrator",
+  "scope": "Implement a fail-closed target-host qualification orchestrator that validates and chains existing probe/binding/E2/runtime-identity/pre-E3-placement/native-trial/E3 artifacts into exact runtime-manifest/admission inputs without launching native commands or converting fixtures into hardware evidence.",
+  "started_at": "2026-10-04T20:41:00+02:00",
+  "expires_at": "2026-10-04T22:41:00+02:00",
+  "base_commit": "e53d5ee4287a11d4e168122df880486f8064bea1",
+  "completion_condition": "Qualification-chain state contract, strict cross-artifact identity validation, runtime-manifest/admission handoff package, portable tests, docs/ADR/validation and CI are committed.",
+  "next_step": "Validate all retained/native artifacts against one config/model/plan/runtime identity tuple and emit a deterministic target-host handoff package that still requires native runtime-manifest measurement and launch admission.",
+  "instructions": "No subprocess launches, no model downloads, no synthetic-to-native promotion, no automatic E3/reference creation, and no GPU/model/performance/distributed-inference claims. Fixtures remain fixtures."
 }
