@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-target-host-admission-orchestrator",
-  "scope": "Implement a fail-closed target-host admission orchestrator that consumes an admission-ready native runtime-manifest collection, exact E3/readiness artifacts and two distinct fresh runtime snapshots, performs reserve then launch_recheck, and only then constructs AcceptedExecutionBundle without launching inference.",
-  "started_at": "2026-10-04T20:50:00+02:00",
-  "expires_at": "2026-10-04T22:50:00+02:00",
-  "base_commit": "12709da4a4c6dfbeaeb5a9a516e0cfed6d6c188f",
-  "completion_condition": "Admission orchestration contract, reserve/fresh-recheck/accepted-bundle integration tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "On a real target host, feed genuine native qualification/measurement artifacts and two fresh runtime observations through this orchestrator, then bind the accepted bundle to the native llama.cpp worker/session lifecycle without weakening the admission gates.",
-  "instructions": "Completed as control-plane admission orchestration only. It does not start inference. Portable tests use constructed native-shaped evidence and local admission fixtures, not real GPU reservations."
+  "status": "active",
+  "owner": "chatgpt-native-session-lifecycle",
+  "scope": "Implement a strict native session launcher/lifecycle bound to AcceptedExecutionBundle and an already launch-admitted lease, with approved local worker artifacts, bounded subprocess I/O, deterministic cancel/failure/release semantics, and lease release on terminal session cleanup.",
+  "started_at": "2026-10-04T22:03:00+02:00",
+  "expires_at": "2026-10-05T00:03:00+02:00",
+  "base_commit": "b3de1af83488604e517677525b0b34a9c2137722",
+  "completion_condition": "Native session contract, strict process identity and lifecycle tests, lease cleanup behavior, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Bind one approved local worker process to the accepted bundle and launch-admitted lease, execute a bounded session fixture, and ensure cancel/failure/release deterministically terminates the process and releases the lease.",
+  "instructions": "No real llama.cpp/GPU claim in CI, no arbitrary argv/env, no detached/background worker, no session without an admitted lease, and real_model_inference remains false for fixture workers."
 }
