@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-target-host-admission-orchestrator",
   "scope": "Implement a fail-closed target-host admission orchestrator that consumes an admission-ready native runtime-manifest collection, exact E3/readiness artifacts and two distinct fresh runtime snapshots, performs reserve then launch_recheck, and only then constructs AcceptedExecutionBundle without launching inference.",
   "started_at": "2026-10-04T20:50:00+02:00",
   "expires_at": "2026-10-04T22:50:00+02:00",
   "base_commit": "12709da4a4c6dfbeaeb5a9a516e0cfed6d6c188f",
   "completion_condition": "Admission orchestration contract, reserve/fresh-recheck/accepted-bundle integration tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Require admission-ready native manifest inputs, reserve exact physical-pool peaks, require a second runtime observation, launch-recheck, then build AcceptedExecutionBundle from the same plan/E3/readiness/manifest tuple.",
-  "instructions": "No inference launch, no arbitrary remote action, no fixture promotion to native, no reuse of the reservation snapshot for launch recheck, and no execution claim beyond accepted-bundle authorization."
+  "next_step": "On a real target host, feed genuine native qualification/measurement artifacts and two fresh runtime observations through this orchestrator, then bind the accepted bundle to the native llama.cpp worker/session lifecycle without weakening the admission gates.",
+  "instructions": "Completed as control-plane admission orchestration only. It does not start inference. Portable tests use constructed native-shaped evidence and local admission fixtures, not real GPU reservations."
 }
