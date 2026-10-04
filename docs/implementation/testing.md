@@ -423,3 +423,29 @@ tampered collection fingerprints and stale candidate-plan identity.
 
 The resulting bundle may be execution-authorized, but the orchestrator always reports
 `inference_started=false` and `real_model_inference=false`; it never launches a model.
+
+
+## Lease-bound native admitted session tests
+
+The managed native session sits after TargetHostAdmissionResult and before any model-facing
+API. It validates that the admission result is intact and execution-authorized, the
+backend belongs to the exact AcceptedExecutionBundle, and the referenced lease is still
+active in state `launched` with matching lease/runtime-manifest identity.
+
+The session executes synchronously through the existing bounded whole-block backend
+interface. It owns lease cleanup:
+- completion releases the lease;
+- backend failure releases the lease;
+- cancellation before run releases immediately without invoking the backend;
+- cancellation while a backend call is already in flight becomes `CANCEL_REQUESTED`
+  and defers lease release until the run reaches a terminal boundary;
+- explicit release is idempotent.
+
+The in-flight rule is important because the current subprocess backend does not yet expose
+a portable process-kill handle through the whole-block interface; releasing memory while
+a worker could still be running would be unsafe.
+
+Portable tests use a deterministic backend plus a real LocalAdmissionController and a
+real TargetHostAdmissionResult produced through the admission orchestrator. The separate
+native-worker suite already covers the real fixture subprocess boundary. No real llama.cpp
+or GPU process is launched by these lifecycle tests.
