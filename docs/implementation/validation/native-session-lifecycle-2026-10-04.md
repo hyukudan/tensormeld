@@ -30,4 +30,4 @@ fixture execution keeps `real_model_inference=false`.
 No real llama.cpp subprocess or GPU inference is executed by this validation; real
 subprocess protocol coverage remains in the native-worker fixture tests.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #20, workflow `Portable Python tests`, run #208 (37230869251) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Portable lifecycle tests validate lease ownership, cancellation/failure cleanup and admitted-bundle identity using deterministic backend execution; they do not establish real llama.cpp/GPU process cancellation.
