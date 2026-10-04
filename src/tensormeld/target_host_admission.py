@@ -136,6 +136,12 @@ def orchestrate_target_host_admission(
     if not isinstance(readiness, list):
         raise ValidationError("qualification handoff has no backend readiness list")
     required_devices = tuple(candidate.get("compute_devices", ()))
+    compute_nodes = tuple(candidate.get("compute_nodes", ()))
+    if len(compute_nodes) != 1:
+        raise ValidationError(
+            "initial target-host admission orchestrator supports one compute node"
+        )
+    owned_node_id = compute_nodes[0]
     ready_by_device: dict[str, dict[str, Any]] = {}
     for item in readiness:
         if not isinstance(item, dict):
@@ -173,6 +179,7 @@ def orchestrate_target_host_admission(
             config=config,
             manifest=manifest,
             snapshot=reservation_snapshot,
+            owned_node_id=owned_node_id,
         )
         if reservation.get("status") != "RESERVED":
             raise ValidationError(
@@ -185,6 +192,7 @@ def orchestrate_target_host_admission(
             config=config,
             manifest=manifest,
             snapshot=launch_snapshot,
+            owned_node_id=owned_node_id,
         )
         if launch.get("status") != "LAUNCH_ADMITTED":
             controller.release(lease_id)
