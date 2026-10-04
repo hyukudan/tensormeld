@@ -22,7 +22,10 @@ from .runtime_model_manifest import (
     runtime_manifest_summary,
 )
 from .schema import ValidationError, items, number, record, text, unique
-from .target_host_qualification import TargetHostQualificationHandoff
+from .target_host_qualification import (
+    TargetHostQualificationHandoff,
+    validate_target_host_handoff,
+)
 
 MEASUREMENT_SCHEMA = "tensormeld/native-runtime-measurement-v1"
 COLLECTOR_SCHEMA = "tensormeld/native-runtime-manifest-collector-v1"
@@ -107,7 +110,7 @@ class NativeRuntimeMeasurement:
                 "runtime measurement cannot self-promote qualification/execution"
             )
 
-        hr = handoff.record
+        hr = validate_target_host_handoff(handoff)
         if r["handoff_sha256"] != handoff.fingerprint:
             raise ValidationError("measurement handoff fingerprint mismatch")
         for field in (
@@ -320,7 +323,7 @@ def collect_native_runtime_manifest(
     handoff: TargetHostQualificationHandoff,
     measurement: NativeRuntimeMeasurement,
 ) -> NativeRuntimeManifestCollection:
-    hr = handoff.record
+    hr = validate_target_host_handoff(handoff)
     req = hr.get("runtime_manifest_requirements")
     if not isinstance(req, dict):
         raise ValidationError("handoff has no runtime manifest requirements")
