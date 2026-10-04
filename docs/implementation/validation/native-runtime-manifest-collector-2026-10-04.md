@@ -43,4 +43,4 @@ inputs are admission-ready, but always keeps:
 Portable tests use fixture/mixed provenance. No native operator probe, memory measurement,
 physical GPU or model inference is executed by this validation.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #18, workflow `Portable Python tests`, run #194 (37228477429) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates collector, provenance and invariant semantics using fixture/mixed inputs only; it does not establish native operator/memory measurements or target-host admission readiness.
