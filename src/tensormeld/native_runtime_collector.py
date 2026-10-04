@@ -464,9 +464,18 @@ def collect_native_runtime_manifest(
                 f"measurement pool {p['pool_ref']} belongs to an unused node"
             )
 
+    manifest_provenance = (
+        "native-adapter"
+        if (
+            measurement.source == "native-adapter"
+            and operator_requirements.source == "native-adapter"
+        )
+        else "fixture"
+    )
+
     raw_manifest = {
         "runtime_manifest_schema": "tensormeld/runtime-model-manifest-v1",
-        "provenance": measurement.source,
+        "provenance": manifest_provenance,
         "config_sha256": config.fingerprint,
         "profile": req["profile"],
         "model_manifest_sha256": model.manifest_sha256,
@@ -508,6 +517,8 @@ def collect_native_runtime_manifest(
         "operator_requirements_sha256": operator_requirements.fingerprint,
         "runtime_manifest_sha256": manifest.fingerprint,
         "measurement_source": measurement.source,
+        "operator_requirements_source": operator_requirements.source,
+        "runtime_manifest_provenance": manifest_provenance,
         "operator_coverage_complete": manifest.operator_coverage_complete,
         "e3_workload_matches_profile": req.get("e3_workload_matches_profile") is True,
         "admission_ready_inputs": (
