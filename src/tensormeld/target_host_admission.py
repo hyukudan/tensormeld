@@ -20,7 +20,10 @@ from .adapter_contract import AdapterCapabilities
 from .admission import LocalAdmissionController
 from .config_v2 import Config
 from .model_manifest import ModelManifest
-from .native_runtime_collector import NativeRuntimeManifestCollection
+from .native_runtime_collector import (
+    NativeRuntimeManifestCollection,
+    validate_native_runtime_collection,
+)
 from .planning_contract import PlanningInput
 from .schema import ValidationError, text
 from .target_host_qualification import (
@@ -81,7 +84,7 @@ def orchestrate_target_host_admission(
     lease_id = text(lease_id, "lease_id")
     hr = validate_target_host_handoff(handoff)
     manifest = collection.manifest
-    cr = collection.record
+    cr = validate_native_runtime_collection(collection)
 
     if cr.get("admission_ready_inputs") is not True:
         raise ValidationError(
