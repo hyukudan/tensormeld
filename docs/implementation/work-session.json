@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-native-runtime-manifest-collector",
-  "scope": "Implement a strict native runtime manifest collector that consumes a validated target-host qualification handoff plus native operator/memory measurements bound to the same worker/runtime identities, and emits the exact RuntimeModelManifest required for admission without reserving or executing anything.",
-  "started_at": "2026-10-04T20:45:00+02:00",
-  "expires_at": "2026-10-04T22:45:00+02:00",
-  "base_commit": "11b6b085e376561eb6f5319841edcce061407eea",
-  "completion_condition": "Native measurement contract, handoff-bound runtime manifest collector, strict identity/invariant tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "On a real target host, collect native operator requirements plus operator/memory observations for the exact qualification handoff, produce a native-adapter RuntimeModelManifest, then feed it with a fresh runtime observation into LocalAdmissionController reserve/launch_recheck.",
-  "instructions": "Completed as a pure collector/validator. It performs no measurement or subprocess launch, creates no reservation and makes no execution claim. Portable tests use fixture/mixed provenance only."
+  "status": "active",
+  "owner": "chatgpt-target-host-admission-orchestrator",
+  "scope": "Implement a fail-closed target-host admission orchestrator that consumes an admission-ready native runtime-manifest collection, exact E3/readiness artifacts and two distinct fresh runtime snapshots, performs reserve then launch_recheck, and only then constructs AcceptedExecutionBundle without launching inference.",
+  "started_at": "2026-10-04T20:50:00+02:00",
+  "expires_at": "2026-10-04T22:50:00+02:00",
+  "base_commit": "12709da4a4c6dfbeaeb5a9a516e0cfed6d6c188f",
+  "completion_condition": "Admission orchestration contract, reserve/fresh-recheck/accepted-bundle integration tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Require admission-ready native manifest inputs, reserve exact physical-pool peaks, require a second runtime observation, launch-recheck, then build AcceptedExecutionBundle from the same plan/E3/readiness/manifest tuple.",
+  "instructions": "No inference launch, no arbitrary remote action, no fixture promotion to native, no reuse of the reservation snapshot for launch recheck, and no execution claim beyond accepted-bundle authorization."
 }
