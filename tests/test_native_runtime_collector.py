@@ -185,7 +185,7 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             NativeRuntimeMeasurement.parse(raw, handoff=self.handoff)
 
-    def test_native_label_alone_does_not_override_e3_workload_gap(self):
+    def test_single_native_label_does_not_promote_manifest_provenance(self):
         raw = self.measurement_raw(measurement_source="native-adapter")
         measurement = NativeRuntimeMeasurement.parse(raw, handoff=self.handoff)
         result = collect_native_runtime_manifest(
@@ -194,17 +194,11 @@ class NativeRuntimeCollectorTests(unittest.TestCase):
             adapter=self.fixture.adapter,
             handoff=self.handoff,
             measurement=measurement,
-            operator_requirements=self.operator_requirements(
-                source="native-adapter"
-            ),
+            operator_requirements=self.operator_requirements(source="fixture"),
         )
-        self.assertEqual(result.manifest.provenance, "native-adapter")
+        self.assertEqual(result.manifest.provenance, "fixture")
+        self.assertEqual(result.record["runtime_manifest_provenance"], "fixture")
         self.assertTrue(result.manifest.operator_coverage_complete)
-        self.assertFalse(
-            self.handoff.record["runtime_manifest_requirements"][
-                "e3_workload_matches_profile"
-            ]
-        )
         self.assertFalse(result.record["admission_ready_inputs"])
 
 
