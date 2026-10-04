@@ -395,3 +395,31 @@ Portable tests cover fixture manifest collection, missing compute pools, stale r
 identity, worker mismatch, independent/stale operator requirements, incomplete operator
 coverage, workload mismatch, duplicate pools, tampered handoff fingerprints and mixed
 provenance. These remain software-contract tests only.
+
+
+## Target-host admission orchestrator tests
+
+The admission orchestrator consumes an intact admission-ready native runtime-manifest
+collection plus the exact qualification handoff/candidate/E3/readiness tuple.
+
+The current llama.cpp path is single-node, so the orchestrator requires exactly one
+compute node and passes that node as the explicit local admission authority.
+
+The orchestration sequence is fixed:
+
+1. validate collection/handoff/manifest/plan identities;
+2. reserve exact manifest physical-pool preparation peaks;
+3. require a second admission snapshot with a different observation ID;
+4. launch-recheck the existing lease;
+5. build AcceptedExecutionBundle from the same E3 v2, current readiness, manifest and
+   launch-admitted lease.
+
+If launch recheck rejects, or AcceptedExecutionBundle construction fails after
+reservation, the lease is released deterministically.
+
+Portable tests cover successful reserve→fresh-recheck→bundle construction, rejection of
+reused observation IDs, rollback after launch shortfall, non-native/non-ready collection,
+tampered collection fingerprints and stale candidate-plan identity.
+
+The resulting bundle may be execution-authorized, but the orchestrator always reports
+`inference_started=false` and `real_model_inference=false`; it never launches a model.
