@@ -28,6 +28,7 @@ from .target_host_qualification import (
 )
 
 MEASUREMENT_SCHEMA = "tensormeld/native-runtime-measurement-v1"
+OPERATOR_REQUIREMENTS_SCHEMA = "tensormeld/runtime-operator-requirements-v1"
 COLLECTOR_SCHEMA = "tensormeld/native-runtime-manifest-collector-v1"
 MAX_MEASURED_DEVICES = 128
 MAX_MEASURED_POOLS = 192
@@ -56,6 +57,84 @@ def _operators(value: Any, where: str) -> tuple[str, ...]:
 
 
 @dataclass(frozen=True)
+class RuntimeOperatorRequirements:
+    source: str
+    handoff_sha256: str
+    model_manifest_sha256: str
+    candidate_plan_sha256: str
+    placement_sha256: str
+    required_operators: tuple[str, ...]
+    fingerprint: str
+
+    @classmethod
+    def parse(
+        cls,
+        data: Any,
+        *,
+        handoff: TargetHostQualificationHandoff,
+    ) -> "RuntimeOperatorRequirements":
+        r = record(data, "runtime operator requirements", {
+            "operator_requirements_schema",
+            "requirements_source",
+            "handoff_sha256",
+            "model_manifest_sha256",
+            "candidate_plan_sha256",
+            "placement_sha256",
+            "required_operators",
+            "qualified",
+            "executable",
+        })
+        if r["operator_requirements_schema"] != OPERATOR_REQUIREMENTS_SCHEMA:
+            raise ValidationError(
+                f"operator_requirements_schema: expected {OPERATOR_REQUIREMENTS_SCHEMA}"
+            )
+        source = text(r["requirements_source"], "requirements_source")
+        if source not in {"native-adapter", "fixture"}:
+            raise ValidationError(
+                "requirements_source: expected native-adapter or fixture"
+            )
+        if r["qualified"] is not False or r["executable"] is not False:
+            raise ValidationError(
+                "operator requirements cannot self-promote qualification/execution"
+            )
+        hr = validate_target_host_handoff(handoff)
+        checks = {
+            "handoff_sha256": handoff.fingerprint,
+            "model_manifest_sha256": hr["model_manifest_sha256"],
+            "candidate_plan_sha256": hr["candidate_plan_sha256"],
+            "placement_sha256": hr["placement_sha256"],
+        }
+        for field, expected in checks.items():
+            if r[field] != expected:
+                raise ValidationError(
+                    f"operator requirements {field} mismatch"
+                )
+        required = _operators(
+            r["required_operators"], "required_operators"
+        )
+        canonical = {
+            "operator_requirements_schema": OPERATOR_REQUIREMENTS_SCHEMA,
+            "requirements_source": source,
+            "handoff_sha256": handoff.fingerprint,
+            "model_manifest_sha256": hr["model_manifest_sha256"],
+            "candidate_plan_sha256": hr["candidate_plan_sha256"],
+            "placement_sha256": hr["placement_sha256"],
+            "required_operators": list(required),
+            "qualified": False,
+            "executable": False,
+        }
+        return cls(
+            source,
+            handoff.fingerprint,
+            hr["model_manifest_sha256"],
+            hr["candidate_plan_sha256"],
+            hr["placement_sha256"],
+            required,
+            _canonical_sha256(canonical),
+        )
+
+
+@dataclass(frozen=True)
 class NativeRuntimeMeasurement:
     source: str
     handoff_sha256: str
@@ -65,7 +144,6 @@ class NativeRuntimeMeasurement:
     engine_revision: str
     worker_artifact_sha256: str
     workload: dict[str, Any]
-    required_operators: tuple[str, ...]
     devices: tuple[dict[str, Any], ...]
     physical_pool_memory: tuple[dict[str, Any], ...]
     fingerprint: str
@@ -87,7 +165,6 @@ class NativeRuntimeMeasurement:
             "engine_revision",
             "worker_artifact_sha256",
             "workload",
-            "required_operators",
             "devices",
             "physical_pool_memory",
             "reservation_created",
@@ -166,10 +243,6 @@ class NativeRuntimeMeasurement:
             raise ValidationError(
                 "runtime measurement workload does not match handoff target workload"
             )
-
-        required_operators = _operators(
-            r["required_operators"], "required_operators"
-        )
 
         expected_devices = tuple(req.get("required_devices", ()))
         expected_identity_sha = tuple(hr.get("runtime_identity_sha256", ()))
@@ -280,7 +353,6 @@ class NativeRuntimeMeasurement:
             "engine_revision": r["engine_revision"],
             "worker_artifact_sha256": r["worker_artifact_sha256"],
             "workload": workload,
-            "required_operators": list(required_operators),
             "devices": sorted(devices, key=lambda d: d["id"]),
             "physical_pool_memory": sorted(
                 pools, key=lambda p: p["pool_ref"]
@@ -298,7 +370,6 @@ class NativeRuntimeMeasurement:
             r["engine_revision"],
             r["worker_artifact_sha256"],
             workload,
-            required_operators,
             tuple(canonical["devices"]),
             tuple(canonical["physical_pool_memory"]),
             _canonical_sha256(canonical),
@@ -322,6 +393,7 @@ def collect_native_runtime_manifest(
     adapter: AdapterCapabilities,
     handoff: TargetHostQualificationHandoff,
     measurement: NativeRuntimeMeasurement,
+    operator_requirements: RuntimeOperatorRequirements,
 ) -> NativeRuntimeManifestCollection:
     hr = validate_target_host_handoff(handoff)
     req = hr.get("runtime_manifest_requirements")
@@ -329,6 +401,14 @@ def collect_native_runtime_manifest(
         raise ValidationError("handoff has no runtime manifest requirements")
     if measurement.handoff_sha256 != handoff.fingerprint:
         raise ValidationError("measurement belongs to another handoff")
+    if operator_requirements.handoff_sha256 != handoff.fingerprint:
+        raise ValidationError("operator requirements belong to another handoff")
+    if operator_requirements.model_manifest_sha256 != model.manifest_sha256:
+        raise ValidationError("operator requirements model identity mismatch")
+    if operator_requirements.candidate_plan_sha256 != hr.get("candidate_plan_sha256"):
+        raise ValidationError("operator requirements plan identity mismatch")
+    if operator_requirements.placement_sha256 != hr.get("placement_sha256"):
+        raise ValidationError("operator requirements placement identity mismatch")
     if measurement.source not in {"native-adapter", "fixture"}:
         raise ValidationError("unsupported runtime measurement source")
 
@@ -395,7 +475,7 @@ def collect_native_runtime_manifest(
         "engine_revision": adapter.engine_revision,
         "worker_artifact_sha256": measurement.worker_artifact_sha256,
         "workload": dict(measurement.workload),
-        "required_operators": list(measurement.required_operators),
+        "required_operators": list(operator_requirements.required_operators),
         "devices": [
             {
                 "id": d["id"],
@@ -425,12 +505,14 @@ def collect_native_runtime_manifest(
         "collector_schema": COLLECTOR_SCHEMA,
         "handoff_sha256": handoff.fingerprint,
         "measurement_sha256": measurement.fingerprint,
+        "operator_requirements_sha256": operator_requirements.fingerprint,
         "runtime_manifest_sha256": manifest.fingerprint,
         "measurement_source": measurement.source,
         "operator_coverage_complete": manifest.operator_coverage_complete,
         "e3_workload_matches_profile": req.get("e3_workload_matches_profile") is True,
         "admission_ready_inputs": (
             measurement.source == "native-adapter"
+            and operator_requirements.source == "native-adapter"
             and manifest.operator_coverage_complete
             and req.get("e3_workload_matches_profile") is True
         ),
