@@ -405,6 +405,8 @@ def validate_native_runtime_collection(
         raise ValidationError("runtime collection fingerprint mismatch")
     if record.get("runtime_manifest_sha256") != collection.manifest.fingerprint:
         raise ValidationError("runtime collection manifest fingerprint mismatch")
+    if record.get("runtime_manifest_provenance") != collection.manifest.provenance:
+        raise ValidationError("runtime collection manifest provenance mismatch")
     if (
         record.get("reservation_created") is not False
         or record.get("launch_authorized") is not False
