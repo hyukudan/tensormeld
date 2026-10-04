@@ -61,6 +61,7 @@ the pre-alpha status or qualify any execution path.
 - native runtime-manifest collector validates an intact qualification handoff, independent operator-requirement contract, per-device runtime identities/operator observations and one memory record per physical pool before producing RuntimeModelManifest;
 - runtime manifest provenance is `native-adapter` only when both measurement and operator-requirement sources are native; mixed/fixture inputs degrade to fixture provenance;
 - target-host admission orchestrator requires an intact admission-ready native collection, distinct reservation/launch observations, performs atomic reserve + fresh launch recheck, and constructs AcceptedExecutionBundle only after both gates pass;
+- lease-bound native admitted session requires a live launched lease plus exact bundle/backend identity and deterministically releases the lease on completion, failure or cancellation cleanup;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - legacy analytical planner and bounded loopback diagnostics retained.
