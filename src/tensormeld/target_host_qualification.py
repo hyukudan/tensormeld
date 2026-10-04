@@ -202,6 +202,7 @@ def assemble_target_host_qualification(
 
     profile = config.profile_map[config.installation.default_profile]
     target_workload = {
+        "task": profile.workload.task,
         "context_tokens": profile.workload.context_tokens,
         "max_output_tokens": profile.workload.max_output_tokens,
         "concurrency": profile.workload.max_active_requests,
