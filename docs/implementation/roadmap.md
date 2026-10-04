@@ -83,7 +83,7 @@ satisfy the real E2/E3 gates.
 - native whole-block executable adapter across one or more nodes;
 - immutable accepted plan;
 - stable local streaming API;
-- cancellation and deterministic release for native sessions;
+- native-session cancellation and deterministic lease release implemented for the admitted local worker lifecycle; real llama.cpp process cancellation remains to be proven on target hardware;
 - reference correctness suite;
 - same-model comparisons: local vs companion vs distributed.
 
@@ -161,7 +161,18 @@ Target-host admission orchestration foundation implemented:
 - construct AcceptedExecutionBundle only from the same plan/E3/readiness/manifest tuple;
 - keep inference_started=false even after execution authorization.
 
-A real target-host run must still provide genuine native artifacts/measurements and then explicitly start the native worker from the accepted bundle.
+Native admitted-session lifecycle foundation implemented:
+
+- session creation requires an intact execution-authorized admission result;
+- backend must be bound to the exact AcceptedExecutionBundle;
+- launch-admitted lease must still be active, launched and fingerprint-matched;
+- synchronous completion releases the lease;
+- pre-run cancellation releases without executing backend work;
+- in-flight cancellation is deferred until execution reaches a terminal boundary, so the lease is not released under a running worker;
+- backend failures release the lease;
+- explicit release is idempotent.
+
+A real target-host run must still supply the actual llama.cpp worker backend and prove real process cancellation/termination behavior before production native inference claims.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
