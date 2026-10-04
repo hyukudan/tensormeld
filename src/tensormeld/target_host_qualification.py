@@ -64,6 +64,34 @@ class TargetHostQualificationHandoff:
         return self.record["handoff_sha256"]
 
 
+def validate_target_host_handoff(
+    handoff: TargetHostQualificationHandoff,
+) -> dict[str, Any]:
+    if not isinstance(handoff, TargetHostQualificationHandoff):
+        raise ValidationError("expected TargetHostQualificationHandoff")
+    record = handoff.record
+    if not isinstance(record, dict):
+        raise ValidationError("qualification handoff record must be an object")
+    if record.get("handoff_schema") != HANDOFF_SCHEMA:
+        raise ValidationError(f"handoff_schema: expected {HANDOFF_SCHEMA}")
+    supplied = record.get("handoff_sha256")
+    if not isinstance(supplied, str):
+        raise ValidationError("qualification handoff has no fingerprint")
+    core = dict(record)
+    core.pop("handoff_sha256", None)
+    if _canonical_sha256(core) != supplied:
+        raise ValidationError("qualification handoff fingerprint mismatch")
+    if record.get("runtime_manifest_required") is not True:
+        raise ValidationError("qualification handoff must require a runtime manifest")
+    if (
+        record.get("reservation_created") is not False
+        or record.get("launch_authorized") is not False
+        or record.get("executable") is not False
+    ):
+        raise ValidationError("qualification handoff cannot self-promote execution")
+    return record
+
+
 def assemble_target_host_qualification(
     *,
     config: Config,
