@@ -161,6 +161,14 @@ class NativeAdmittedSession:
                 }
         self._reference.cancel()
         with self._lock:
+            if current == "running":
+                return {
+                    "result_schema": "tensormeld/native-session-cancel-v1",
+                    "status": "CANCEL_REQUESTED",
+                    "lease_id": self.lease_id,
+                    "cancelled": False,
+                    "lease_released": False,
+                }
             if self.state == "prepared":
                 self.state = "cancelled"
         release = self._release_lease()
