@@ -362,3 +362,36 @@ qualification.
 Portable tests use native-shaped fixtures only and cover stale bound records, changed
 runtime identity, fixture trial provenance, probe/trial binary mismatch and incomplete E2
 coverage. This is orchestration-contract evidence, not real target-host qualification.
+
+
+## Native runtime-manifest collector tests
+
+The collector consumes the deterministic target-host qualification handoff and two
+separate evidence inputs:
+
+1. runtime observations: per-device operator observations plus one memory record per
+   physical pool;
+2. operator requirements: the independent required-operator set for the exact
+   handoff/model/plan/placement.
+
+Separating requirements from observations prevents a measurement from declaring a small
+required set (for example only ADD) and then self-reporting complete coverage.
+
+Both contracts are fingerprint-bound to the intact target-host handoff. Device
+measurements additionally carry the exact runtime-identity SHA expected for that device.
+The collector verifies device node/backend identity against Config and requires every
+compute device's physical pool to appear in the memory measurement. Duplicate pool
+records fail closed so shared/unified memory cannot be counted once per logical device.
+
+The existing RuntimeModelManifest parser remains the final canonical validator for
+profile workload, physical-pool capacity bounds, preparation peak >= steady peak, device
+identity and operator coverage.
+
+Manifest provenance is promoted to `native-adapter` only when both the runtime
+measurement and operator-requirement contracts are native. Mixed or fixture provenance
+produces a fixture manifest and can never be admission-ready native input.
+
+Portable tests cover fixture manifest collection, missing compute pools, stale runtime
+identity, worker mismatch, independent/stale operator requirements, incomplete operator
+coverage, workload mismatch, duplicate pools, tampered handoff fingerprints and mixed
+provenance. These remain software-contract tests only.
