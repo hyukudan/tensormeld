@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-server-e4",
-  "scope": "Implement E4 llama-cli versus llama-server request equivalence for one exact build package/model/placement/workload/sampler contract, using a closed loopback server request and emitting strict server-equivalence evidence before inference requests can be authorized.",
-  "started_at": "2026-10-05T20:20:00+02:00",
-  "expires_at": "2026-10-05T22:20:00+02:00",
-  "base_commit": "f2bb0b1ae2cc69b2eb732d6afb9ae37688b76787",
-  "completion_condition": "Closed server request contract, E4 equivalence evidence, admitted request-authorization gate, real fixture CLI/server tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Add the first E4-authorized persistent completion request path bound to the same admitted server/package/bundle/spec, with bounded response and lease-safe process lifecycle; real_model_inference can become true only on genuine native target-host execution.",
-  "instructions": "Completed as equivalence and authorization control-plane functionality. Portable CI uses real fixture CLI/server processes; fixture equality does not qualify E4 or authorize native requests."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-authorized-request",
+  "scope": "Implement the first E4-authorized persistent llama-server completion request path, requiring exact authorized binding/E4 spec/server/lease identity on every call, bounded loopback request/response, stale-process/lease rejection, and native-only real_model_inference promotion.",
+  "started_at": "2026-10-05T20:40:00+02:00",
+  "expires_at": "2026-10-05T22:40:00+02:00",
+  "base_commit": "953ab3142309fe77aea8288f69fb2d20eae85076",
+  "completion_condition": "Authorized request contract, lease/process revalidation, fixture/native provenance tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Execute only the E4-qualified completion request contract against a ready admitted managed server, retain bounded response evidence, keep the lease active while the server lives, and mark real_model_inference=true only for genuine native-server-subprocess execution.",
+  "instructions": "No arbitrary request body, no streaming, no cache widening, no public endpoint/RPC, no request after lease/process invalidation, and fixture server execution must remain real_model_inference=false."
 }
