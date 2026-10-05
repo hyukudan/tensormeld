@@ -30,4 +30,4 @@ authorization false.
 
 No real llama.cpp binary, GGUF inference or GPU executes in this validation.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #23, workflow `Portable Python tests`, run #231 (37352525627) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Portable CI validated exact package/build identity, admitted lease ownership and a real fixture server process; it did not establish llama-server semantic equivalence to llama-cli or authorize inference requests.
