@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-native-session-lifecycle",
-  "scope": "Implement a strict native session launcher/lifecycle bound to AcceptedExecutionBundle and an already launch-admitted lease, with approved local worker artifacts, bounded subprocess I/O, deterministic cancel/failure/release semantics, and lease release on terminal session cleanup.",
-  "started_at": "2026-10-04T22:03:00+02:00",
-  "expires_at": "2026-10-05T00:03:00+02:00",
-  "base_commit": "b3de1af83488604e517677525b0b34a9c2137722",
-  "completion_condition": "Native session contract, strict process identity and lifecycle tests, lease cleanup behavior, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Implement a real llama.cpp session backend that consumes the AcceptedExecutionBundle/placement/model artifacts and exposes a cancellable process handle; validate target-host termination/release semantics before setting real_model_inference=true in production evidence.",
-  "instructions": "Completed as lease-bound session lifecycle over the existing backend interface. Portable tests use deterministic backend execution; real subprocess behavior remains covered separately by fixture worker tests. No real llama.cpp/GPU inference claim is made."
+  "status": "active",
+  "owner": "chatgpt-tensorfold-strata-audit",
+  "scope": "Deep-audit pinned current TensorFold and Strata implementations, extract reusable architecture and optimization patterns for TensorMeld, classify them as adopt/adapt/defer/reject, update research/roadmap/third-party provenance, and avoid importing code or unsupported performance claims.",
+  "started_at": "2026-10-05T08:15:00+02:00",
+  "expires_at": "2026-10-05T11:15:00+02:00",
+  "base_commit": "47604f891a858be448eeb7d48bbc3688e5935205",
+  "completion_condition": "Pinned comparative research document, explicit decisions/priorities, roadmap and third-party registry updates, PR and CI evidence are committed.",
+  "next_step": "Record current external revisions, compare Strata placement/tuning/process ownership with TensorFold memory/admission/exactness/streaming, then map only portable concepts onto TensorMeld's AMD/heterogeneous architecture.",
+  "instructions": "Research/documentation slice only. Do not copy external source code, do not add performance claims without source labels, do not broaden TensorMeld's core around Apple/NVIDIA assumptions, and do not weaken existing evidence/admission gates."
 }
