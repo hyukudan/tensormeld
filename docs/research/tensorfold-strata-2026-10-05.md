@@ -466,3 +466,20 @@ wants to copy or adapt source, record that separately with:
 - reason reuse is preferable to independent implementation;
 - tests proving that the imported path respects TensorMeld's security and evidence
   boundaries.
+
+
+## TensorMeld integration result
+
+This research slice was merged as PR #21.
+
+GitHub Actions workflow `Portable Python tests`, run #211
+(`37273859904`), passed all 7 jobs:
+
+- Linux Python 3.11 and 3.13;
+- Windows Python 3.11 and 3.13;
+- optional-adapter integration on Linux and Windows;
+- dedicated real-mTLS-loopback integration.
+
+The CI result validates TensorMeld repository consistency after the research/roadmap
+changes. It does not qualify any Strata or TensorFold code, and neither project became a
+TensorMeld runtime dependency.
