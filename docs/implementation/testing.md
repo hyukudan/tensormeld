@@ -449,3 +449,30 @@ Portable tests use a deterministic backend plus a real LocalAdmissionController 
 real TargetHostAdmissionResult produced through the admission orchestrator. The separate
 native-worker suite already covers the real fixture subprocess boundary. No real llama.cpp
 or GPU process is launched by these lifecycle tests.
+
+
+## Managed llama-server process lifecycle tests
+
+TensorMeld now owns a persistent server-process primitive separately from the one-shot
+llama-cli E3 trial path.
+
+The launch spec is bound to the pinned llama.cpp revision, approved llama-server artifact,
+optional approved launcher artifact used only for portable fixture execution, exact
+ModelManifest and approved GGUF, exact post-E3 placement translation, and loopback host
+with one explicit server slot.
+
+No caller-supplied argv or environment extension is accepted. Inherited LLAMA_ARG_*
+variables are removed before launch.
+
+Portable tests start a real Python HTTP fixture process on Windows/Linux, wait for /health,
+verify bounded stderr diagnostics, detect early process exit, stop cleanly, and on POSIX
+prove terminate→kill fallback with a stubborn process.
+
+This is process-lifecycle evidence only. The fixture does not execute llama.cpp or a GGUF
+model.
+
+A deliberate identity boundary remains: native E3 currently binds llama-cli, while the
+persistent server is a distinct llama-server artifact. TensorMeld will not treat them as
+the same worker merely because they came from the same source tree. A future build/package
+identity must bind both artifacts before persistent server execution can inherit E3 and
+lease authorization.

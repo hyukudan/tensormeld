@@ -65,6 +65,7 @@ the pre-alpha status or qualify any execution path.
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
 - pinned 2026-10-05 Strata/TensorFold code audit recorded as research-only prior art with explicit TensorMeld independence and adopt/adapt/defer/reject priorities;
+- TensorMeld-owned managed llama-server child-process primitive with exact server/model/GGUF/placement identity, loopback-only readiness, bounded stderr tail, early-exit detection and terminate→kill shutdown;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
