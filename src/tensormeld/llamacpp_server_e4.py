@@ -131,7 +131,7 @@ def build_llamacpp_server_e4_spec(
         "prompt": trial_spec.prompt,
         "n_predict": trial_spec.predict_tokens,
         "seed": 0,
-        "temperature": 0,
+        "temperature": 0.0,
         "stream": False,
         "cache_prompt": False,
     }
@@ -150,7 +150,7 @@ def build_llamacpp_server_e4_spec(
         "context_tokens": trial_spec.context_tokens,
         "predict_tokens": trial_spec.predict_tokens,
         "seed": 0,
-        "temperature": 0,
+        "temperature": 0.0,
         "request_body": body,
     }
     return LlamaCppServerE4Spec(
@@ -200,7 +200,7 @@ def validate_llamacpp_server_e4_spec(
         "prompt": spec.prompt,
         "n_predict": spec.predict_tokens,
         "seed": 0,
-        "temperature": 0,
+        "temperature": 0.0,
         "stream": False,
         "cache_prompt": False,
     }
