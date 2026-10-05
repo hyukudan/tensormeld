@@ -60,6 +60,7 @@ def _canonical_sha256(value: Any) -> str:
 class LlamaCppServerLaunchSpec:
     source_revision: str
     server_artifact_sha256: str
+    launcher_artifact_sha256: str | None
     model_manifest_sha256: str
     gguf_sha256: str
     accepted_bundle_sha256: str
@@ -77,6 +78,7 @@ def build_llamacpp_server_launch_spec(
     placement: LlamaCppPlacementTranslation,
     llama_server: WorkerArtifact,
     gguf: ApprovedGGUF,
+    launcher: WorkerArtifact | None = None,
     context_tokens: int,
     port: int,
 ) -> LlamaCppServerLaunchSpec:
@@ -94,8 +96,13 @@ def build_llamacpp_server_launch_spec(
         raise ValidationError("port must be an unprivileged TCP port")
     host = "127.0.0.1"
 
+    prefix = (
+        (str(launcher.path), str(llama_server.path))
+        if launcher is not None
+        else (str(llama_server.path),)
+    )
     argv = (
-        str(llama_server.path),
+        *prefix,
         "-m",
         str(gguf.path),
         *placement.argv_fragment,
@@ -114,6 +121,9 @@ def build_llamacpp_server_launch_spec(
         "server_spec_schema": SERVER_SPEC_SCHEMA,
         "source_revision": LLAMACPP_PINNED_COMMIT,
         "server_artifact_sha256": llama_server.sha256,
+        "launcher_artifact_sha256": (
+            launcher.sha256 if launcher is not None else None
+        ),
         "model_manifest_sha256": bundle.model_manifest_sha256,
         "gguf_sha256": gguf.sha256,
         "accepted_bundle_sha256": bundle.bundle_sha256,
@@ -127,6 +137,7 @@ def build_llamacpp_server_launch_spec(
     return LlamaCppServerLaunchSpec(
         LLAMACPP_PINNED_COMMIT,
         llama_server.sha256,
+        launcher.sha256 if launcher is not None else None,
         bundle.model_manifest_sha256,
         gguf.sha256,
         bundle.bundle_sha256,
@@ -219,6 +230,7 @@ class ManagedLlamaCppServer:
             "status": "STARTED",
             "spec_sha256": self.spec.spec_sha256,
             "server_artifact_sha256": self.spec.server_artifact_sha256,
+            "launcher_artifact_sha256": self.spec.launcher_artifact_sha256,
             "pid": child.pid,
             "endpoint": f"http://{self.spec.host}:{self.spec.port}",
             "ready": False,
