@@ -82,6 +82,7 @@ def _placement_semantics(
 class LlamaCppServerE4Spec:
     package_sha256: str
     model_manifest_sha256: str
+    accepted_bundle_sha256: str
     qualification_placement_sha256: str
     execution_placement_sha256: str
     trial_spec_sha256: str
@@ -137,6 +138,7 @@ def build_llamacpp_server_e4_spec(
         "e4_spec_schema": E4_SPEC_SCHEMA,
         "package_sha256": package.fingerprint,
         "model_manifest_sha256": trial_spec.model_manifest_sha256,
+        "accepted_bundle_sha256": server_spec.accepted_bundle_sha256,
         "qualification_placement_sha256": qualification_placement.fingerprint,
         "execution_placement_sha256": execution_placement.fingerprint,
         "placement_semantics": semantics,
@@ -152,6 +154,7 @@ def build_llamacpp_server_e4_spec(
     return LlamaCppServerE4Spec(
         package.fingerprint,
         trial_spec.model_manifest_sha256,
+        server_spec.accepted_bundle_sha256,
         qualification_placement.fingerprint,
         execution_placement.fingerprint,
         trial_spec.spec_sha256,
@@ -239,6 +242,7 @@ def run_llamacpp_server_e4_request(
 class LlamaCppServerE4Evidence:
     package_sha256: str
     model_manifest_sha256: str
+    accepted_bundle_sha256: str
     qualification_placement_sha256: str
     execution_placement_sha256: str
     trial_spec_sha256: str
@@ -256,6 +260,7 @@ class LlamaCppServerE4Evidence:
             "e4_evidence_schema": E4_EVIDENCE_SCHEMA,
             "package_sha256": self.package_sha256,
             "model_manifest_sha256": self.model_manifest_sha256,
+            "accepted_bundle_sha256": self.accepted_bundle_sha256,
             "qualification_placement_sha256": self.qualification_placement_sha256,
             "execution_placement_sha256": self.execution_placement_sha256,
             "trial_spec_sha256": self.trial_spec_sha256,
@@ -325,6 +330,7 @@ def evaluate_llamacpp_server_e4(
         "e4_evidence_schema": E4_EVIDENCE_SCHEMA,
         "package_sha256": spec.package_sha256,
         "model_manifest_sha256": spec.model_manifest_sha256,
+        "accepted_bundle_sha256": spec.accepted_bundle_sha256,
         "qualification_placement_sha256": spec.qualification_placement_sha256,
         "execution_placement_sha256": spec.execution_placement_sha256,
         "trial_spec_sha256": spec.trial_spec_sha256,
@@ -341,6 +347,7 @@ def evaluate_llamacpp_server_e4(
     return LlamaCppServerE4Evidence(
         spec.package_sha256,
         spec.model_manifest_sha256,
+        spec.accepted_bundle_sha256,
         spec.qualification_placement_sha256,
         spec.execution_placement_sha256,
         spec.trial_spec_sha256,
@@ -379,11 +386,31 @@ class AuthorizedAdmittedLlamaCppServerBinding:
         }
 
 
+def validate_llamacpp_server_e4_evidence(
+    evidence: LlamaCppServerE4Evidence,
+) -> dict[str, Any]:
+    if not isinstance(evidence, LlamaCppServerE4Evidence):
+        raise ValidationError("expected LlamaCppServerE4Evidence")
+    record = evidence.as_record()
+    supplied = record.pop("fingerprint")
+    if _canonical_sha256(record) != supplied:
+        raise ValidationError("llama.cpp server E4 evidence fingerprint mismatch")
+    if evidence.qualified:
+        if (
+            evidence.cli_execution_source != "native-subprocess"
+            or evidence.server_execution_source != "native-server-subprocess"
+            or evidence.outputs_equal is not True
+        ):
+            raise ValidationError("qualified E4 evidence has invalid native provenance")
+    return {**record, "fingerprint": supplied}
+
+
 def authorize_admitted_llamacpp_server_requests(
     *,
     binding: AdmittedLlamaCppServerBinding,
     evidence: LlamaCppServerE4Evidence,
 ) -> AuthorizedAdmittedLlamaCppServerBinding:
+    validate_llamacpp_server_e4_evidence(evidence)
     if evidence.qualified is not True:
         raise ValidationError("native E4 equivalence is required for request authorization")
     if evidence.outputs_equal is not True:
@@ -392,6 +419,8 @@ def authorize_admitted_llamacpp_server_requests(
         raise ValidationError("E4 package identity differs from admitted server binding")
     if evidence.server_spec_sha256 != binding.server_spec_sha256:
         raise ValidationError("E4 server spec differs from admitted server binding")
+    if evidence.accepted_bundle_sha256 != binding.accepted_bundle_sha256:
+        raise ValidationError("E4 accepted bundle differs from admitted server binding")
     canonical = {
         "binding_schema": AUTHORIZED_BINDING_SCHEMA,
         "base_binding_sha256": binding.fingerprint,
