@@ -26,6 +26,7 @@ constraint.
 - [ADR-0008 — Reuse before reimplementation](decisions/0008-reuse-before-reimplementation.md)
 - [ADR-0009 — Synthetic planning boundary](decisions/0009-synthetic-v2-planning.md)
 - [ADR-0010 — Public transparency publication](decisions/0010-public-transparency-publication.md)
+- [ADR-0036 — External engines inform TensorMeld; they do not own its architecture](decisions/0036-independent-prior-art-adoption.md)
 
 ## Normative specification
 
@@ -53,6 +54,13 @@ installation contract.
 
 - [v2 planner contract](implementation/planner-v2.md)
 - [Open-source adapter status](implementation/open-source-adapters.md)
+
+## Research
+
+Research notes are non-normative inputs to TensorMeld design. They do not make the
+reviewed projects TensorMeld dependencies.
+
+- [TensorFold and Strata audit — 2026-10-05](research/tensorfold-strata-2026-10-05.md)
 
 ## Examples
 

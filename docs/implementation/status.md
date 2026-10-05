@@ -64,6 +64,7 @@ the pre-alpha status or qualify any execution path.
 - lease-bound native admitted session requires a live launched lease plus exact bundle/backend identity and deterministically releases the lease on completion, failure or cancellation cleanup;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
+- pinned 2026-10-05 Strata/TensorFold code audit recorded as research-only prior art with explicit TensorMeld independence and adopt/adapt/defer/reject priorities;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI

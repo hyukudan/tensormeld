@@ -174,6 +174,27 @@ Native admitted-session lifecycle foundation implemented:
 
 A real target-host run must still supply the actual llama.cpp worker backend and prove real process cancellation/termination behavior before production native inference claims.
 
+### Prior-art-informed M3 priorities
+
+The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownership:
+
+**P0 — measured llama.cpp backend baseline**
+- finish the real child-process backend with bounded logs, readiness, terminate/kill and lease-safe cleanup;
+- qualify the first real target machines through the existing E2/E3/manifest/admission chain;
+- add TensorMeld-owned placement calibration records keyed by exact model, worker/runtime identity, context, KV/state format, topology and workload;
+- measure prefill and decode separately and rank candidates by declared workload wall time;
+- use bounded coarse search followed by local refinement, treating planner estimates as candidate generation rather than truth.
+
+**P1 — predictive memory and equivalence**
+- add model/tensor movability classes rather than a single parameter-size scalar;
+- extend physical-pool accounting with hard-resident, staging and reclaimable/file-backed classes;
+- add measured session/cache growth and prefill/decode/shared-round working-set contracts;
+- add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
+- define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
+
+These are independent TensorMeld implementations informed by prior art. Strata and
+TensorFold are research references, not planner/runtime dependencies.
+
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 
 ## M4 — Planner quality and product UX
@@ -187,6 +208,14 @@ Exit gate: a model larger than the entrypoint GPU can execute through a verified
 
 ## M5 — Advanced heterogeneous execution
 
+Prior-art-informed later work:
+- session-prefix/KV checkpoint retention and optional disk spill before generic disk-backed weight streaming;
+- directional storage→host→device and node→node path profiling;
+- benchmark mmap/page-cache versus direct/pinned/read-ahead separately for discrete GPUs and unified-memory Strix Halo;
+- adaptive speculative depth only after exact AMD-native equivalence evidence;
+- selective replacement of llama.cpp paths only where profiling proves a material bottleneck and a TensorMeld-native implementation passes correctness/equivalence gates.
+
+Core M5 placement/execution work:
 - expert-aware placement;
 - tensor/operator strategies;
 - prefill/decode phase placement;
