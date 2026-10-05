@@ -18,6 +18,7 @@ from tensormeld.llamacpp_package import build_llamacpp_package_identity
 from tensormeld.llamacpp_placement import LlamaCppPlacementTranslation
 from tensormeld.llamacpp_server_e4 import (
     LlamaCppServerE4Evidence,
+    LlamaCppServerE4Spec,
     authorize_admitted_llamacpp_server_requests,
     build_llamacpp_server_e4_spec,
     evaluate_llamacpp_server_e4,
@@ -181,6 +182,7 @@ class LlamaCppServerE4FixtureTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             authorize_admitted_llamacpp_server_requests(
                 binding=AdmittedManagedLlamaCppServerTests,
+                spec=self.e4_spec,
                 evidence=evidence,
             )
 
@@ -198,8 +200,8 @@ class LlamaCppServerE4FixtureTests(unittest.TestCase):
             "completed": True,
             "qualified": False,
             "real_model_inference": False,
-            "result_sha256": "1" * 64,
         }
+        server_result["result_sha256"] = canonical_sha(server_result)
         evidence = evaluate_llamacpp_server_e4(
             spec=self.e4_spec,
             cli_trial_result=cli_result,
@@ -241,15 +243,49 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
     def tearDown(self):
         self.fixture.tearDown()
 
+    def authorization_spec(self):
+        body = {
+            "prompt": "authorization-contract",
+            "n_predict": 1,
+            "seed": 0,
+            "temperature": 0,
+            "stream": False,
+            "cache_prompt": False,
+        }
+        spec = self.authorization_spec()
+        kwargs = {
+            "e4_spec_sha256": spec.fingerprint,
+            "package_sha256": self.binding.package_sha256,
+            "model_manifest_sha256": self.fixture.admission.bundle.model_manifest_sha256,
+            "accepted_bundle_sha256": self.binding.accepted_bundle_sha256,
+            "qualification_placement_sha256": "b" * 64,
+            "execution_placement_sha256": "c" * 64,
+            "placement_semantics_sha256": "e" * 64,
+            "trial_spec_sha256": "d" * 64,
+            "server_spec_sha256": spec.server_spec_sha256,
+            "prompt": "authorization-contract",
+            "context_tokens": 128,
+            "predict_tokens": 1,
+            "seed": 0,
+            "temperature": 0.0,
+            "request_body": body,
+        }
+        provisional = LlamaCppServerE4Spec(**kwargs, fingerprint="")
+        canonical = {
+            "e4_spec_schema": "tensormeld/llamacpp-server-e4-spec-v1",
+            **kwargs,
+        }
+        return replace(provisional, fingerprint=canonical_sha(canonical))
+
     def native_evidence(self, **changes):
         output_sha = "a" * 64
         kwargs = {
             "package_sha256": self.binding.package_sha256,
             "model_manifest_sha256": self.fixture.admission.bundle.model_manifest_sha256,
             "accepted_bundle_sha256": self.binding.accepted_bundle_sha256,
-            "qualification_placement_sha256": "b" * 64,
-            "execution_placement_sha256": "c" * 64,
-            "trial_spec_sha256": "d" * 64,
+            "qualification_placement_sha256": spec.qualification_placement_sha256,
+            "execution_placement_sha256": spec.execution_placement_sha256,
+            "trial_spec_sha256": spec.trial_spec_sha256,
             "server_spec_sha256": self.binding.server_spec_sha256,
             "cli_output_sha256": output_sha,
             "server_output_sha256": output_sha,
@@ -273,6 +309,7 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
     def test_exact_native_e4_authorizes_persistent_requests(self):
         authorized = authorize_admitted_llamacpp_server_requests(
             binding=self.binding,
+            spec=self.authorization_spec(),
             evidence=self.native_evidence(),
         )
         record = authorized.as_record()
