@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-authorized-request",
-  "scope": "Implement the first E4-authorized persistent llama-server completion request path, requiring exact authorized binding/E4 spec/server/lease identity on every call, bounded loopback request/response, stale-process/lease rejection, and native-only real_model_inference promotion.",
-  "started_at": "2026-10-05T20:40:00+02:00",
-  "expires_at": "2026-10-05T22:40:00+02:00",
-  "base_commit": "953ab3142309fe77aea8288f69fb2d20eae85076",
-  "completion_condition": "Authorized request contract, lease/process revalidation, fixture/native provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Define a bounded qualified request-family contract that can safely vary prompt/output length/sampling dimensions, or run the existing exact request path on real target hardware first to obtain native E4 and real_model_inference evidence.",
-  "instructions": "Completed as one exact E4-authorized completion contract. No arbitrary request body or streaming is allowed. Portable CI uses a real fixture server and remains real_model_inference=false."
+  "status": "active",
+  "owner": "chatgpt-placement-calibration",
+  "scope": "Implement TensorMeld-owned placement calibration records and bounded coarse-to-refine candidate selection over existing planner candidates, with separate prefill/decode measurements, workload-normalized objective, exact package/runtime/topology identities and fixture/native provenance separation.",
+  "started_at": "2026-10-05T20:53:00+02:00",
+  "expires_at": "2026-10-05T23:00:00+02:00",
+  "base_commit": "8ed9af3b6dd1d3dd0712af2ade415307c82a37e2",
+  "completion_condition": "Calibration measurement schema, applicability/ranking, bounded coarse/refine selection, fixture/native provenance tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Measure exact existing planner candidates with separate prefill/decode timings, normalize to the target workload, choose the best applicable native calibration, and expose bounded neighboring candidates for refinement without mutating planner estimates into facts.",
+  "instructions": "No benchmark execution in this slice, no hardware performance claims, no imported Strata tuner, no universal tuning constants, and fixture calibration must never become native placement evidence."
 }
