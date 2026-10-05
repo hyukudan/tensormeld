@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import os
 import sys
 
 
@@ -11,6 +12,9 @@ def value(args, flag):
 
 
 def main() -> int:
+    if any(key.startswith("LLAMA_ARG_") for key in os.environ):
+        print("inherited LLAMA_ARG environment leaked", file=sys.stderr, flush=True)
+        return 63
     args = sys.argv[1:]
     required = [
         "-m",
