@@ -33,4 +33,4 @@ reporting real_model_inference=false because no production request has yet execu
 
 No real llama.cpp binary, GGUF inference or GPU is executed in hosted CI.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #24, workflow `Portable Python tests`, run #243 (37356485327) passed all 7 jobs after one earlier run exposed an E4 spec canonicalization mismatch between numeric `0` and `0.0` for temperature. The contract now canonicalizes temperature as float zero consistently. Linux and Windows Python 3.11/3.13, optional-adapter integration on both operating systems, and the dedicated real-mTLS-loopback job all passed. Hosted CI validated real fixture CLI/server equivalence only; it did not establish native llama.cpp E4 or GPU inference.
