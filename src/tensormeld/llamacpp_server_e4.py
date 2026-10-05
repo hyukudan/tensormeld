@@ -85,6 +85,7 @@ class LlamaCppServerE4Spec:
     accepted_bundle_sha256: str
     qualification_placement_sha256: str
     execution_placement_sha256: str
+    placement_semantics_sha256: str
     trial_spec_sha256: str
     server_spec_sha256: str
     prompt: str
@@ -134,6 +135,7 @@ def build_llamacpp_server_e4_spec(
         "stream": False,
         "cache_prompt": False,
     }
+    placement_semantics_sha256 = _canonical_sha256(semantics)
     canonical = {
         "e4_spec_schema": E4_SPEC_SCHEMA,
         "package_sha256": package.fingerprint,
@@ -141,7 +143,7 @@ def build_llamacpp_server_e4_spec(
         "accepted_bundle_sha256": server_spec.accepted_bundle_sha256,
         "qualification_placement_sha256": qualification_placement.fingerprint,
         "execution_placement_sha256": execution_placement.fingerprint,
-        "placement_semantics": semantics,
+        "placement_semantics_sha256": placement_semantics_sha256,
         "trial_spec_sha256": trial_spec.spec_sha256,
         "server_spec_sha256": server_spec.spec_sha256,
         "prompt": trial_spec.prompt,
@@ -157,6 +159,7 @@ def build_llamacpp_server_e4_spec(
         server_spec.accepted_bundle_sha256,
         qualification_placement.fingerprint,
         execution_placement.fingerprint,
+        placement_semantics_sha256,
         trial_spec.spec_sha256,
         server_spec.spec_sha256,
         trial_spec.prompt,
@@ -169,12 +172,92 @@ def build_llamacpp_server_e4_spec(
     )
 
 
+def validate_llamacpp_server_e4_spec(
+    spec: LlamaCppServerE4Spec,
+) -> dict[str, Any]:
+    if not isinstance(spec, LlamaCppServerE4Spec):
+        raise ValidationError("expected LlamaCppServerE4Spec")
+    canonical = {
+        "e4_spec_schema": E4_SPEC_SCHEMA,
+        "package_sha256": spec.package_sha256,
+        "model_manifest_sha256": spec.model_manifest_sha256,
+        "accepted_bundle_sha256": spec.accepted_bundle_sha256,
+        "qualification_placement_sha256": spec.qualification_placement_sha256,
+        "execution_placement_sha256": spec.execution_placement_sha256,
+        "placement_semantics_sha256": spec.placement_semantics_sha256,
+        "trial_spec_sha256": spec.trial_spec_sha256,
+        "server_spec_sha256": spec.server_spec_sha256,
+        "prompt": spec.prompt,
+        "context_tokens": spec.context_tokens,
+        "predict_tokens": spec.predict_tokens,
+        "seed": spec.seed,
+        "temperature": spec.temperature,
+        "request_body": spec.request_body,
+    }
+    if _canonical_sha256(canonical) != spec.fingerprint:
+        raise ValidationError("llama.cpp server E4 spec fingerprint mismatch")
+    expected_body = {
+        "prompt": spec.prompt,
+        "n_predict": spec.predict_tokens,
+        "seed": 0,
+        "temperature": 0,
+        "stream": False,
+        "cache_prompt": False,
+    }
+    if spec.seed != 0 or spec.temperature != 0 or spec.request_body != expected_body:
+        raise ValidationError("llama.cpp server E4 deterministic request contract changed")
+    return {**canonical, "spec_sha256": spec.fingerprint}
+
+
+def validate_llamacpp_server_e4_result(
+    result: dict[str, Any],
+    *,
+    spec: LlamaCppServerE4Spec,
+) -> dict[str, Any]:
+    if not isinstance(result, dict):
+        raise ValidationError("E4 server result must be an object")
+    expected_fields = {
+        "e4_result_schema",
+        "e4_spec_sha256",
+        "server_spec_sha256",
+        "server_artifact_sha256",
+        "execution_source",
+        "content_sha256",
+        "content_bytes",
+        "http_status",
+        "completed",
+        "qualified",
+        "real_model_inference",
+        "result_sha256",
+    }
+    if set(result) != expected_fields:
+        raise ValidationError("E4 server result fields mismatch")
+    if result.get("e4_result_schema") != E4_RESULT_SCHEMA:
+        raise ValidationError("E4 server result schema mismatch")
+    if result.get("e4_spec_sha256") != spec.fingerprint:
+        raise ValidationError("E4 server result spec mismatch")
+    if result.get("server_spec_sha256") != spec.server_spec_sha256:
+        raise ValidationError("E4 server result launch spec mismatch")
+    supplied = result.get("result_sha256")
+    core = dict(result)
+    core.pop("result_sha256")
+    if _canonical_sha256(core) != supplied:
+        raise ValidationError("E4 server result fingerprint mismatch")
+    _sha256(result.get("content_sha256"), "server_result.content_sha256")
+    if result.get("http_status") != 200 or result.get("completed") is not True:
+        raise ValidationError("E4 server request did not complete successfully")
+    if result.get("qualified") is not False or result.get("real_model_inference") is not False:
+        raise ValidationError("E4 request result cannot self-promote qualification")
+    return result
+
+
 def run_llamacpp_server_e4_request(
     *,
     server: ManagedLlamaCppServer,
     spec: LlamaCppServerE4Spec,
     timeout_s: float = 30.0,
 ) -> dict[str, Any]:
+    validate_llamacpp_server_e4_spec(spec)
     if server.state != "ready":
         raise ValidationError("E4 server request requires ready managed server")
     if server.spec.spec_sha256 != spec.server_spec_sha256:
@@ -303,16 +386,8 @@ def evaluate_llamacpp_server_e4(
         "cli_trial_result.execution_source",
     )
 
-    if not isinstance(server_result, dict):
-        raise ValidationError("E4 server result must be an object")
-    if server_result.get("e4_result_schema") != E4_RESULT_SCHEMA:
-        raise ValidationError("E4 server result schema mismatch")
-    if server_result.get("e4_spec_sha256") != spec.fingerprint:
-        raise ValidationError("E4 server result spec mismatch")
-    if server_result.get("server_spec_sha256") != spec.server_spec_sha256:
-        raise ValidationError("E4 server result launch spec mismatch")
-    if server_result.get("completed") is not True:
-        raise ValidationError("E4 server request did not complete")
+    validate_llamacpp_server_e4_spec(spec)
+    validate_llamacpp_server_e4_result(server_result, spec=spec)
     server_output = _sha256(
         server_result.get("content_sha256"), "server_result.content_sha256"
     )
