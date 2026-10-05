@@ -179,7 +179,8 @@ A real target-host run must still supply the actual llama.cpp worker backend and
 The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownership:
 
 **P0 — measured llama.cpp backend baseline**
-- finish the real child-process backend with bounded logs, readiness, terminate/kill and lease-safe cleanup;
+- managed child-process ownership with bounded logs, readiness and terminate/kill is implemented and portable-tested with a real fixture server;
+- next bind llama-cli and llama-server to one explicit TensorMeld build/package identity before connecting the persistent server to AcceptedExecutionBundle/lease ownership;
 - qualify the first real target machines through the existing E2/E3/manifest/admission chain;
 - add TensorMeld-owned placement calibration records keyed by exact model, worker/runtime identity, context, KV/state format, topology and workload;
 - measure prefill and decode separately and rank candidates by declared workload wall time;
