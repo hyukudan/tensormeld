@@ -164,6 +164,11 @@ def parse_placement_calibration(
         raise ValidationError(
             "placement calibration runtime identities must cover exact candidate devices"
         )
+    for device in candidate_devices:
+        if by_device[device].worker_artifact_sha256 != package.llama_server_sha256:
+            raise ValidationError(
+                "placement calibration runtime identity must use package llama-server artifact"
+            )
     expected_runtime = tuple(
         by_device[device].identity_sha256 for device in candidate_devices
     )
@@ -240,9 +245,23 @@ def parse_placement_calibration(
             )),
         ))
     unique([pool for pool, _ in pool_peaks], "physical_pool_peak_bytes.pool_ref")
-    pool_ids = {pool.id for pool in config.pools}
-    if any(pool not in pool_ids for pool, _ in pool_peaks):
-        raise ValidationError("placement calibration references unknown physical pool")
+    pools_by_id = {pool.id: pool for pool in config.pools}
+    candidate_nodes = set(candidate.get("compute_nodes", ()))
+    for pool_id, peak in pool_peaks:
+        pool = pools_by_id.get(pool_id)
+        if pool is None:
+            raise ValidationError("placement calibration references unknown physical pool")
+        if pool.node not in candidate_nodes:
+            raise ValidationError(
+                "placement calibration physical pool belongs to unused candidate node"
+            )
+        if (
+            pool.reported_capacity_bytes is not None
+            and peak > pool.reported_capacity_bytes
+        ):
+            raise ValidationError(
+                "placement calibration physical pool peak exceeds reported capacity"
+            )
     pool_peaks.sort()
 
     canonical = {
