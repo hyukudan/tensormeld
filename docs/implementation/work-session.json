@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-llamacpp-package-identity",
   "scope": "Implement a TensorMeld llama.cpp build/package identity that binds exact llama-cli, llama-server and backend-library artifacts to one pinned build, then allow ManagedLlamaCppServer to attach to an already admitted bundle/lease only when that package identity bridges the qualified CLI artifact and execution server artifact.",
   "started_at": "2026-10-05T20:00:00+02:00",
   "expires_at": "2026-10-05T22:00:00+02:00",
   "base_commit": "ae41f5aecf8d54eb97244e8419c44235953c7209",
   "completion_condition": "Package identity contract, admitted-server binding, strict identity/provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Bind CLI/server/backend artifacts to one exact build identity, validate the qualified CLI artifact against AcceptedExecutionBundle and the server artifact against the managed launch spec, then attach server lifecycle to the admitted lease without issuing inference requests.",
-  "instructions": "Do not claim server semantic equivalence to CLI E3 merely from package identity. No inference requests, no real_model_inference promotion, no public listener/RPC, and no lease release before process termination."
+  "next_step": "Implement E4 server-vs-cli equivalence for the same package/model/placement/workload and only then authorize inference requests through the admitted persistent server.",
+  "instructions": "Completed as artifact/build provenance plus admitted process ownership. Same package does not imply request-semantic equivalence; inference_request_authorized remains false and no real llama.cpp/GPU claim is made by portable CI."
 }

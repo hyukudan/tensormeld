@@ -476,3 +476,32 @@ persistent server is a distinct llama-server artifact. TensorMeld will not treat
 the same worker merely because they came from the same source tree. A future build/package
 identity must bind both artifacts before persistent server execution can inherit E3 and
 lease authorization.
+
+
+## llama.cpp build/package identity and admitted-server bridge tests
+
+TensorMeld now represents a llama.cpp build package separately from individual executable
+identity. The package requires two distinct artifact hashes for llama-cli and llama-server,
+identical observed build metadata, the pinned source revision, and a deterministic set of
+backend-library artifact hashes.
+
+Package identity does not assert request-semantic equivalence. It only proves that the
+qualified CLI artifact and persistent server artifact are sibling artifacts in the exact
+recorded build package.
+
+The admitted-server bridge then requires:
+- intact TargetHostAdmissionResult;
+- exact AcceptedExecutionBundle;
+- package llama-cli SHA == the bundle's E3-qualified worker artifact;
+- server launch spec SHA == package llama-server SHA;
+- exact model/source revision identity;
+- live launched lease with matching lease/runtime-manifest fingerprint.
+
+Portable tests start a real fixture HTTP server under a real launch-admitted
+LocalAdmissionController lease. The lease stays active while the server is running and is
+released only after process stop is confirmed. Early server exit also cleans up the lease.
+
+The bridge deliberately reports both
+`server_semantic_equivalence_qualified=false` and
+`inference_request_authorized=false`. Same-build provenance is not an E4 correctness
+claim.
