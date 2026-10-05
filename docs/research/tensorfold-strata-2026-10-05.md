@@ -20,9 +20,18 @@ TensorMeld should keep **llama.cpp as the first production compute engine** whil
 TensorMeld control plane owns model identity, hardware identity, placement, qualification,
 resource admission, topology, session lifecycle and eventually multi-node transport.
 
-The architectural target is not "TensorMeld as a llama.cpp wrapper". The backend boundary
-must stay replaceable so that measured bottlenecks can later move to TensorMeld-native HIP
-or other kernels one path at a time.
+The architectural target is **independent TensorMeld infrastructure**, not "TensorMeld as
+a llama.cpp wrapper" and not a derivative of Strata or TensorFold. llama.cpp is initially
+one replaceable compute backend. Placement, planning, memory/resource semantics,
+qualification, scheduling, transport and session lifecycle remain TensorMeld-owned
+contracts.
+
+External projects are used only as research inputs: ideas are re-derived inside
+TensorMeld's hardware-neutral architecture. No external planner, scheduler, memory model
+or process manager becomes a TensorMeld dependency merely because its design is useful.
+
+The backend boundary must stay replaceable so that measured bottlenecks can later move to
+TensorMeld-native HIP or other kernels one path at a time.
 
 The most useful external patterns divide cleanly:
 
@@ -34,8 +43,9 @@ The most useful external patterns divide cleanly:
   identity, prefix/checkpoint reuse, read-ahead/streaming primitives and hardware-qualified
   optimization paths.
 
-TensorMeld should combine those ideas under its stronger identity/evidence/admission
-contracts rather than copying either architecture wholesale.
+TensorMeld should combine the useful principles under its own identity/evidence/admission
+contracts. The goal is independent implementation informed by prior art, not architectural
+inheritance from either project.
 
 ## What Strata actually does
 
@@ -420,6 +430,27 @@ Therefore the Strix qualification profile should prioritize:
 - mmap versus direct/staged I/O benchmarks on the actual Linux/ROCm stack;
 - inter-node transfer profiling separately from local unified-memory bandwidth;
 - no assumption that maximizing GPU-visible residency maximizes throughput.
+
+## Independence rule
+
+The default implementation policy is:
+
+1. study external behavior and published design;
+2. express the useful concept as a TensorMeld-owned contract;
+3. implement that contract independently against our heterogeneous AMD/NVIDIA/multi-node
+   requirements;
+4. qualify it with TensorMeld's own evidence gates.
+
+Direct source reuse is exceptional, not the default. It requires a concrete reason that
+independent implementation would be materially worse and a separate provenance/license
+decision.
+
+In particular:
+- TensorMeld will not import Strata's planner/tuner/scheduler as a dependency;
+- TensorMeld will not import TensorFold's engine/memory scheduler as a dependency;
+- their model-specific constants and hardware heuristics are not TensorMeld defaults;
+- llama.cpp remains a backend adapter, not the owner of TensorMeld's planning or resource
+  model.
 
 ## Licensing / reuse boundary
 
