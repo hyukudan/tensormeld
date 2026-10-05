@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-llamacpp-server-e4",
   "scope": "Implement E4 llama-cli versus llama-server request equivalence for one exact build package/model/placement/workload/sampler contract, using a closed loopback server request and emitting strict server-equivalence evidence before inference requests can be authorized.",
   "started_at": "2026-10-05T20:20:00+02:00",
   "expires_at": "2026-10-05T22:20:00+02:00",
   "base_commit": "f2bb0b1ae2cc69b2eb732d6afb9ae37688b76787",
   "completion_condition": "Closed server request contract, E4 equivalence evidence, admitted request-authorization gate, real fixture CLI/server tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Run the exact deterministic prompt/workload through qualified CLI and same-build managed server, compare canonical generated content, bind E4 to package/model/placement/spec/runtime identities, and authorize persistent requests only if it matches.",
-  "instructions": "Portable CI uses real fixture CLI/server processes only. No real llama.cpp/GPU claim, no public endpoint, no arbitrary HTTP body, no streaming yet, and no request authorization without exact E4 evidence."
+  "next_step": "Add the first E4-authorized persistent completion request path bound to the same admitted server/package/bundle/spec, with bounded response and lease-safe process lifecycle; real_model_inference can become true only on genuine native target-host execution.",
+  "instructions": "Completed as equivalence and authorization control-plane functionality. Portable CI uses real fixture CLI/server processes; fixture equality does not qualify E4 or authorize native requests."
 }
