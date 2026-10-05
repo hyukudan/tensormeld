@@ -20,8 +20,12 @@ from .admission import LocalAdmissionController
 from .llamacpp_managed_server import (
     LlamaCppServerLaunchSpec,
     ManagedLlamaCppServer,
+    validate_llamacpp_server_launch_spec,
 )
-from .llamacpp_package import LlamaCppBuildPackage
+from .llamacpp_package import (
+    LlamaCppBuildPackage,
+    validate_llamacpp_package_identity,
+)
 from .native_session import validate_target_host_admission_result
 from .schema import ValidationError
 from .target_host_admission import TargetHostAdmissionResult
@@ -80,6 +84,8 @@ def bind_admitted_llamacpp_server(
     server_spec: LlamaCppServerLaunchSpec,
 ) -> AdmittedLlamaCppServerBinding:
     record = validate_target_host_admission_result(admission)
+    validate_llamacpp_package_identity(package)
+    validate_llamacpp_server_launch_spec(server_spec)
     bundle = admission.bundle
 
     if package.source_revision != bundle.engine_revision:
