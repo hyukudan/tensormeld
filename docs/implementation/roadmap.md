@@ -180,7 +180,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 
 **P0 — measured llama.cpp backend baseline**
 - managed child-process ownership with bounded logs, readiness and terminate/kill is implemented and portable-tested with a real fixture server;
-- next bind llama-cli and llama-server to one explicit TensorMeld build/package identity before connecting the persistent server to AcceptedExecutionBundle/lease ownership;
+- exact llama-cli/llama-server/backend-library build package identity and admitted lease bridge are implemented;
+- next add server-vs-cli E4 request equivalence for the exact package/model/placement before enabling inference requests through the persistent server;
 - qualify the first real target machines through the existing E2/E3/manifest/admission chain;
 - add TensorMeld-owned placement calibration records keyed by exact model, worker/runtime identity, context, KV/state format, topology and workload;
 - measure prefill and decode separately and rank candidates by declared workload wall time;
