@@ -272,10 +272,15 @@ class ManagedLlamaCppServer:
             except (urlerror.URLError, TimeoutError, OSError):
                 pass
             time.sleep(poll_s)
+        tail = list(self.log_tail())
         self.state = "failed"
+        try:
+            self.stop()
+        except Exception:
+            pass
         raise ValidationError(
             f"llama-server did not become ready within {timeout_s:g}s; "
-            f"log_tail={list(self.log_tail())!r}"
+            f"log_tail={tail!r}"
         )
 
     def _ready_record(self) -> dict[str, Any]:
