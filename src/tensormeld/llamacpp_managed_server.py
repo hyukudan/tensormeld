@@ -161,6 +161,35 @@ def build_llamacpp_server_launch_spec(
     )
 
 
+def validate_llamacpp_server_launch_spec(
+    spec: LlamaCppServerLaunchSpec,
+) -> dict[str, Any]:
+    if not isinstance(spec, LlamaCppServerLaunchSpec):
+        raise ValidationError("expected LlamaCppServerLaunchSpec")
+    canonical = {
+        "server_spec_schema": SERVER_SPEC_SCHEMA,
+        "source_revision": spec.source_revision,
+        "server_artifact_sha256": spec.server_artifact_sha256,
+        "launcher_artifact_sha256": spec.launcher_artifact_sha256,
+        "model_manifest_sha256": spec.model_manifest_sha256,
+        "gguf_sha256": spec.gguf_sha256,
+        "accepted_bundle_sha256": spec.accepted_bundle_sha256,
+        "placement_sha256": spec.placement_sha256,
+        "host": spec.host,
+        "port": spec.port,
+        "context_tokens": spec.context_tokens,
+        "argv": list(spec.argv),
+        "real_model_inference": False,
+    }
+    if _canonical_sha256(canonical) != spec.spec_sha256:
+        raise ValidationError("llama.cpp server launch spec fingerprint mismatch")
+    if spec.source_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("llama.cpp server launch spec revision mismatch")
+    if spec.host != "127.0.0.1":
+        raise ValidationError("llama.cpp server launch spec must remain loopback-only")
+    return {**canonical, "spec_sha256": spec.spec_sha256}
+
+
 class ManagedLlamaCppServer:
     """Own one local llama-server child through readiness and shutdown."""
 
