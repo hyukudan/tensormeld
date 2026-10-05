@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-package-identity",
-  "scope": "Implement a TensorMeld llama.cpp build/package identity that binds exact llama-cli, llama-server and backend-library artifacts to one pinned build, then allow ManagedLlamaCppServer to attach to an already admitted bundle/lease only when that package identity bridges the qualified CLI artifact and execution server artifact.",
-  "started_at": "2026-10-05T20:00:00+02:00",
-  "expires_at": "2026-10-05T22:00:00+02:00",
-  "base_commit": "ae41f5aecf8d54eb97244e8419c44235953c7209",
-  "completion_condition": "Package identity contract, admitted-server binding, strict identity/provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Implement E4 server-vs-cli equivalence for the same package/model/placement/workload and only then authorize inference requests through the admitted persistent server.",
-  "instructions": "Completed as artifact/build provenance plus admitted process ownership. Same package does not imply request-semantic equivalence; inference_request_authorized remains false and no real llama.cpp/GPU claim is made by portable CI."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-server-e4",
+  "scope": "Implement E4 llama-cli versus llama-server request equivalence for one exact build package/model/placement/workload/sampler contract, using a closed loopback server request and emitting strict server-equivalence evidence before inference requests can be authorized.",
+  "started_at": "2026-10-05T20:20:00+02:00",
+  "expires_at": "2026-10-05T22:20:00+02:00",
+  "base_commit": "f2bb0b1ae2cc69b2eb732d6afb9ae37688b76787",
+  "completion_condition": "Closed server request contract, E4 equivalence evidence, admitted request-authorization gate, real fixture CLI/server tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Run the exact deterministic prompt/workload through qualified CLI and same-build managed server, compare canonical generated content, bind E4 to package/model/placement/spec/runtime identities, and authorize persistent requests only if it matches.",
+  "instructions": "Portable CI uses real fixture CLI/server processes only. No real llama.cpp/GPU claim, no public endpoint, no arbitrary HTTP body, no streaming yet, and no request authorization without exact E4 evidence."
 }
