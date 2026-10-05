@@ -160,17 +160,17 @@ def parse_placement_calibration(
     if len(by_device) != len(identities):
         raise ValidationError("duplicate runtime identity device")
     candidate_devices = tuple(candidate.get("compute_devices", ()))
-    if set(by_device) != set(candidate_devices):
+    if not set(candidate_devices) <= set(by_device):
         raise ValidationError(
-            "placement calibration runtime identities must cover exact candidate devices"
+            "placement calibration runtime environment does not cover candidate devices"
         )
-    for device in candidate_devices:
-        if by_device[device].worker_artifact_sha256 != package.llama_server_sha256:
+    for identity in identities:
+        if identity.worker_artifact_sha256 != package.llama_server_sha256:
             raise ValidationError(
-                "placement calibration runtime identity must use package llama-server artifact"
+                "placement calibration runtime environment must use package llama-server artifact"
             )
     expected_runtime = tuple(
-        by_device[device].identity_sha256 for device in candidate_devices
+        by_device[device].identity_sha256 for device in sorted(by_device)
     )
     supplied_runtime = tuple(
         text(value, "runtime_identity_sha256[]")
