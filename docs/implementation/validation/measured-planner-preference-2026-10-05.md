@@ -30,4 +30,4 @@ planning-identity mismatch rejection and tampered planner-best rejection.
 
 No hardware benchmark or performance claim is created by hosted CI.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #27, workflow `Portable Python tests`, run #263 (37364578939) ultimately passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Several jobs were cancelled by runner availability and re-run individually; the completed attempts were green. Hosted CI validates recommendation-overlay semantics only and does not establish target-hardware performance.
