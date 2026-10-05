@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-llamacpp-authorized-request",
   "scope": "Implement the first E4-authorized persistent llama-server completion request path, requiring exact authorized binding/E4 spec/server/lease identity on every call, bounded loopback request/response, stale-process/lease rejection, and native-only real_model_inference promotion.",
   "started_at": "2026-10-05T20:40:00+02:00",
   "expires_at": "2026-10-05T22:40:00+02:00",
   "base_commit": "953ab3142309fe77aea8288f69fb2d20eae85076",
   "completion_condition": "Authorized request contract, lease/process revalidation, fixture/native provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Execute only the E4-qualified completion request contract against a ready admitted managed server, retain bounded response evidence, keep the lease active while the server lives, and mark real_model_inference=true only for genuine native-server-subprocess execution.",
-  "instructions": "No arbitrary request body, no streaming, no cache widening, no public endpoint/RPC, no request after lease/process invalidation, and fixture server execution must remain real_model_inference=false."
+  "next_step": "Define a bounded qualified request-family contract that can safely vary prompt/output length/sampling dimensions, or run the existing exact request path on real target hardware first to obtain native E4 and real_model_inference evidence.",
+  "instructions": "Completed as one exact E4-authorized completion contract. No arbitrary request body or streaming is allowed. Portable CI uses a real fixture server and remains real_model_inference=false."
 }
