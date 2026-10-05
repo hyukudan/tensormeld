@@ -143,6 +143,10 @@ def execute_authorized_llamacpp_completion(
     except (urlerror.URLError, TimeoutError, OSError) as exc:
         if not server.is_alive:
             admitted_server.state = "failed"
+            try:
+                admitted_server.stop()
+            except Exception:
+                pass
         raise ValidationError("authorized completion request failed") from exc
 
     if len(raw) > MAX_RESPONSE_BYTES:
