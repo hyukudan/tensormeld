@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-tensorfold-strata-audit",
   "scope": "Deep-audit pinned current TensorFold and Strata implementations, extract reusable architecture and optimization patterns for TensorMeld, classify them as adopt/adapt/defer/reject, update research/roadmap/third-party provenance, and avoid importing code or unsupported performance claims.",
   "started_at": "2026-10-05T08:15:00+02:00",
   "expires_at": "2026-10-05T11:15:00+02:00",
   "base_commit": "47604f891a858be448eeb7d48bbc3688e5935205",
   "completion_condition": "Pinned comparative research document, explicit decisions/priorities, roadmap and third-party registry updates, PR and CI evidence are committed.",
-  "next_step": "Record current external revisions, compare Strata placement/tuning/process ownership with TensorFold memory/admission/exactness/streaming, then map only portable concepts onto TensorMeld's AMD/heterogeneous architecture.",
-  "instructions": "Research/documentation slice only. Do not copy external source code, do not add performance claims without source labels, do not broaden TensorMeld's core around Apple/NVIDIA assumptions, and do not weaken existing evidence/admission gates."
+  "next_step": "Implement the P0 real llama.cpp child-process backend and a TensorMeld-owned placement calibration contract; after the first real target qualification, add P1 session-growth memory admission and E4 equivalence.",
+  "instructions": "Completed as research/architecture guidance only. Strata and TensorFold are research-reference-only, not TensorMeld dependencies. No source was copied or vendored, and external performance measurements were not promoted to TensorMeld claims."
 }
