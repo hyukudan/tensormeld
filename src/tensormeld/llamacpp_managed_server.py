@@ -213,6 +213,10 @@ class ManagedLlamaCppServer:
     def pid(self) -> int | None:
         return None if self._child is None else self._child.pid
 
+    @property
+    def is_alive(self) -> bool:
+        return self._child is not None and self._child.poll() is None
+
     def log_tail(self) -> tuple[str, ...]:
         with self._log_lock:
             return tuple(self._log)
