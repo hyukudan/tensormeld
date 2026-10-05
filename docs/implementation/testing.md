@@ -505,3 +505,41 @@ The bridge deliberately reports both
 `server_semantic_equivalence_qualified=false` and
 `inference_request_authorized=false`. Same-build provenance is not an E4 correctness
 claim.
+
+
+## llama-cli ↔ llama-server E4 equivalence tests
+
+The E4 gate compares one deterministic request through the one-shot CLI path and the
+same-build persistent server path.
+
+The E4 spec binds:
+- exact llama.cpp build package;
+- ModelManifest;
+- AcceptedExecutionBundle;
+- pre-E3 qualification placement and post-E3 execution placement;
+- exact semantic equality of block ownership, buffer types, override-tensor value and
+  placement argv;
+- CLI trial spec and persistent server launch spec;
+- prompt, context, output length, seed 0 and temperature 0;
+- closed non-streaming server body with cache_prompt disabled.
+
+The server result is fingerprinted and bounded. The evaluator compares the SHA-256 of the
+CLI stdout bytes against the SHA-256 of the server's completion content bytes.
+
+Portable CI launches a real CLI fixture subprocess and a real HTTP server fixture process.
+They intentionally receive fixture provenance. Exact output equality therefore proves the
+comparison protocol but does not produce native E4 qualification.
+
+Request authorization requires E4 evidence with:
+- cli_execution_source=native-subprocess;
+- server_execution_source=native-server-subprocess;
+- exact output equality;
+- intact E4 spec/evidence fingerprints;
+- package/model/bundle/pre/post-placement/trial/server-spec identities matching the
+  admitted server binding.
+
+Only then can a derived binding report
+`server_semantic_equivalence_qualified=true` and
+`inference_request_authorized=true`. The gate still reports
+`real_model_inference=false` until an actual request is executed through that authorized
+binding.
