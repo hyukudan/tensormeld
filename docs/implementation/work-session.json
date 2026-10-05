@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-llamacpp-managed-server",
-  "scope": "Implement TensorMeld-owned revision-pinned llama-server child-process lifecycle with closed launch spec, approved artifacts/model/placement identity, loopback-only readiness, bounded diagnostic tail, early-exit detection, terminate-wait-kill shutdown, and no inference request path yet.",
-  "started_at": "2026-10-05T19:43:00+02:00",
-  "expires_at": "2026-10-05T22:43:00+02:00",
-  "base_commit": "c8d22a5fad4c64f98350ebfd2b500e11d65f032b",
-  "completion_condition": "Managed llama-server process contract, real cross-platform fixture-server lifecycle tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Introduce a TensorMeld llama.cpp build/package identity that binds the exact llama-cli qualification artifact and llama-server execution artifact to one pinned build, then attach ManagedLlamaCppServer to the admitted-session lease lifecycle.",
-  "instructions": "Completed as a managed persistent-process primitive only. Portable CI executes a real fixture HTTP server, not llama.cpp. Persistent server execution is intentionally not connected to AcceptedExecutionBundle authorization until CLI/server artifact identity is explicitly bridged."
+  "status": "active",
+  "owner": "chatgpt-llamacpp-package-identity",
+  "scope": "Implement a TensorMeld llama.cpp build/package identity that binds exact llama-cli, llama-server and backend-library artifacts to one pinned build, then allow ManagedLlamaCppServer to attach to an already admitted bundle/lease only when that package identity bridges the qualified CLI artifact and execution server artifact.",
+  "started_at": "2026-10-05T20:00:00+02:00",
+  "expires_at": "2026-10-05T22:00:00+02:00",
+  "base_commit": "ae41f5aecf8d54eb97244e8419c44235953c7209",
+  "completion_condition": "Package identity contract, admitted-server binding, strict identity/provenance tests, docs/ADR/validation and CI evidence are committed.",
+  "next_step": "Bind CLI/server/backend artifacts to one exact build identity, validate the qualified CLI artifact against AcceptedExecutionBundle and the server artifact against the managed launch spec, then attach server lifecycle to the admitted lease without issuing inference requests.",
+  "instructions": "Do not claim server semantic equivalence to CLI E3 merely from package identity. No inference requests, no real_model_inference promotion, no public listener/RPC, and no lease release before process termination."
 }
