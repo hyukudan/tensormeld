@@ -543,3 +543,36 @@ Only then can a derived binding report
 `inference_request_authorized=true`. The gate still reports
 `real_model_inference=false` until an actual request is executed through that authorized
 binding.
+
+
+## First E4-authorized persistent completion tests
+
+The first persistent request path is intentionally not a general chat/completion proxy.
+It accepts no caller-supplied prompt or sampler changes. It executes exactly the
+`request_body` already fingerprinted by the E4 equivalence spec.
+
+Before every HTTP request TensorMeld revalidates:
+- the authorized E4 binding fingerprint/state;
+- the exact E4 spec fingerprint;
+- package/bundle/base-binding/server-spec identity;
+- admitted server state = ready;
+- managed child process still alive;
+- launch-admitted lease still active in state launched;
+- lease SHA and runtime-manifest SHA.
+
+The same checks run again after the HTTP response so a racing process/lease loss cannot be
+reported as a successful persistent completion.
+
+Because this first contract is deterministic, the returned content SHA-256 must still
+equal the E4-equivalent expected output SHA stored in the authorized binding. Output drift
+fails closed.
+
+Portable tests execute a real fixture HTTP server under a real LocalAdmissionController
+lease. They cover successful completion with the lease retained until server stop,
+runtime output drift, externally released/stale lease, stopped server, tampered authorized
+binding and mismatched E4 spec.
+
+Fixture execution reports `fixture-server-subprocess` and
+`real_model_inference=false`. The code permits `real_model_inference=true` only for
+the native-server-subprocess path after the same authorization and runtime checks; hosted
+CI does not claim that native path has executed.
