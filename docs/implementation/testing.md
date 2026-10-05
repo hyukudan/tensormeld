@@ -614,3 +614,32 @@ Portable tests cover workload normalization, fixture/native provenance separatio
 runtime/package invalidation, unused-pool rejection, mixed calibration environments,
 deterministic coarse sampling, local refinement and blocked refinement when no applicable
 ranking exists.
+
+
+## Measured planner preference overlay tests
+
+The measured preference layer consumes an already-produced planner-v2 result and optional
+placement calibrations. It does not call the planner, generate new candidates or rewrite
+candidate content.
+
+The output exposes:
+- the planner's original synthetic best;
+- the best applicable measured candidate;
+- the final recommended candidate;
+- recommendation provenance and measured objective.
+
+When native evidence is required, fixture calibration cannot replace the synthetic best.
+When no applicable native calibration exists, recommendation falls back to the original
+synthetic best.
+
+Portable tests prove:
+- a native-calibrated retained candidate can become the recommendation even when it is not
+  planner-v2's synthetic best;
+- planner result and candidate list remain unchanged;
+- fixture measurements cannot override native-mode recommendation;
+- fixture mode can exercise reordering semantics without native claims;
+- unretained-candidate calibration, planning-identity mismatch and tampered planner-best
+  views fail closed.
+
+Measured preference remains unqualified and non-executable. It changes recommendation
+ordering only; all qualification/admission gates remain downstream.

@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-measured-planner-preference",
   "scope": "Integrate native placement calibration as a measured preference over existing planner-v2 candidates without mutating candidate identity, synthetic estimates, qualification or executability; expose explicit synthetic-best versus measured-best recommendation provenance.",
   "started_at": "2026-10-05T21:10:00+02:00",
   "expires_at": "2026-10-05T23:10:00+02:00",
   "base_commit": "c734970a531ebc2b139c441da5d4b0d8a6c214e5",
   "completion_condition": "Measured recommendation contract, strict applicability/candidate-preservation tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Overlay applicable native-target calibrations on planner-v2 output, recommend the best measured retained candidate when available, otherwise preserve the synthetic recommendation, and keep all candidate hashes/content unchanged.",
-  "instructions": "No candidate mutation, no calibration-driven qualification/execution, no fixture preference in native mode, no hidden fallback from incompatible measurements, and no performance claim without real native calibration."
+  "next_step": "Collect and persist real native-target calibration records on RTX/Strix hosts, add invalidation/aging across runtime/package/topology changes, and feed only currently applicable records into the measured preference overlay.",
+  "instructions": "Completed as a recommendation overlay only. Planner output and candidates remain immutable; fixture calibration cannot override native-mode selection; recommendation does not imply qualification or executability."
 }
