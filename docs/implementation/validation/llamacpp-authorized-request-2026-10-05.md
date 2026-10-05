@@ -33,4 +33,4 @@ A real fixture HTTP process runs under a real LocalAdmissionController lease. Te
 Fixture execution remains real_model_inference=false. No real llama.cpp binary, GGUF
 inference or GPU executes in hosted CI.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #25, workflow `Portable Python tests`, run #253 (37358461514) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Portable CI executed a real fixture HTTP completion under a real LocalAdmissionController lease and validated lease persistence, stale-state rejection and E4 output-drift checking; it did not execute llama.cpp or GPU inference.
