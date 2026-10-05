@@ -83,6 +83,8 @@ def _validate_live_admitted_server(
         raise ValidationError("authorized completion bundle differs from admitted server")
     if authorization.base_binding_sha256 != admitted_server.binding.fingerprint:
         raise ValidationError("authorized completion base binding differs from admitted server")
+    if authorization.e4_spec_sha256 != spec.fingerprint:
+        raise ValidationError("authorized completion E4 spec fingerprint mismatch")
     if spec.package_sha256 != authorization.package_sha256:
         raise ValidationError("authorized completion E4 package differs from authorization")
     if spec.accepted_bundle_sha256 != authorization.accepted_bundle_sha256:
@@ -177,6 +179,11 @@ def execute_authorized_llamacpp_completion(
     )
     real_model_inference = execution_source == "native-server-subprocess"
     content_bytes = content.encode("utf-8")
+    content_sha256 = hashlib.sha256(content_bytes).hexdigest()
+    if content_sha256 != authorization.expected_output_sha256:
+        raise ValidationError(
+            "authorized completion output drifted from E4-equivalent output"
+        )
     core = {
         "request_result_schema": REQUEST_RESULT_SCHEMA,
         "authorized_binding_sha256": authorization.fingerprint,
@@ -188,7 +195,8 @@ def execute_authorized_llamacpp_completion(
         "lease_sha256": admitted_server.binding.lease_sha256,
         "execution_source": execution_source,
         "request_body_sha256": _canonical_sha256(spec.request_body),
-        "content_sha256": hashlib.sha256(content_bytes).hexdigest(),
+        "content_sha256": content_sha256,
+        "expected_output_sha256": authorization.expected_output_sha256,
         "content_bytes": len(content_bytes),
         "http_status": 200,
         "completed": True,
