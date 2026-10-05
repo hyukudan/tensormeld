@@ -478,6 +478,16 @@ def validate_authorized_llamacpp_server_binding(
     supplied = record.pop("fingerprint")
     if _canonical_sha256(record) != supplied:
         raise ValidationError("authorized llama.cpp server binding fingerprint mismatch")
+    for field in (
+        "base_binding_sha256",
+        "e4_evidence_sha256",
+        "e4_spec_sha256",
+        "expected_output_sha256",
+        "package_sha256",
+        "accepted_bundle_sha256",
+        "server_spec_sha256",
+    ):
+        _sha256(record.get(field), field)
     if (
         record.get("server_semantic_equivalence_qualified") is not True
         or record.get("inference_request_authorized") is not True
