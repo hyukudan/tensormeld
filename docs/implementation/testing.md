@@ -576,3 +576,41 @@ Fixture execution reports `fixture-server-subprocess` and
 `real_model_inference=false`. The code permits `real_model_inference=true` only for
 the native-server-subprocess path after the same authorization and runtime checks; hosted
 CI does not claim that native path has executed.
+
+
+## Placement calibration tests
+
+TensorMeld placement calibration is an evidence layer over existing planner candidates.
+It does not create new placements and cannot self-promote correctness or execution.
+
+Each calibration record is bound to:
+- exact Config and PlanningInput;
+- exact profile/model manifest reference;
+- exact llama.cpp build-package fingerprint;
+- exact candidate plan SHA;
+- a common runtime environment containing stable RuntimeIdentity fingerprints for all
+  devices available to the calibration sweep;
+- package llama-server artifact identity for every runtime identity;
+- target prefill/decode workload;
+- measured prefill/decode token counts and elapsed microseconds;
+- optional physical-pool peaks restricted to nodes used by the candidate.
+
+The common runtime environment allows candidate comparisons whose compute-device subsets
+differ (for example one GPU versus two GPUs) without pretending the hardware environment
+itself changed between measurements.
+
+The workload objective is deterministic integer arithmetic:
+`ceil(measured_prefill_us * target_prefill_tokens / measured_prefill_tokens)
++ ceil(measured_decode_us * target_decode_tokens / measured_decode_tokens)`.
+
+Native ranking ignores fixture records when `require_native=true`.
+
+The bounded search helper never invents placements. It samples evenly across the planner's
+already ordered candidate list for the coarse round, then exposes only nearby unmeasured
+planner candidates around the best applicable measured candidate. This is a bounded search
+heuristic and does not claim a global optimum.
+
+Portable tests cover workload normalization, fixture/native provenance separation,
+runtime/package invalidation, unused-pool rejection, mixed calibration environments,
+deterministic coarse sampling, local refinement and blocked refinement when no applicable
+ranking exists.

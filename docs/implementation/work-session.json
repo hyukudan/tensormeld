@@ -1,12 +1,12 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-placement-calibration",
   "scope": "Implement TensorMeld-owned placement calibration records and bounded coarse-to-refine candidate selection over existing planner candidates, with separate prefill/decode measurements, workload-normalized objective, exact package/runtime/topology identities and fixture/native provenance separation.",
   "started_at": "2026-10-05T20:53:00+02:00",
   "expires_at": "2026-10-05T23:00:00+02:00",
   "base_commit": "8ed9af3b6dd1d3dd0712af2ade415307c82a37e2",
   "completion_condition": "Calibration measurement schema, applicability/ranking, bounded coarse/refine selection, fixture/native provenance tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Measure exact existing planner candidates with separate prefill/decode timings, normalize to the target workload, choose the best applicable native calibration, and expose bounded neighboring candidates for refinement without mutating planner estimates into facts.",
-  "instructions": "No benchmark execution in this slice, no hardware performance claims, no imported Strata tuner, no universal tuning constants, and fixture calibration must never become native placement evidence."
+  "next_step": "Collect real native-target calibration records on target RTX/Strix hardware and add an evidence-backed planner preference that can select the best measured applicable candidate without mutating plan identity or turning calibration into qualification.",
+  "instructions": "Completed as calibration contracts and search policy only. No benchmarks are executed by hosted CI, no external tuner is imported, no universal performance constants are introduced, and fixture calibration never becomes native placement evidence."
 }

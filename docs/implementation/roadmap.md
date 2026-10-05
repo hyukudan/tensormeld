@@ -183,9 +183,10 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - exact llama-cli/llama-server/backend-library build package identity and admitted lease bridge are implemented;
 - next add server-vs-cli E4 request equivalence for the exact package/model/placement before enabling inference requests through the persistent server;
 - qualify the first real target machines through the existing E2/E3/manifest/admission chain;
-- add TensorMeld-owned placement calibration records keyed by exact model, worker/runtime identity, context, KV/state format, topology and workload;
-- measure prefill and decode separately and rank candidates by declared workload wall time;
-- use bounded coarse search followed by local refinement, treating planner estimates as candidate generation rather than truth.
+- TensorMeld-owned placement calibration records are implemented for exact planner candidates, build package and common runtime environment;
+- separate prefill/decode timings are normalized to the target context/output workload with integer arithmetic;
+- bounded coarse→local-refinement candidate selection is implemented without inventing placements or treating synthetic estimates as measurements;
+- next collect real native-target calibration records on RTX/Strix hosts, then feed the best applicable measured candidate back into planner selection as an evidence-backed preference rather than replacing plan identity.
 
 **P1 — predictive memory and equivalence**
 - add model/tensor movability classes rather than a single parameter-size scalar;
