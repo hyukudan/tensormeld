@@ -252,9 +252,7 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
             "stream": False,
             "cache_prompt": False,
         }
-        spec = self.authorization_spec()
         kwargs = {
-            "e4_spec_sha256": spec.fingerprint,
             "package_sha256": self.binding.package_sha256,
             "model_manifest_sha256": self.fixture.admission.bundle.model_manifest_sha256,
             "accepted_bundle_sha256": self.binding.accepted_bundle_sha256,
@@ -262,7 +260,7 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
             "execution_placement_sha256": "c" * 64,
             "placement_semantics_sha256": "e" * 64,
             "trial_spec_sha256": "d" * 64,
-            "server_spec_sha256": spec.server_spec_sha256,
+            "server_spec_sha256": self.binding.server_spec_sha256,
             "prompt": "authorization-contract",
             "context_tokens": 128,
             "predict_tokens": 1,
@@ -277,16 +275,18 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
         }
         return replace(provisional, fingerprint=canonical_sha(canonical))
 
-    def native_evidence(self, **changes):
+    def native_evidence(self, spec=None, **changes):
+        spec = spec or self.authorization_spec()
         output_sha = "a" * 64
         kwargs = {
+            "e4_spec_sha256": spec.fingerprint,
             "package_sha256": self.binding.package_sha256,
-            "model_manifest_sha256": self.fixture.admission.bundle.model_manifest_sha256,
-            "accepted_bundle_sha256": self.binding.accepted_bundle_sha256,
+            "model_manifest_sha256": spec.model_manifest_sha256,
+            "accepted_bundle_sha256": spec.accepted_bundle_sha256,
             "qualification_placement_sha256": spec.qualification_placement_sha256,
             "execution_placement_sha256": spec.execution_placement_sha256,
             "trial_spec_sha256": spec.trial_spec_sha256,
-            "server_spec_sha256": self.binding.server_spec_sha256,
+            "server_spec_sha256": spec.server_spec_sha256,
             "cli_output_sha256": output_sha,
             "server_output_sha256": output_sha,
             "cli_execution_source": "native-subprocess",
@@ -295,22 +295,17 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
             "qualified": True,
         }
         kwargs.update(changes)
-        provisional = LlamaCppServerE4Evidence(
-            **kwargs,
-            fingerprint="",
-        )
+        provisional = LlamaCppServerE4Evidence(**kwargs, fingerprint="")
         record = provisional.as_record()
         record.pop("fingerprint")
-        return replace(
-            provisional,
-            fingerprint=canonical_sha(record),
-        )
+        return replace(provisional, fingerprint=canonical_sha(record))
 
     def test_exact_native_e4_authorizes_persistent_requests(self):
+        spec = self.authorization_spec()
         authorized = authorize_admitted_llamacpp_server_requests(
             binding=self.binding,
-            spec=self.authorization_spec(),
-            evidence=self.native_evidence(),
+            spec=spec,
+            evidence=self.native_evidence(spec),
         )
         record = authorized.as_record()
         self.assertTrue(record["server_semantic_equivalence_qualified"])
@@ -318,7 +313,9 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
         self.assertFalse(record["real_model_inference"])
 
     def test_non_native_e4_cannot_authorize_requests(self):
+        spec = self.authorization_spec()
         evidence = self.native_evidence(
+            spec,
             cli_execution_source="fixture-subprocess",
             server_execution_source="fixture-server-subprocess",
             qualified=False,
@@ -326,31 +323,36 @@ class LlamaCppServerE4AuthorizationTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             authorize_admitted_llamacpp_server_requests(
                 binding=self.binding,
+                spec=spec,
                 evidence=evidence,
             )
 
     def test_tampered_e4_fingerprint_is_rejected(self):
+        spec = self.authorization_spec()
         evidence = replace(
-            self.native_evidence(),
+            self.native_evidence(spec),
             fingerprint="0" * 64,
         )
         with self.assertRaises(ValidationError):
             authorize_admitted_llamacpp_server_requests(
                 binding=self.binding,
+                spec=spec,
                 evidence=evidence,
             )
 
     def test_e4_from_another_bundle_is_rejected(self):
+        spec = self.authorization_spec()
         evidence = self.native_evidence(
+            spec,
             accepted_bundle_sha256="0" * 64,
         )
-        # Recompute its internal fingerprint so rejection is specifically bundle identity.
         record = evidence.as_record()
         record.pop("fingerprint")
         evidence = replace(evidence, fingerprint=canonical_sha(record))
         with self.assertRaises(ValidationError):
             authorize_admitted_llamacpp_server_requests(
                 binding=self.binding,
+                spec=spec,
                 evidence=evidence,
             )
 
