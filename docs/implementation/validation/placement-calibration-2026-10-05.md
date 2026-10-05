@@ -31,4 +31,4 @@ ranking is required.
 
 No hardware benchmark or performance claim is produced by hosted CI.
 
-GitHub Actions result: pending for the implementation PR.
+GitHub Actions result: PR #26, workflow `Portable Python tests`, run #259 (37359966389) passed all 7 jobs: Linux and Windows on Python 3.11/3.13, optional-adapter integration on both operating systems, plus the dedicated real-mTLS-loopback job. Hosted CI validates calibration identity, workload normalization and bounded coarse→refine search with fixture measurements only; it does not establish target-hardware performance.
