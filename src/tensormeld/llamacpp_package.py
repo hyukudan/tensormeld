@@ -143,3 +143,18 @@ def build_llamacpp_package_identity(
         tuple(libs),
         _canonical_sha256(canonical),
     )
+
+
+def validate_llamacpp_package_identity(
+    package: LlamaCppBuildPackage,
+) -> dict[str, Any]:
+    if not isinstance(package, LlamaCppBuildPackage):
+        raise ValidationError("expected LlamaCppBuildPackage")
+    record = package.as_record()
+    supplied = record.pop("package_sha256")
+    expected = _canonical_sha256(record)
+    if supplied != expected:
+        raise ValidationError("llama.cpp package fingerprint mismatch")
+    if package.source_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("llama.cpp package source revision mismatch")
+    return {**record, "package_sha256": supplied}
