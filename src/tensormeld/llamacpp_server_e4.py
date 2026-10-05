@@ -465,6 +465,24 @@ class AuthorizedAdmittedLlamaCppServerBinding:
         }
 
 
+def validate_authorized_llamacpp_server_binding(
+    binding: AuthorizedAdmittedLlamaCppServerBinding,
+) -> dict[str, Any]:
+    if not isinstance(binding, AuthorizedAdmittedLlamaCppServerBinding):
+        raise ValidationError("expected AuthorizedAdmittedLlamaCppServerBinding")
+    record = binding.as_record()
+    supplied = record.pop("fingerprint")
+    if _canonical_sha256(record) != supplied:
+        raise ValidationError("authorized llama.cpp server binding fingerprint mismatch")
+    if (
+        record.get("server_semantic_equivalence_qualified") is not True
+        or record.get("inference_request_authorized") is not True
+        or record.get("real_model_inference") is not False
+    ):
+        raise ValidationError("authorized llama.cpp server binding state is invalid")
+    return {**record, "fingerprint": supplied}
+
+
 def validate_llamacpp_server_e4_evidence(
     evidence: LlamaCppServerE4Evidence,
 ) -> dict[str, Any]:
