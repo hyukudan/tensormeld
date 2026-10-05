@@ -10,6 +10,11 @@ contract. Custom code is justified for placement policy, resource accounting and
 coordination contracts that distinguish this product, not for duplicating mature parsers,
 OS introspection libraries, cryptography, tokenizers or GPU kernels.
 
+"Reuse" does not mean adopting another inference project's planner, scheduler or memory
+architecture as TensorMeld's core. Prior-art ideas are normally re-derived into
+TensorMeld-owned contracts and independently implemented against TensorMeld's heterogeneous
+resource model. Direct source reuse is an explicit, provenance-recorded exception.
+
 Prefer in order: a pinned library API, an isolated subprocess adapter, a small documented
 patch set, then narrowly vendored source with preserved notices. A large fork is not the
 default way to acquire a small feature. Keep generic inference engines outside the
