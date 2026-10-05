@@ -1,6 +1,6 @@
 {
   "schema": "tensormeld/third-party-v1",
-  "reviewed_on": "2026-10-03",
+  "reviewed_on": "2026-10-05",
   "vendored_source": false,
   "fully_resolved_dependency_lock": false,
   "components": [
@@ -44,6 +44,25 @@
       "adoption": "native-adapter-candidate",
       "status": "revision/root license and placement/RPC interface reviewed as a future compatibility target; current TensorMeld model-aware shim targets the pinned upstream llama.cpp placement contract only and does not enable halo-hybrid-specific overrides or remote RPC",
       "notice": "licenses/ggml-MIT.txt"
+    },
+    {
+      "name": "Strata",
+      "source": "https://github.com/mehbul/strata",
+      "commit": "e8647a84bac93cc2fae5f620726621e56fbc9659",
+      "license": "Apache-2.0",
+      "adoption": "research-reference-only",
+      "status": "architecture/code audit only; no source vendored, imported or runtime-linked; measured-placement, context/KV tuning and owned-process lifecycle ideas were re-derived into TensorMeld roadmap priorities",
+      "dependency": false
+    },
+    {
+      "name": "TensorFold",
+      "source": "https://github.com/ashhart/TensorFold",
+      "commit": "609ca419abecebdc5a059498a613680bd3aa847f",
+      "version": "0.6.5",
+      "license": "Apache-2.0 (with stated MIT notice for older retained code)",
+      "adoption": "research-reference-only",
+      "status": "architecture/code audit only; no source vendored, imported or runtime-linked; memory admission, exactness, cache identity and read-ahead ideas were re-derived into TensorMeld roadmap priorities",
+      "dependency": false
     }
   ]
 }
