@@ -445,6 +445,8 @@ def evaluate_llamacpp_server_e4(
 class AuthorizedAdmittedLlamaCppServerBinding:
     base_binding_sha256: str
     e4_evidence_sha256: str
+    e4_spec_sha256: str
+    expected_output_sha256: str
     package_sha256: str
     accepted_bundle_sha256: str
     server_spec_sha256: str
@@ -455,6 +457,8 @@ class AuthorizedAdmittedLlamaCppServerBinding:
             "binding_schema": AUTHORIZED_BINDING_SCHEMA,
             "base_binding_sha256": self.base_binding_sha256,
             "e4_evidence_sha256": self.e4_evidence_sha256,
+            "e4_spec_sha256": self.e4_spec_sha256,
+            "expected_output_sha256": self.expected_output_sha256,
             "package_sha256": self.package_sha256,
             "accepted_bundle_sha256": self.accepted_bundle_sha256,
             "server_spec_sha256": self.server_spec_sha256,
@@ -540,6 +544,8 @@ def authorize_admitted_llamacpp_server_requests(
         "binding_schema": AUTHORIZED_BINDING_SCHEMA,
         "base_binding_sha256": binding.fingerprint,
         "e4_evidence_sha256": evidence.fingerprint,
+        "e4_spec_sha256": spec.fingerprint,
+        "expected_output_sha256": evidence.server_output_sha256,
         "package_sha256": binding.package_sha256,
         "accepted_bundle_sha256": binding.accepted_bundle_sha256,
         "server_spec_sha256": binding.server_spec_sha256,
@@ -550,6 +556,8 @@ def authorize_admitted_llamacpp_server_requests(
     return AuthorizedAdmittedLlamaCppServerBinding(
         binding.fingerprint,
         evidence.fingerprint,
+        spec.fingerprint,
+        evidence.server_output_sha256,
         binding.package_sha256,
         binding.accepted_bundle_sha256,
         binding.server_spec_sha256,
