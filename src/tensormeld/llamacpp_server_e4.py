@@ -323,6 +323,7 @@ def run_llamacpp_server_e4_request(
 
 @dataclass(frozen=True)
 class LlamaCppServerE4Evidence:
+    e4_spec_sha256: str
     package_sha256: str
     model_manifest_sha256: str
     accepted_bundle_sha256: str
@@ -341,6 +342,7 @@ class LlamaCppServerE4Evidence:
     def as_record(self) -> dict[str, Any]:
         return {
             "e4_evidence_schema": E4_EVIDENCE_SCHEMA,
+            "e4_spec_sha256": self.e4_spec_sha256,
             "package_sha256": self.package_sha256,
             "model_manifest_sha256": self.model_manifest_sha256,
             "accepted_bundle_sha256": self.accepted_bundle_sha256,
@@ -403,6 +405,7 @@ def evaluate_llamacpp_server_e4(
     qualified = outputs_equal and native
     canonical = {
         "e4_evidence_schema": E4_EVIDENCE_SCHEMA,
+        "e4_spec_sha256": spec.fingerprint,
         "package_sha256": spec.package_sha256,
         "model_manifest_sha256": spec.model_manifest_sha256,
         "accepted_bundle_sha256": spec.accepted_bundle_sha256,
@@ -420,6 +423,7 @@ def evaluate_llamacpp_server_e4(
         "inference_request_authorized": False,
     }
     return LlamaCppServerE4Evidence(
+        spec.fingerprint,
         spec.package_sha256,
         spec.model_manifest_sha256,
         spec.accepted_bundle_sha256,
@@ -483,9 +487,27 @@ def validate_llamacpp_server_e4_evidence(
 def authorize_admitted_llamacpp_server_requests(
     *,
     binding: AdmittedLlamaCppServerBinding,
+    spec: LlamaCppServerE4Spec,
     evidence: LlamaCppServerE4Evidence,
 ) -> AuthorizedAdmittedLlamaCppServerBinding:
+    validate_llamacpp_server_e4_spec(spec)
     validate_llamacpp_server_e4_evidence(evidence)
+    if evidence.e4_spec_sha256 != spec.fingerprint:
+        raise ValidationError("E4 evidence belongs to another equivalence spec")
+    if evidence.package_sha256 != spec.package_sha256:
+        raise ValidationError("E4 evidence package differs from equivalence spec")
+    if evidence.model_manifest_sha256 != spec.model_manifest_sha256:
+        raise ValidationError("E4 evidence model differs from equivalence spec")
+    if evidence.accepted_bundle_sha256 != spec.accepted_bundle_sha256:
+        raise ValidationError("E4 evidence bundle differs from equivalence spec")
+    if evidence.qualification_placement_sha256 != spec.qualification_placement_sha256:
+        raise ValidationError("E4 evidence qualification placement differs from spec")
+    if evidence.execution_placement_sha256 != spec.execution_placement_sha256:
+        raise ValidationError("E4 evidence execution placement differs from spec")
+    if evidence.trial_spec_sha256 != spec.trial_spec_sha256:
+        raise ValidationError("E4 evidence trial spec differs from equivalence spec")
+    if evidence.server_spec_sha256 != spec.server_spec_sha256:
+        raise ValidationError("E4 evidence server spec differs from equivalence spec")
     if evidence.qualified is not True:
         raise ValidationError("native E4 equivalence is required for request authorization")
     if evidence.outputs_equal is not True:
