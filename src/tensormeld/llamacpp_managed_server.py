@@ -34,6 +34,7 @@ from urllib import request as urlrequest
 from .llamacpp_native_trial import ApprovedGGUF
 from .llamacpp_placement import LlamaCppPlacementTranslation
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
+from .model_manifest import ModelManifest
 from .native_worker import WorkerArtifact
 from .schema import ValidationError
 from .whole_block_execution import AcceptedExecutionBundle
@@ -76,6 +77,7 @@ def build_llamacpp_server_launch_spec(
     *,
     bundle: AcceptedExecutionBundle,
     placement: LlamaCppPlacementTranslation,
+    model: ModelManifest,
     llama_server: WorkerArtifact,
     gguf: ApprovedGGUF,
     launcher: WorkerArtifact | None = None,
@@ -90,6 +92,15 @@ def build_llamacpp_server_launch_spec(
         raise ValidationError("llama.cpp server placement belongs to another bundle")
     if placement.fingerprint == "":
         raise ValidationError("llama.cpp server placement has no fingerprint")
+    if model.manifest_sha256 != bundle.model_manifest_sha256:
+        raise ValidationError("llama.cpp server model manifest does not match bundle")
+    if len(model.files) != 1:
+        raise ValidationError("initial managed llama-server supports one GGUF file")
+    if (
+        gguf.file_name != model.files[0].name
+        or gguf.sha256 != model.files[0].sha256
+    ):
+        raise ValidationError("approved GGUF does not match ModelManifest")
     if not 1 <= int(context_tokens) <= 1_048_576:
         raise ValidationError("context_tokens outside supported server bound")
     if type(port) is not int or not 1024 <= port <= 65535:
