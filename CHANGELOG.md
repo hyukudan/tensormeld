@@ -13,6 +13,7 @@
 - Convert bound devices to runtime state `observed`, not `ready`; backend self-test
   remains required.
 - Keep all pre-execution stages separate from live session admission.
+- Persist placement calibrations as immutable fingerprint records with bounded age and revalidation against current build/runtime/device/topology identities before measured-preference reuse.
 
 ## 0.2.0a2 — 2026-10-01
 
