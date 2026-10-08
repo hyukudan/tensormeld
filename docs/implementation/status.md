@@ -66,6 +66,9 @@ the pre-alpha status or qualify any execution path.
 - dependency/license register and alternate pinned native-engine candidate;
 - pinned 2026-10-05 Strata/TensorFold code audit recorded as research-only prior art with explicit TensorMeld independence and adopt/adapt/defer/reject priorities;
 - TensorMeld-owned managed llama-server child-process primitive with exact server/model/GGUF/placement identity, loopback-only readiness, bounded stderr tail, early-exit detection and terminate→kill shutdown;
+- immutable local placement-calibration store keyed by calibration fingerprint;
+- persisted calibration records carry timezone-aware age limits and are revalidated against current package/runtime/device/topology identities before reuse;
+- expired, future-dated, fixture-only or context-mismatched calibration records are excluded from measured preference without mutating planner candidates;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
@@ -103,4 +106,4 @@ launch, but this is not yet a distributed/agent lease service. Explicit reflecte
 separate telemetry that already includes an allocation from pending logical reservations so
 committed bytes are not necessarily subtracted twice.
 
-No measured RTX, Strix or model speed is claimed.
+No measured RTX, Strix or model speed is claimed. The calibration store has portable fixture coverage only until real target-host measurements are collected.
