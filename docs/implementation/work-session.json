@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-legal-model-units",
   "scope": "Add adapter-declared ordered indivisible legal model units and explicit cut boundaries over complete tensor-movability evidence, without enabling finer-grained execution automatically.",
   "started_at": "2026-10-08T15:38:00+02:00",
-  "expires_at": "2026-10-08T17:38:00+02:00",
+  "completed_at": "2026-10-08T15:52:00+02:00",
+  "expires_at": null,
   "base_commit": "3f790460dfb70c9d5853f2fb374aaf5fb6b77970",
-  "branch": "chatgpt-legal-model-units",
+  "merged_pr": 32,
+  "merge_commit": "355f759e876a01ffafe2ca4194e6b788f24c5264",
+  "validation_record": "docs/implementation/validation/legal-model-units-2026-10-08.md",
   "completion_condition": "Legal-unit contract, complete tensor/alias coverage tests, cut-boundary validation, ADR/status/roadmap and PR CI are green and merged; planner baseline remains unchanged.",
-  "next_step": "Implement explicit legal unit sequence, allowed-device intersection and cut-after boundaries.",
-  "instructions": "Do not infer unit order/cuts from tensor names. Do not enable fine-grained planner execution in this slice."
+  "next_step": "Build a bounded advisory planner over adapter-declared legal model units and cut boundaries, keeping results non-executable until a native adapter validates the finer-grained execution path.",
+  "instructions": "Do not repeat legal-unit metadata. Whole-block remains the validated executable baseline."
 }
