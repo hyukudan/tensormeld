@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import copy
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
+from tensormeld.cli import main
 from tensormeld.predictive_memory import (
+    load_predictive_memory_profile,
     parse_predictive_memory_profile,
     predictive_memory_summary,
 )
 from tensormeld.runtime_model_manifest import parse_runtime_model_manifest
 from tensormeld.schema import ValidationError
-from test_runtime_model_manifest import setup, manifest
+from test_config_v2 import data
+from test_runtime_model_manifest import setup, manifest, model_data
 
 
 def predictive_raw(runtime):
@@ -138,6 +144,87 @@ class PredictiveMemoryTests(unittest.TestCase):
         summary = predictive_memory_summary(profile)
         self.assertEqual(summary["provenance"], "fixture")
         self.assertIn("Fixture provenance", " ".join(summary["warnings"]))
+
+    def test_loader_rejects_duplicate_keys(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "predictive.json"
+            path.write_text(
+                '{"predictive_memory_schema":"a","predictive_memory_schema":"b"}',
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValidationError):
+                load_predictive_memory_profile(
+                    path,
+                    config=self.config,
+                    runtime_manifest=self.runtime,
+                )
+
+    def test_cli_roundtrip_and_output_safety(self):
+        raw_cfg = data()
+        raw_cfg["profiles"]["interactive"]["model_manifest_ref"] = self.model.manifest_sha256
+        raw_adapter = {
+            "adapter_schema": "tensormeld/adapter-capabilities-v1",
+            "adapter_id": self.adapter.adapter_id,
+            "engine": self.adapter.engine,
+            "engine_revision": self.adapter.engine_revision,
+            "placement": {
+                "strategies": sorted(self.adapter.strategies),
+                "exact_owner_binding": self.adapter.exact_owner_binding,
+                "explicit_unit_ranges": self.adapter.explicit_unit_ranges,
+                "mixed_backends": self.adapter.mixed_backends,
+                "remote_compute": self.adapter.remote_compute,
+                "coordinator_outside_compute": self.adapter.coordinator_outside_compute,
+                "max_compute_devices": self.adapter.max_compute_devices,
+                "max_compute_nodes": self.adapter.max_compute_nodes,
+                "max_segments": self.adapter.max_segments,
+            },
+            "route_modes": sorted(self.adapter.route_modes),
+            "coordinator_nodes": sorted(self.adapter.coordinator_nodes),
+            "devices": [
+                {"id": d.id, "node": d.node, "backend": d.backend}
+                for d in self.adapter.devices
+            ],
+        }
+        raw_runtime = manifest(self.config, self.model, self.adapter)
+        raw_predictive = predictive_raw(self.runtime)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            config_path = root / "config.json"
+            model_path = root / "model.json"
+            adapter_path = root / "adapter.json"
+            runtime_path = root / "runtime.json"
+            predictive_path = root / "predictive.json"
+            out = root / "out.json"
+            config_path.write_text(json.dumps(raw_cfg), encoding="utf-8")
+            model_path.write_text(json.dumps(model_data()), encoding="utf-8")
+            adapter_path.write_text(json.dumps(raw_adapter), encoding="utf-8")
+            runtime_path.write_text(json.dumps(raw_runtime), encoding="utf-8")
+            predictive_path.write_text(json.dumps(raw_predictive), encoding="utf-8")
+            self.assertEqual(main([
+                "validate-predictive-memory",
+                str(config_path),
+                str(model_path),
+                str(adapter_path),
+                str(runtime_path),
+                str(predictive_path),
+                "--out",
+                str(out),
+            ]), 0)
+            result = json.loads(out.read_text(encoding="utf-8"))
+            self.assertFalse(result["qualified"])
+            self.assertFalse(result["executable"])
+            before = predictive_path.read_bytes()
+            self.assertEqual(main([
+                "validate-predictive-memory",
+                str(config_path),
+                str(model_path),
+                str(adapter_path),
+                str(runtime_path),
+                str(predictive_path),
+                "--out",
+                str(predictive_path),
+            ]), 1)
+            self.assertEqual(predictive_path.read_bytes(), before)
 
 
 if __name__ == "__main__":
