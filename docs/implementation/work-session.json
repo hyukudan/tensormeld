@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-movability-envelopes",
   "scope": "Derive auditable tensor eligibility byte envelopes per device and physical pool from exact movability evidence, while keeping runtime measured memory and legal placement potential separate.",
   "started_at": "2026-10-08T15:22:00+02:00",
-  "expires_at": "2026-10-08T17:22:00+02:00",
+  "completed_at": "2026-10-08T15:35:00+02:00",
+  "expires_at": null,
   "base_commit": "ff055224125112571ee5cb8122f88c6b929f0bfd",
-  "branch": "chatgpt-movability-envelopes",
+  "merged_pr": 31,
+  "merge_commit": "a2c548008f0b768952c1f333d37031b40bcbec45",
+  "validation_record": "docs/implementation/validation/movability-envelope-2026-10-08.md",
   "completion_condition": "Envelope derivation, shared-pool de-duplication tests, ADR/status/roadmap and PR CI are green and merged without changing planner/admission semantics.",
-  "next_step": "Implement per-device/per-pool eligible and pinned tensor-byte envelopes bound to runtime/predictive/movability identities.",
-  "instructions": "Do not equate eligibility bytes with measured resident memory or infer current tensor owner. No planner ownership changes in this slice."
+  "next_step": "Construct adapter-declared legal tensor/model units and cut boundaries from exact movability evidence without automatically enabling finer-grained execution.",
+  "instructions": "Do not repeat movability envelopes. Eligibility remains distinct from ownership and measured runtime memory."
 }
