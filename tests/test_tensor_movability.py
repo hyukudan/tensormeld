@@ -3,16 +3,22 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from dataclasses import replace
+from pathlib import Path
+import tempfile
 import unittest
 
 from tensormeld.adapter_contract import AdapterCapabilities
+from tensormeld.cli import main
 from tensormeld.config_v2 import Config
-from tensormeld.llamacpp_package import build_llamacpp_package_identity
+from tensormeld.llamacpp_package import (
+    build_llamacpp_package_identity,
+    load_llamacpp_package_identity,
+)
 from tensormeld.model_manifest import ModelManifest
 from tensormeld.runtime_identity import RuntimeIdentity
 from tensormeld.schema import ValidationError
 from tensormeld.tensor_movability import (
+    load_gguf_tensor_index,
     parse_tensor_movability_profile,
     tensor_movability_summary,
 )
@@ -362,6 +368,117 @@ class TensorMovabilityTests(unittest.TestCase):
         b = copy.deepcopy(a)
         b["tensors"].reverse()
         self.assertEqual(self.parse(a).fingerprint, self.parse(b).fingerprint)
+
+    def test_persisted_package_loader_roundtrip_and_tamper(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "package.json"
+            path.write_text(json.dumps(self.package.as_record()), encoding="utf-8")
+            loaded = load_llamacpp_package_identity(path)
+            self.assertEqual(loaded.fingerprint, self.package.fingerprint)
+            raw = self.package.as_record()
+            raw["artifacts"]["llama_server_sha256"] = "f" * 64
+            path.write_text(json.dumps(raw), encoding="utf-8")
+            with self.assertRaises(ValidationError):
+                load_llamacpp_package_identity(path)
+
+    def test_tensor_index_loader_rejects_duplicate_keys(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "index.json"
+            path.write_text('{"index_schema":"a","index_schema":"b"}', encoding="utf-8")
+            with self.assertRaises(ValidationError):
+                load_gguf_tensor_index(path)
+
+    def test_cli_roundtrip_and_output_safety(self):
+        raw_cfg = data()
+        raw_cfg["profiles"]["interactive"]["model_manifest_ref"] = self.model.manifest_sha256
+        raw_model = {
+            "model_manifest_schema": "tensormeld/model-manifest-v1",
+            "model_id": self.model.model_id,
+            "revision": self.model.revision,
+            "format": self.model.format,
+            "architecture": self.model.architecture,
+            "tokenizer_ref": self.model.tokenizer_ref,
+            "chat_template_ref": self.model.chat_template_ref,
+            "files": [
+                {"name": item.name, "size_bytes": item.size_bytes, "sha256": item.sha256}
+                for item in self.model.files
+            ],
+            "tensor_index_sha256": self.model.tensor_index_sha256,
+            "tensor_count": self.model.tensor_count,
+            "tensor_payload_bytes": self.model.tensor_payload_bytes,
+        }
+        raw_adapter = {
+            "adapter_schema": "tensormeld/adapter-capabilities-v1",
+            "adapter_id": self.adapter.adapter_id,
+            "engine": self.adapter.engine,
+            "engine_revision": self.adapter.engine_revision,
+            "placement": {
+                "strategies": sorted(self.adapter.strategies),
+                "exact_owner_binding": self.adapter.exact_owner_binding,
+                "explicit_unit_ranges": self.adapter.explicit_unit_ranges,
+                "mixed_backends": self.adapter.mixed_backends,
+                "remote_compute": self.adapter.remote_compute,
+                "coordinator_outside_compute": self.adapter.coordinator_outside_compute,
+                "max_compute_devices": self.adapter.max_compute_devices,
+                "max_compute_nodes": self.adapter.max_compute_nodes,
+                "max_segments": self.adapter.max_segments,
+            },
+            "route_modes": sorted(self.adapter.route_modes),
+            "coordinator_nodes": [
+                n.id for n in self.config.nodes
+                if n.id in self.adapter.coordinator_nodes
+            ],
+            "devices": [
+                {"id": item.id, "node": item.node, "backend": item.backend}
+                for item in self.adapter.devices
+            ],
+        }
+        raw_move = raw_profile(
+            self.config, self.model, self.index, self.adapter,
+            self.package, self.identities
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            paths = {
+                "config": root / "config.json",
+                "model": root / "model.json",
+                "index": root / "index.json",
+                "adapter": root / "adapter.json",
+                "package": root / "package.json",
+                "move": root / "move.json",
+                "out": root / "out.json",
+            }
+            paths["config"].write_text(json.dumps(raw_cfg), encoding="utf-8")
+            paths["model"].write_text(json.dumps(raw_model), encoding="utf-8")
+            paths["index"].write_text(json.dumps(self.index), encoding="utf-8")
+            paths["adapter"].write_text(json.dumps(raw_adapter), encoding="utf-8")
+            paths["package"].write_text(json.dumps(self.package.as_record()), encoding="utf-8")
+            paths["move"].write_text(json.dumps(raw_move), encoding="utf-8")
+            identity_paths = []
+            for i, identity in enumerate(self.identities):
+                path = root / f"identity-{i}.json"
+                path.write_text(json.dumps(identity.as_record()), encoding="utf-8")
+                identity_paths.append(path)
+            argv = [
+                "validate-tensor-movability",
+                str(paths["config"]),
+                str(paths["model"]),
+                str(paths["index"]),
+                str(paths["adapter"]),
+                str(paths["package"]),
+                str(paths["move"]),
+            ]
+            for path in identity_paths:
+                argv += ["--runtime-identity", str(path)]
+            argv += ["--out", str(paths["out"])]
+            self.assertEqual(main(argv), 0)
+            result = json.loads(paths["out"].read_text(encoding="utf-8"))
+            self.assertEqual(result["tensor_count"], 2)
+            self.assertFalse(result["qualified"])
+            before = paths["move"].read_bytes()
+            overwrite = argv[:-2] + ["--out", str(paths["move"])]
+            self.assertEqual(main(overwrite), 1)
+            self.assertEqual(paths["move"].read_bytes(), before)
 
 
 if __name__ == "__main__":
