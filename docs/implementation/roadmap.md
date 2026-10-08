@@ -195,7 +195,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - current admission remains conservative because worst-case physical bytes exactly reproduce the existing preparation peak;
 - exact tensor storage/movability evidence is implemented with complete GGUF-index coverage, explicit allowed devices and current build/runtime identity binding;
 - per-device/per-pool movability envelopes now connect verified tensor legal destinations to physical-pool identity without conflating eligibility with measured resident memory;
-- next construct adapter-declared legal tensor/model units and cuts from this evidence, while retaining whole-block placement as the default executable baseline;
+- adapter-declared legal model units/cut-after boundaries are implemented with complete tensor coverage, alias-group indivisibility and conservative device intersections;
+- next build a bounded advisory planner over these legal units, keeping its output non-executable until a native adapter validates the finer-grained path;
 - add measured session/cache growth and prefill/decode/shared-round working-set contracts;
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.

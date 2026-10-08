@@ -75,6 +75,8 @@ the pre-alpha status or qualify any execution path.
 - tensor movability requires complete explicit coverage and never infers policy from tensor names, size, backend labels or model family;
 - auditable per-device and physical-pool movability envelopes separate legal placement potential from measured resident memory;
 - shared physical-pool envelopes use tensor unions so multiple logical devices do not multiply the same eligible tensor bytes;
+- adapter-declared legal model units provide explicit tensor grouping, execution sequence and cut-after boundaries with complete tensor coverage;
+- legal unit devices can only narrow the tensor-level device intersection, and alias groups cannot cross unit boundaries;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
