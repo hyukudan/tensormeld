@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-tensor-movability",
-  "scope": "Add exact per-tensor movability/storage classification bound to the exact model/tensor index, adapter/build and current runtime identities, without inferring policy from tensor names or changing admission.",
-  "started_at": "2026-10-08T15:05:00+02:00",
-  "completed_at": "2026-10-08T15:20:00+02:00",
-  "expires_at": null,
-  "base_commit": "cc5a2ade58ab550c118807538658116ec29dc210",
-  "merged_pr": 30,
-  "merge_commit": "335914cea8354a9d0f7a7410592fe97991c0be46",
-  "validation_record": "docs/implementation/validation/tensor-movability-2026-10-08.md",
-  "completion_condition": "Contract, strict loaders/CLI, tests, ADR/status/roadmap and PR CI are green and merged without altering existing runtime admission or planner ownership.",
-  "next_step": "Bind verified tensor storage classes to predictive physical-pool classes and derive auditable per-device/per-pool byte envelopes without yet enabling fine-grained planner ownership changes.",
-  "instructions": "Do not repeat tensor movability. No real target-host movability measurements were made."
+  "status": "active",
+  "owner": "chatgpt-movability-envelopes",
+  "scope": "Derive auditable tensor eligibility byte envelopes per device and physical pool from exact movability evidence, while keeping runtime measured memory and legal placement potential separate.",
+  "started_at": "2026-10-08T15:22:00+02:00",
+  "expires_at": "2026-10-08T17:22:00+02:00",
+  "base_commit": "ff055224125112571ee5cb8122f88c6b929f0bfd",
+  "branch": "chatgpt-movability-envelopes",
+  "completion_condition": "Envelope derivation, shared-pool de-duplication tests, ADR/status/roadmap and PR CI are green and merged without changing planner/admission semantics.",
+  "next_step": "Implement per-device/per-pool eligible and pinned tensor-byte envelopes bound to runtime/predictive/movability identities.",
+  "instructions": "Do not equate eligibility bytes with measured resident memory or infer current tensor owner. No planner ownership changes in this slice."
 }
