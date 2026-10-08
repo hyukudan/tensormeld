@@ -69,6 +69,8 @@ the pre-alpha status or qualify any execution path.
 - immutable local placement-calibration store keyed by calibration fingerprint;
 - persisted calibration records carry timezone-aware age limits and are revalidated against current package/runtime/device/topology identities before reuse;
 - expired, future-dated, fixture-only or context-mismatched calibration records are excluded from measured preference without mutating planner candidates;
+- predictive memory refinement splits runtime resident memory into hard-resident and reclaimable/file-backed classes while preserving exact v1 preparation peaks;
+- predictive hard/state/workspace/staging accounting is per physical pool and cannot reduce current admission requirements;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
