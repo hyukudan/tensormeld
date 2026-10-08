@@ -1,12 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-measured-planner-preference",
-  "scope": "Integrate native placement calibration as a measured preference over existing planner-v2 candidates without mutating candidate identity, synthetic estimates, qualification or executability; expose explicit synthetic-best versus measured-best recommendation provenance.",
-  "started_at": "2026-10-05T21:10:00+02:00",
-  "expires_at": "2026-10-05T23:10:00+02:00",
-  "base_commit": "c734970a531ebc2b139c441da5d4b0d8a6c214e5",
-  "completion_condition": "Measured recommendation contract, strict applicability/candidate-preservation tests, docs/ADR/validation and CI evidence are committed.",
-  "next_step": "Collect and persist real native-target calibration records on RTX/Strix hosts, add invalidation/aging across runtime/package/topology changes, and feed only currently applicable records into the measured preference overlay.",
-  "instructions": "Completed as a recommendation overlay only. Planner output and candidates remain immutable; fixture calibration cannot override native-mode selection; recommendation does not imply qualification or executability."
+  "status": "active",
+  "owner": "chatgpt-calibration-aging",
+  "scope": "Persist placement calibrations across runs with immutable fingerprint records, explicit age limits, current package/runtime/topology revalidation, and measured-preference filtering.",
+  "started_at": "2026-10-08T14:40:00+02:00",
+  "expires_at": "2026-10-08T16:40:00+02:00",
+  "base_commit": "ecdaf42e717f88702bf94826b15fafbc5234796c",
+  "branch": "chatgpt-calibration-aging",
+  "completion_condition": "Store, applicability filtering, tests, docs and CI are green and merged without weakening existing calibration identity checks.",
+  "next_step": "Complete calibration store tests and measured-preference integration; open PR and validate CI.",
+  "instructions": "Do not start overlapping calibration persistence/aging work. Real RTX/Strix measurements remain pending and must not be claimed."
 }
