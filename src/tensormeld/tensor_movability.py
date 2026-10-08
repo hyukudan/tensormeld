@@ -409,3 +409,17 @@ def load_tensor_movability_profile(
         package=package,
         runtime_identities=runtime_identities,
     )
+
+
+def load_gguf_tensor_index(path: str | Path) -> dict[str, Any]:
+    with Path(path).open("rb") as stream:
+        raw = stream.read(MAX_INPUT_BYTES + 1)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise ValidationError("GGUF tensor index exceeds 2 MiB")
+    try:
+        value = json.loads(raw, object_pairs_hook=_no_duplicates)
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
+        raise ValidationError(f"invalid GGUF tensor index JSON: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValidationError("GGUF tensor index: expected object")
+    return value
