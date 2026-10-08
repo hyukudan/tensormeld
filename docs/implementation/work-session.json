@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-calibration-aging",
-  "scope": "Persist placement calibrations across runs with immutable fingerprint records, explicit age limits, current package/runtime/topology revalidation, and measured-preference filtering.",
-  "started_at": "2026-10-08T14:40:00+02:00",
-  "completed_at": "2026-10-08T14:47:00+02:00",
-  "expires_at": null,
-  "base_commit": "ecdaf42e717f88702bf94826b15fafbc5234796c",
-  "merged_pr": 28,
-  "merge_commit": "013752df732d71e97118b6b46881c4e445b56750",
-  "validation_record": "docs/implementation/validation/calibration-store-2026-10-08.md",
-  "completion_condition": "Store, applicability filtering, tests, docs and PR CI are green and merged without weakening existing calibration identity checks.",
-  "next_step": "Implement predictive memory classes for model/tensor placement: hard-resident, staging and reclaimable/file-backed demand, while preserving physical-pool accounting and avoiding any claim that file size equals runtime memory.",
-  "instructions": "Do not repeat calibration persistence/aging. Real RTX/Strix measurements remain pending and must not be claimed."
+  "status": "active",
+  "owner": "chatgpt-predictive-memory-classes",
+  "scope": "Add predictive physical-pool memory classes separating hard-resident/state/workspace/staging from reclaimable file-backed pressure, with conservative hard and worst-case peaks.",
+  "started_at": "2026-10-08T14:50:00+02:00",
+  "expires_at": "2026-10-08T16:50:00+02:00",
+  "base_commit": "2bc4553f9c652774acf1b3d78b57c3b12f8aa94e",
+  "branch": "chatgpt-predictive-memory-classes",
+  "completion_condition": "Contract, tests, ADR/status/roadmap and PR CI are green and merged without changing runtime-model-manifest-v1 admission semantics.",
+  "next_step": "Implement predictive memory class contract and portable tests.",
+  "instructions": "Do not overlap predictive memory classification. Do not infer runtime memory from GGUF file size or claim real hardware measurements."
 }
