@@ -16,6 +16,7 @@
 - Persist placement calibrations as immutable fingerprint records with bounded age and revalidation against current build/runtime/device/topology identities before measured-preference reuse.
 - Add predictive physical-pool memory classes that distinguish hard-resident/state/workspace/staging from reclaimable file-backed pressure while reconciling exactly to existing runtime admission peaks.
 - Add complete explicit per-tensor storage/movability evidence bound to exact GGUF index, adapter/build and runtime identities; no name/size/backend heuristic can mark a tensor movable.
+- Derive overlapping per-device and de-duplicated physical-pool movability byte envelopes without treating legal eligibility as current ownership or measured resident memory.
 
 ## 0.2.0a2 — 2026-10-01
 
