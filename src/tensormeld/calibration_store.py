@@ -246,6 +246,7 @@ def applicable_persisted_calibrations(
 
         raw = dict(persisted.calibration_record)
         supplied_fingerprint = raw.pop("fingerprint", None)
+        supplied_objective = raw.pop("objective_us", None)
         plan = raw.get("candidate_plan_sha256")
         candidate = by_plan.get(plan)
         if candidate is None:
@@ -275,6 +276,12 @@ def applicable_persisted_calibrations(
             rejected.append({
                 "fingerprint": persisted.fingerprint,
                 "reason": "CALIBRATION_FINGERPRINT_MISMATCH",
+            })
+            continue
+        if calibration.objective_us != supplied_objective:
+            rejected.append({
+                "fingerprint": persisted.fingerprint,
+                "reason": "CALIBRATION_OBJECTIVE_MISMATCH",
             })
             continue
         if require_native and calibration.source != "native-target":
