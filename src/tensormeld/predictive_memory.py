@@ -13,7 +13,7 @@ from typing import Any
 
 from .config_v2 import Config
 from .runtime_model_manifest import RuntimeModelManifest
-from .schema import ValidationError, items, number, record, text, unique
+from .schema import MAX_INPUT_BYTES, ValidationError, _no_duplicates, items, number, record, text, unique
 
 PREDICTIVE_MEMORY_SCHEMA = "tensormeld/predictive-memory-v1"
 MAX_POOLS = 192
@@ -272,3 +272,26 @@ def predictive_memory_summary(
             "Fixture provenance is contract evidence only, not a native memory measurement.",
         ],
     }
+
+
+def load_predictive_memory_profile(
+    path,
+    *,
+    config: Config,
+    runtime_manifest: RuntimeModelManifest,
+) -> PredictiveMemoryProfile:
+    from pathlib import Path
+
+    with Path(path).open("rb") as f:
+        raw = f.read(MAX_INPUT_BYTES + 1)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise ValidationError("predictive memory profile exceeds 2 MiB")
+    try:
+        value = json.loads(raw, object_pairs_hook=_no_duplicates)
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
+        raise ValidationError(f"invalid predictive memory JSON: {exc}") from exc
+    return parse_predictive_memory_profile(
+        value,
+        config=config,
+        runtime_manifest=runtime_manifest,
+    )
