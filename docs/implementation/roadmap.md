@@ -191,8 +191,9 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - next collect real native-target calibration records on RTX/Strix hosts and compare only currently applicable records across runs.
 
 **P1 — predictive memory and equivalence**
-- add model/tensor movability classes rather than a single parameter-size scalar;
-- extend physical-pool accounting with hard-resident, staging and reclaimable/file-backed classes;
+- physical-pool predictive memory classes are implemented as an exact refinement of runtime-manifest-v1: hard-resident, state, workspace, staging and reclaimable/file-backed;
+- current admission remains conservative because worst-case physical bytes exactly reproduce the existing preparation peak;
+- next add model/tensor movability classes that explain which tensors contribute to each pool class rather than using a single parameter-size scalar;
 - add measured session/cache growth and prefill/decode/shared-round working-set contracts;
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
