@@ -73,6 +73,8 @@ the pre-alpha status or qualify any execution path.
 - predictive hard/state/workspace/staging accounting is per physical pool and cannot reduce current admission requirements;
 - exact per-tensor storage/movability evidence is bound to model/tensor-index, adapter/build and current runtime identities;
 - tensor movability requires complete explicit coverage and never infers policy from tensor names, size, backend labels or model family;
+- auditable per-device and physical-pool movability envelopes separate legal placement potential from measured resident memory;
+- shared physical-pool envelopes use tensor unions so multiple logical devices do not multiply the same eligible tensor bytes;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
