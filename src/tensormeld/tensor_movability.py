@@ -62,6 +62,21 @@ class TensorMovabilityProfile:
 def _flatten_index(index: Any, model: ModelManifest) -> dict[str, int]:
     if not isinstance(index, dict):
         raise ValidationError("GGUF index: expected object")
+    supplied_index_sha = index.get("index_sha256")
+    if not isinstance(supplied_index_sha, str) or len(supplied_index_sha) != 64:
+        raise ValidationError("GGUF index fingerprint invalid")
+    unhashed = dict(index)
+    unhashed.pop("index_sha256", None)
+    recomputed_index_sha = hashlib.sha256(
+        json.dumps(
+            unhashed,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode()
+    ).hexdigest()
+    if recomputed_index_sha != supplied_index_sha:
+        raise ValidationError("GGUF index fingerprint mismatch")
     if index.get("index_schema") != "tensormeld/gguf-index-v1":
         raise ValidationError("GGUF index schema mismatch")
     if index.get("complete_shard_set") is not True:
