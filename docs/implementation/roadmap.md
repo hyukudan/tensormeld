@@ -194,7 +194,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - physical-pool predictive memory classes are implemented as an exact refinement of runtime-manifest-v1: hard-resident, state, workspace, staging and reclaimable/file-backed;
 - current admission remains conservative because worst-case physical bytes exactly reproduce the existing preparation peak;
 - exact tensor storage/movability evidence is implemented with complete GGUF-index coverage, explicit allowed devices and current build/runtime identity binding;
-- next connect verified tensor movability to predictive pool classes and planner legal-unit generation without changing current whole-block admission by default;
+- per-device/per-pool movability envelopes now connect verified tensor legal destinations to physical-pool identity without conflating eligibility with measured resident memory;
+- next construct adapter-declared legal tensor/model units and cuts from this evidence, while retaining whole-block placement as the default executable baseline;
 - add measured session/cache growth and prefill/decode/shared-round working-set contracts;
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
