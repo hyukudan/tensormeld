@@ -13,11 +13,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 from .llamacpp_probe import LLAMACPP_PINNED_COMMIT
 from .model_manifest import _sha256
-from .schema import ValidationError, items, record, text, unique
+from .schema import MAX_INPUT_BYTES, ValidationError, _no_duplicates, items, number, record, text, unique
 
 PACKAGE_SCHEMA = "tensormeld/llamacpp-build-package-v1"
 MAX_BACKEND_LIBS = 64
@@ -158,3 +159,91 @@ def validate_llamacpp_package_identity(
     if package.source_revision != LLAMACPP_PINNED_COMMIT:
         raise ValidationError("llama.cpp package source revision mismatch")
     return {**record, "package_sha256": supplied}
+
+
+def parse_llamacpp_package_identity(data: Any) -> LlamaCppBuildPackage:
+    r = record(
+        data,
+        "llama.cpp package",
+        {"package_schema", "source_revision", "build", "artifacts", "package_sha256"},
+    )
+    if r["package_schema"] != PACKAGE_SCHEMA:
+        raise ValidationError(f"package_schema: expected {PACKAGE_SCHEMA}")
+    source_revision = text(r["source_revision"], "source_revision")
+    if source_revision != LLAMACPP_PINNED_COMMIT:
+        raise ValidationError("llama.cpp package source revision mismatch")
+    build = record(
+        r["build"],
+        "build",
+        {"version", "build", "commit", "compiler", "target"},
+    )
+    canonical_build = {
+        "version": text(build["version"], "build.version"),
+        "build": int(number(build["build"], "build.build", 0, True)),
+        "commit": text(build["commit"], "build.commit").lower(),
+        "compiler": text(build["compiler"], "build.compiler"),
+        "target": text(build["target"], "build.target"),
+    }
+    if not LLAMACPP_PINNED_COMMIT.startswith(canonical_build["commit"]):
+        raise ValidationError("llama.cpp package build commit is not pinned revision")
+    artifacts = record(
+        r["artifacts"],
+        "artifacts",
+        {"llama_cli_sha256", "llama_server_sha256", "backend_libraries"},
+    )
+    cli_sha = _sha256(artifacts["llama_cli_sha256"], "artifacts.llama_cli_sha256")
+    server_sha = _sha256(
+        artifacts["llama_server_sha256"], "artifacts.llama_server_sha256"
+    )
+    if cli_sha == server_sha:
+        raise ValidationError(
+            "llama-cli and llama-server must remain distinct artifact identities"
+        )
+    libs: list[tuple[str, str]] = []
+    for i, raw in enumerate(
+        items(artifacts["backend_libraries"], "artifacts.backend_libraries", MAX_BACKEND_LIBS, 0)
+    ):
+        lib = record(raw, f"artifacts.backend_libraries[{i}]", {"name", "sha256"})
+        libs.append((
+            text(lib["name"], f"artifacts.backend_libraries[{i}].name"),
+            _sha256(lib["sha256"], f"artifacts.backend_libraries[{i}].sha256"),
+        ))
+    unique([name for name, _ in libs], "artifacts.backend_libraries.name")
+    unique([sha for _, sha in libs], "artifacts.backend_libraries.sha256")
+    libs.sort()
+    canonical = {
+        "package_schema": PACKAGE_SCHEMA,
+        "source_revision": source_revision,
+        "build": canonical_build,
+        "artifacts": {
+            "llama_cli_sha256": cli_sha,
+            "llama_server_sha256": server_sha,
+            "backend_libraries": [
+                {"name": name, "sha256": sha} for name, sha in libs
+            ],
+        },
+    }
+    supplied = _sha256(r["package_sha256"], "package_sha256")
+    expected = _canonical_sha256(canonical)
+    if supplied != expected:
+        raise ValidationError("llama.cpp package fingerprint mismatch")
+    return LlamaCppBuildPackage(
+        source_revision,
+        canonical_build,
+        cli_sha,
+        server_sha,
+        tuple(libs),
+        supplied,
+    )
+
+
+def load_llamacpp_package_identity(path: str | Path) -> LlamaCppBuildPackage:
+    with Path(path).open("rb") as stream:
+        raw = stream.read(MAX_INPUT_BYTES + 1)
+    if len(raw) > MAX_INPUT_BYTES:
+        raise ValidationError("llama.cpp package identity exceeds 2 MiB")
+    try:
+        value = json.loads(raw, object_pairs_hook=_no_duplicates)
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
+        raise ValidationError(f"invalid llama.cpp package JSON: {exc}") from exc
+    return parse_llamacpp_package_identity(value)

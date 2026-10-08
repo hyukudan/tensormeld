@@ -30,6 +30,13 @@ from .predictive_memory import (
     load_predictive_memory_profile,
     predictive_memory_summary,
 )
+from .llamacpp_package import load_llamacpp_package_identity
+from .runtime_identity import load_runtime_identity
+from .tensor_movability import (
+    load_gguf_tensor_index,
+    load_tensor_movability_profile,
+    tensor_movability_summary,
+)
 from .planner import plan
 from .probe import probe
 from .schema import ValidationError, load
@@ -130,6 +137,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("predictive_memory", type=Path)
     p.add_argument("--profile")
     p.add_argument("--out", type=Path)
+    p = subs.add_parser(
+        "validate-tensor-movability",
+        help="Validate complete explicit tensor storage/movement evidence against exact model/build/runtime identities",
+    )
+    p.add_argument("config", type=Path)
+    p.add_argument("model_manifest", type=Path)
+    p.add_argument("tensor_index", type=Path)
+    p.add_argument("adapter_capabilities", type=Path)
+    p.add_argument("package_identity", type=Path)
+    p.add_argument("movability", type=Path)
+    p.add_argument("--runtime-identity", dest="runtime_identities", action="append", type=Path, required=True)
+    p.add_argument("--out", type=Path)
     p = subs.add_parser("bench-loopback", help="Loopback-only bounded TCP echo diagnostic")
     p.add_argument("--iterations", type=int, default=20)
     p.add_argument("--out", type=Path)
@@ -143,9 +162,11 @@ def main(argv: list[str] | None = None) -> int:
                     "source", "destination", "binary", "probe_report", "binding",
                     "bound_result", "test_binary", "model_manifest",
                     "adapter_capabilities", "runtime_manifest", "predictive_memory",
+                    "tensor_index", "package_identity", "movability",
                 )
             ]
             inputs += getattr(args, "paths", [])
+            inputs += getattr(args, "runtime_identities", []) or []
             if any(
                 isinstance(p, Path)
                 and (
@@ -219,6 +240,25 @@ def main(argv: list[str] | None = None) -> int:
                 runtime_manifest=runtime_manifest,
             )
             result = predictive_memory_summary(predictive)
+        elif args.command == "validate-tensor-movability":
+            config = load_config(args.config)
+            model_manifest = load_model_manifest(args.model_manifest)
+            tensor_index = load_gguf_tensor_index(args.tensor_index)
+            adapter = load_adapter_capabilities(args.adapter_capabilities)
+            package = load_llamacpp_package_identity(args.package_identity)
+            runtime_identities = tuple(
+                load_runtime_identity(path) for path in args.runtime_identities
+            )
+            movability = load_tensor_movability_profile(
+                args.movability,
+                config=config,
+                model=model_manifest,
+                tensor_index=tensor_index,
+                adapter=adapter,
+                package=package,
+                runtime_identities=runtime_identities,
+            )
+            result = tensor_movability_summary(movability)
         elif args.command == "runtime-select":
             config = load_config(args.config)
             observation = load_runtime_observation(args.runtime_observation)

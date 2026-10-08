@@ -71,6 +71,8 @@ the pre-alpha status or qualify any execution path.
 - expired, future-dated, fixture-only or context-mismatched calibration records are excluded from measured preference without mutating planner candidates;
 - predictive memory refinement splits runtime resident memory into hard-resident and reclaimable/file-backed classes while preserving exact v1 preparation peaks;
 - predictive hard/state/workspace/staging accounting is per physical pool and cannot reduce current admission requirements;
+- exact per-tensor storage/movability evidence is bound to model/tensor-index, adapter/build and current runtime identities;
+- tensor movability requires complete explicit coverage and never infers policy from tensor names, size, backend labels or model family;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
