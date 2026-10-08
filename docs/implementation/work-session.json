@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-predictive-memory-classes",
-  "scope": "Add predictive physical-pool memory classes separating hard-resident/state/workspace/staging from reclaimable file-backed pressure, with conservative hard and worst-case peaks.",
-  "started_at": "2026-10-08T14:50:00+02:00",
-  "completed_at": "2026-10-08T15:03:00+02:00",
-  "expires_at": null,
-  "base_commit": "2bc4553f9c652774acf1b3d78b57c3b12f8aa94e",
-  "merged_pr": 29,
-  "merge_commit": "08eb3052155f1f4935e21a08a2bfaf0cf6710062",
-  "validation_record": "docs/implementation/validation/predictive-memory-2026-10-08.md",
-  "completion_condition": "Contract, tests, loader/CLI, ADR/status/roadmap and PR CI are green and merged without changing runtime-model-manifest-v1 admission semantics.",
-  "next_step": "Implement exact model/tensor movability classes tied to model/tensor index and runtime identities, without inferring movability from tensor names alone or relaxing admission.",
-  "instructions": "Do not repeat predictive memory classification. No real hardware measurements were made."
+  "status": "active",
+  "owner": "chatgpt-tensor-movability",
+  "scope": "Add exact per-tensor movability/storage classification bound to the exact model/tensor index, adapter/build and current runtime identities, without inferring policy from tensor names or changing admission.",
+  "started_at": "2026-10-08T15:05:00+02:00",
+  "expires_at": "2026-10-08T17:05:00+02:00",
+  "base_commit": "cc5a2ade58ab550c118807538658116ec29dc210",
+  "branch": "chatgpt-tensor-movability",
+  "completion_condition": "Contract, tests, ADR/status/roadmap and PR CI are green and merged without altering existing runtime admission or claiming native movability measurements.",
+  "next_step": "Implement strict tensor-index-bound movability classification with complete coverage and runtime/build invalidation.",
+  "instructions": "Do not infer movability from tensor names, GGUF size, or backend label. Real target-host movability evidence remains pending."
 }
