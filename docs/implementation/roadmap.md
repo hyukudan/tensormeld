@@ -187,7 +187,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - separate prefill/decode timings are normalized to the target context/output workload with integer arithmetic;
 - bounded coarse→local-refinement candidate selection is implemented without inventing placements or treating synthetic estimates as measurements;
 - measured preference overlay is implemented: applicable native-target calibration can supersede synthetic ordering without mutating planner candidates or plan identity;
-- next collect real native-target calibration records on RTX/Strix hosts and persist/compare them across runs with explicit invalidation when package/runtime/topology changes.
+- local calibration persistence/aging is implemented with immutable fingerprint files and current package/runtime/topology revalidation;
+- next collect real native-target calibration records on RTX/Strix hosts and compare only currently applicable records across runs.
 
 **P1 — predictive memory and equivalence**
 - add model/tensor movability classes rather than a single parameter-size scalar;
