@@ -26,6 +26,10 @@ from .runtime_model_manifest import (
     load_runtime_model_manifest,
     runtime_manifest_summary,
 )
+from .predictive_memory import (
+    load_predictive_memory_profile,
+    predictive_memory_summary,
+)
 from .planner import plan
 from .probe import probe
 from .schema import ValidationError, load
@@ -115,6 +119,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("runtime_manifest", type=Path)
     p.add_argument("--profile")
     p.add_argument("--out", type=Path)
+    p = subs.add_parser(
+        "validate-predictive-memory",
+        help="Validate predictive physical-pool memory classes against an exact runtime manifest",
+    )
+    p.add_argument("config", type=Path)
+    p.add_argument("model_manifest", type=Path)
+    p.add_argument("adapter_capabilities", type=Path)
+    p.add_argument("runtime_manifest", type=Path)
+    p.add_argument("predictive_memory", type=Path)
+    p.add_argument("--profile")
+    p.add_argument("--out", type=Path)
     p = subs.add_parser("bench-loopback", help="Loopback-only bounded TCP echo diagnostic")
     p.add_argument("--iterations", type=int, default=20)
     p.add_argument("--out", type=Path)
@@ -127,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                     "config", "runtime_observation", "planning_input", "scenario",
                     "source", "destination", "binary", "probe_report", "binding",
                     "bound_result", "test_binary", "model_manifest",
-                    "adapter_capabilities", "runtime_manifest",
+                    "adapter_capabilities", "runtime_manifest", "predictive_memory",
                 )
             ]
             inputs += getattr(args, "paths", [])
@@ -187,6 +202,23 @@ def main(argv: list[str] | None = None) -> int:
                 profile_name=args.profile,
             )
             result = runtime_manifest_summary(runtime_manifest)
+        elif args.command == "validate-predictive-memory":
+            config = load_config(args.config)
+            model_manifest = load_model_manifest(args.model_manifest)
+            adapter = load_adapter_capabilities(args.adapter_capabilities)
+            runtime_manifest = load_runtime_model_manifest(
+                args.runtime_manifest,
+                config=config,
+                model=model_manifest,
+                adapter=adapter,
+                profile_name=args.profile,
+            )
+            predictive = load_predictive_memory_profile(
+                args.predictive_memory,
+                config=config,
+                runtime_manifest=runtime_manifest,
+            )
+            result = predictive_memory_summary(predictive)
         elif args.command == "runtime-select":
             config = load_config(args.config)
             observation = load_runtime_observation(args.runtime_observation)
