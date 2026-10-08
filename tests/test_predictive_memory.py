@@ -179,7 +179,10 @@ class PredictiveMemoryTests(unittest.TestCase):
                 "max_segments": self.adapter.max_segments,
             },
             "route_modes": sorted(self.adapter.route_modes),
-            "coordinator_nodes": sorted(self.adapter.coordinator_nodes),
+            "coordinator_nodes": [
+                n.id for n in self.config.nodes
+                if n.id in self.adapter.coordinator_nodes
+            ],
             "devices": [
                 {"id": d.id, "node": d.node, "backend": d.backend}
                 for d in self.adapter.devices
