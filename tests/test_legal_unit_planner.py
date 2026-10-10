@@ -27,11 +27,11 @@ class LegalUnitPlannerTests(unittest.TestCase):
     def setUp(self):
         self.legal = legal_profile()
 
-    def run(self, raw=None, **kwargs):
+    def plan(self, raw=None, **kwargs):
         return plan_legal_units(Config.parse(raw or config_raw()), self.legal, **kwargs)
 
     def test_default_capacity_ranking_prefers_one_device(self):
-        result = self.run()
+        result = self.plan()
         self.assertEqual(result["status"], "CANDIDATES_FOUND")
         self.assertEqual(result["best"]["compute_device_count"], 1)
         self.assertEqual(result["best"]["owners"], ["pc-gpu", "pc-gpu"])
@@ -45,7 +45,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
             p for p in raw["resource_policies"] if p["pool_ref"] == "pc-vram"
         )
         policy["allocation_cap_bytes"] = 200
-        result = self.run(raw)
+        result = self.plan(raw)
         self.assertEqual(result["status"], "CANDIDATES_FOUND")
         self.assertEqual(result["best"]["owners"], ["pc-gpu", "helper-a-igpu"])
         self.assertEqual(result["best"]["segments"], [
@@ -69,7 +69,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
     def test_required_helper_device_is_respected(self):
         raw = config_raw()
         raw["selection"]["required_devices"] = ["helper-a-igpu"]
-        result = self.run(raw)
+        result = self.plan(raw)
         self.assertEqual(set(result["best"]["compute_devices"]), {
             "pc-gpu", "helper-a-igpu"
         })
@@ -77,7 +77,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
     def test_policy_filtered_unit_without_legal_device_is_no_candidate(self):
         raw = config_raw()
         raw["selection"]["excluded_devices"] = ["pc-gpu"]
-        result = self.run(raw)
+        result = self.plan(raw)
         self.assertEqual(result["status"], "NO_CANDIDATE_IN_SEARCH_SPACE")
         self.assertEqual(
             result["search"]["rejections"]["unit_has_no_policy_eligible_device"],
@@ -102,7 +102,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
         next(
             p for p in raw["resource_policies"] if p["pool_ref"] == "pc-vram"
         )["allocation_cap_bytes"] = 200
-        result = self.run(raw)
+        result = self.plan(raw)
         self.assertEqual(result["status"], "NO_CANDIDATE_IN_SEARCH_SPACE")
         self.assertGreater(
             result["search"]["rejections"].get("pool_budget_exceeded", 0),
@@ -112,7 +112,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
     def test_budget_exhaustion_is_search_incomplete_not_infeasible(self):
         raw = config_raw()
         raw["planning_policy"]["search_budget"]["candidate_limit"] = 1
-        result = self.run(raw)
+        result = self.plan(raw)
         self.assertEqual(result["status"], "SEARCH_INCOMPLETE")
         self.assertFalse(result["search"]["complete"])
         self.assertEqual(result["search"]["reason"], "work_limit")
@@ -121,24 +121,24 @@ class LegalUnitPlannerTests(unittest.TestCase):
         raw = config_raw()
         raw["planning_policy"]["search_budget"]["deadline_ms"] = 1
         times = iter([0.0, 0.01, 0.02, 0.03])
-        result = self.run(raw, clock=lambda: next(times))
+        result = self.plan(raw, clock=lambda: next(times))
         self.assertEqual(result["status"], "SEARCH_INCOMPLETE")
         self.assertEqual(result["search"]["reason"], "deadline")
 
     def test_result_is_deterministic(self):
-        a = self.run()
-        b = self.run()
+        a = self.plan()
+        b = self.plan()
         self.assertEqual(a["candidates"], b["candidates"])
 
     def test_top_k_is_bounded(self):
-        result = self.run(top_k=1)
+        result = self.plan(top_k=1)
         self.assertLessEqual(len(result["candidates"]), 1)
         for invalid in (0, 21, True):
             with self.subTest(invalid=invalid), self.assertRaises(ValidationError):
-                self.run(top_k=invalid)
+                self.plan(top_k=invalid)
 
     def test_reclaimable_bytes_are_counted_in_full(self):
-        result = self.run()
+        result = self.plan()
         self.assertEqual(
             result["best"]["pool_tensor_resident_bytes"]["pc-vram"],
             250,
@@ -154,7 +154,7 @@ class LegalUnitPlannerTests(unittest.TestCase):
         # Three units: split tensor.b into two explicit legal units is impossible
         # because every tensor must appear exactly once, so instead assert the
         # existing two-unit ownership boundary corresponds to unit.0 cut_after.
-        result = self.run()
+        result = self.plan()
         for candidate in result["candidates"]:
             if candidate["owners"][0] != candidate["owners"][1]:
                 self.assertTrue(self.legal.units[0].cut_after)
