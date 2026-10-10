@@ -197,7 +197,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - per-device/per-pool movability envelopes now connect verified tensor legal destinations to physical-pool identity without conflating eligibility with measured resident memory;
 - adapter-declared legal model units/cut-after boundaries are implemented with complete tensor coverage, alias-group indivisibility and conservative device intersections;
 - bounded advisory legal-unit resident-capacity planning is implemented with explicit cut-boundary enforcement, current policy constraints, physical-pool tensor accounting and SEARCH_INCOMPLETE semantics;
-- next add adapter evidence for per-unit persistent state/workspace/staging, transfer payloads and compute cost before any finer-grained execution or performance ranking;
+- exact per-unit adapter evidence for compute, persistent state, workspace, staging and boundary payload bytes is implemented with complete legal-device coverage and identity binding;
+- next add directional path evidence and combine it with these unit costs in a bounded performance-aware advisory ranking, still non-executable;
 - add measured session/cache growth and prefill/decode/shared-round working-set contracts;
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
