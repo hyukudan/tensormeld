@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-legal-unit-performance",
-  "scope": "Combine legal-unit compute/memory evidence and directional path evidence in a bounded unit-chain upper-bound advisory planner, still non-executable.",
-  "started_at": "2026-10-10T10:14:00+02:00",
-  "completed_at": "2026-10-10T10:24:00+02:00",
-  "expires_at": null,
-  "base_commit": "f084fa86fb085343039628c0d31e117bd176cbc8",
-  "merged_pr": 36,
-  "merge_commit": "c06466ba9264cba1b2069784eddde0c8c6ac29e6",
-  "validation_record": "docs/implementation/validation/legal-unit-performance-2026-10-10.md",
-  "completion_condition": "Performance-aware advisory planner, tests, ADR/status/roadmap and PR CI are green and merged; no token-latency or executable-path claim.",
-  "next_step": "Add explicit token-feedback/sampling and phase-specific evidence before any token-latency/TTFT/throughput claim; keep finer-grained native execution separately gated.",
-  "instructions": "Do not repeat ordered-chain ranking. No real hardware performance claim until native target evidence exists."
+  "status": "active",
+  "owner": "chatgpt-generation-phase-evidence",
+  "scope": "Add explicit generation-phase evidence separating prefill, decode-step compute, sampling cost, logits payload and token-feedback payload for exact legal-unit/device/runtime identities.",
+  "started_at": "2026-10-10T10:26:00+02:00",
+  "expires_at": "2026-10-10T12:26:00+02:00",
+  "base_commit": "3a6ef0d05d42355fa0610120b32c4861d2c2606c",
+  "branch": "chatgpt-generation-phase-evidence",
+  "completion_condition": "Phase/sampling evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no TTFT/token-latency planner integration yet.",
+  "next_step": "Implement exact prefill/decode-step and sampling/feedback evidence contracts.",
+  "instructions": "Do not overlap generation-phase evidence. No inferred phase costs, no throughput/TTFT/token-latency claim, no native execution claim."
 }
