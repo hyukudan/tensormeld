@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-generation-phase-evidence",
-  "scope": "Add explicit generation-phase evidence separating prefill, decode-step compute, sampling cost, logits payload and token-feedback payload for exact legal-unit/device/runtime identities.",
-  "started_at": "2026-10-10T10:26:00+02:00",
-  "completed_at": "2026-10-10T10:36:00+02:00",
-  "expires_at": null,
-  "base_commit": "3a6ef0d05d42355fa0610120b32c4861d2c2606c",
-  "merged_pr": 37,
-  "merge_commit": "b5267f642898d3858ee1d5d35aabdd9ea399fed8",
-  "validation_record": "docs/implementation/validation/generation-phase-evidence-2026-10-10.md",
-  "completion_condition": "Phase/sampling evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no TTFT/token-latency planner integration yet.",
-  "next_step": "Combine phase evidence with directional paths into separate prefill/TTFT-scenario and one-decode-cycle advisory upper bounds, still non-executable.",
-  "instructions": "Do not repeat generation-phase evidence. No sustained-throughput or native-execution claim."
+  "status": "active",
+  "owner": "chatgpt-generation-phase-v2",
+  "scope": "Extend generation-phase evidence with phase-specific legal-unit boundary payloads so prefill and decode transfer costs cannot reuse one generic payload.",
+  "started_at": "2026-10-10T10:38:00+02:00",
+  "expires_at": "2026-10-10T12:38:00+02:00",
+  "base_commit": "b828ff4e1c81f184f4e68916a2cc18d7a877b974",
+  "branch": "chatgpt-generation-phase-v2",
+  "completion_condition": "Backward-compatible v1/v2 parsing, v2 phase-boundary coverage, tests, ADR/status/roadmap and PR CI are green and merged.",
+  "next_step": "Add generation-phase-evidence-v2 with prefill/decode boundary payload bytes per legal unit.",
+  "instructions": "Do not build TTFT/decode-cycle planner until phase-specific boundary payload evidence is merged."
 }
