@@ -77,6 +77,8 @@ the pre-alpha status or qualify any execution path.
 - shared physical-pool envelopes use tensor unions so multiple logical devices do not multiply the same eligible tensor bytes;
 - adapter-declared legal model units provide explicit tensor grouping, execution sequence and cut-after boundaries with complete tensor coverage;
 - legal unit devices can only narrow the tensor-level device intersection, and alias groups cannot cross unit boundaries;
+- bounded advisory legal-unit planner explores only adapter-declared cut boundaries and policy-eligible owners;
+- legal-unit planning counts hard-resident plus reclaimable/file-backed tensor bytes per physical pool and keeps results non-executable;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
