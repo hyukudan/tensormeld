@@ -197,6 +197,48 @@ class LegalUnitPerformancePlannerTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self.plan(config=config)
 
+    def test_static_pool_budget_can_force_split_with_full_memory_classes(self):
+        raw = copy.deepcopy(self.raw_costs)
+        # The config's pc-vram static budget is 10 GiB while reported capacity is 12 GiB.
+        # A unit-local 11 GiB persistent-state demand is valid evidence but cannot fit
+        # the owner's policy budget when both units stay on pc-gpu.
+        raw["units"][1]["device_profiles"]["pc-gpu"]["persistent_state_bytes"] = {
+            "pc-vram": 11 * 1024**3
+        }
+        costs = self.costs_from_raw(raw)
+        result = self.plan(costs=costs)
+        self.assertEqual(result["status"], "CANDIDATES_FOUND")
+        self.assertEqual(result["best"]["owners"], ["pc-gpu", "helper-a-igpu"])
+        self.assertGreater(
+            result["search"]["rejections"].get("pool_budget_exceeded", 0),
+            0,
+        )
+
+    def test_required_memory_split_without_directional_path_is_not_feasible(self):
+        raw = copy.deepcopy(self.raw_costs)
+        raw["units"][1]["device_profiles"]["pc-gpu"]["persistent_state_bytes"] = {
+            "pc-vram": 11 * 1024**3
+        }
+        costs = self.costs_from_raw(raw)
+        path_raw = copy.deepcopy(self.paths_raw)
+        path_raw["paths"] = [
+            path for path in path_raw["paths"] if path["id"] != "a-b"
+        ]
+        paths = parse_directional_path_evidence(
+            path_raw,
+            config=self.config,
+            runtime_identities=self.identities,
+        )
+        result = self.plan(costs=costs, paths=paths)
+        self.assertEqual(result["status"], "NO_CANDIDATE_IN_SEARCH_SPACE")
+        self.assertIsNone(result["best"])
+        self.assertGreater(
+            result["search"]["rejections"].get(
+                "missing_directional_path_bucket", 0
+            ),
+            0,
+        )
+
     def test_path_runtime_environment_must_match_movability(self):
         changed = replace(
             self.paths,
