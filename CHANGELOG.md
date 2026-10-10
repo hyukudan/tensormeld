@@ -18,6 +18,7 @@
 - Add bounded advisory legal-unit placement search that honors explicit cut boundaries and physical-pool resident capacity without enabling finer-grained native execution.
 - Add exact per-legal-unit compute/state/workspace/staging and boundary-payload evidence bound to current legal/model/adapter/runtime identities.
 - Add exact directional transfer-path evidence with conservative payload upper-bound buckets, runtime identity binding and no interpolation, extrapolation or automatic multirail aggregation.
+- Add bounded performance-aware legal-unit advisory ranking that combines explicit compute/memory evidence and conservative directional transfer costs as an ordered-chain upper bound, without claiming token latency or execution.
 - Add complete explicit per-tensor storage/movability evidence bound to exact GGUF index, adapter/build and runtime identities; no name/size/backend heuristic can mark a tensor movable.
 - Derive overlapping per-device and de-duplicated physical-pool movability byte envelopes without treating legal eligibility as current ownership or measured resident memory.
 - Add adapter-declared ordered indivisible legal model units and explicit cut boundaries; complete tensor coverage and alias-group indivisibility are mandatory and unit device sets may only narrow tensor-level legality.
