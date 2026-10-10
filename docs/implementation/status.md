@@ -79,6 +79,8 @@ the pre-alpha status or qualify any execution path.
 - legal unit devices can only narrow the tensor-level device intersection, and alias groups cannot cross unit boundaries;
 - bounded advisory legal-unit planner explores only adapter-declared cut boundaries and policy-eligible owners;
 - legal-unit planning counts hard-resident plus reclaimable/file-backed tensor bytes per physical pool and keeps results non-executable;
+- exact per-legal-unit device cost evidence now binds compute, persistent state, workspace, staging and boundary payload bytes to legal/model/adapter/runtime identities;
+- legal-unit cost profiles require complete explicit coverage for every legal device and reject cross-node memory pools or inferred costs;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
