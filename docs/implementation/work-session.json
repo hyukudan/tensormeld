@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-directional-path-evidence",
-  "scope": "Add exact directional device-to-device path evidence with bounded conservative payload buckets and current config/runtime identity binding.",
-  "started_at": "2026-10-10T10:03:00+02:00",
-  "completed_at": "2026-10-10T10:12:00+02:00",
-  "expires_at": null,
-  "base_commit": "c9760d367df02a64d552b0912e9da5c6d2e39f6c",
-  "merged_pr": 35,
-  "merge_commit": "661fbd3d7a88d8af27bec5b4ce73f5825b5f5d6f",
-  "validation_record": "docs/implementation/validation/directional-path-evidence-2026-10-10.md",
-  "completion_condition": "Directional path evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no transfer interpolation/extrapolation or performance-aware planner yet.",
-  "next_step": "Combine legal-unit compute/memory evidence and directional path evidence in a bounded unit-chain upper-bound advisory planner, still non-executable.",
-  "instructions": "Do not repeat directional path evidence. No real link-speed or hardware claim."
+  "status": "active",
+  "owner": "chatgpt-legal-unit-performance",
+  "scope": "Combine legal-unit compute/memory evidence and directional path evidence in a bounded unit-chain upper-bound advisory planner, still non-executable.",
+  "started_at": "2026-10-10T10:14:00+02:00",
+  "expires_at": "2026-10-10T12:14:00+02:00",
+  "base_commit": "f084fa86fb085343039628c0d31e117bd176cbc8",
+  "branch": "chatgpt-legal-unit-performance",
+  "completion_condition": "Performance-aware advisory planner, tests, ADR/status/roadmap and PR CI are green and merged; no token-latency or executable-path claim.",
+  "next_step": "Implement bounded unit-chain upper-bound ranking with exact memory aggregation and conservative directional transfer lookup.",
+  "instructions": "Do not overlap this planner slice. Objective is ordered unit-chain upper bound only; no sampling/feedback/overlap/prefill inference and no hardware claim."
 }
