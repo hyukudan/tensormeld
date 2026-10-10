@@ -15,6 +15,7 @@
 - Keep all pre-execution stages separate from live session admission.
 - Persist placement calibrations as immutable fingerprint records with bounded age and revalidation against current build/runtime/device/topology identities before measured-preference reuse.
 - Add predictive physical-pool memory classes that distinguish hard-resident/state/workspace/staging from reclaimable file-backed pressure while reconciling exactly to existing runtime admission peaks.
+- Add bounded advisory legal-unit placement search that honors explicit cut boundaries and physical-pool resident capacity without enabling finer-grained native execution.
 - Add complete explicit per-tensor storage/movability evidence bound to exact GGUF index, adapter/build and runtime identities; no name/size/backend heuristic can mark a tensor movable.
 - Derive overlapping per-device and de-duplicated physical-pool movability byte envelopes without treating legal eligibility as current ownership or measured resident memory.
 - Add adapter-declared ordered indivisible legal model units and explicit cut boundaries; complete tensor coverage and alias-group indivisibility are mandatory and unit device sets may only narrow tensor-level legality.
