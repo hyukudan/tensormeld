@@ -87,6 +87,7 @@ the pre-alpha status or qualify any execution path.
 - legal-unit performance ranking is explicitly an ordered-chain upper bound, not token latency/TTFT/throughput, and remains non-executable;
 - generation-phase evidence now separates exact-scenario prefill, decode-step compute, sampling cost, logits payload and token-feedback payload;
 - phase evidence is context-position specific and cannot be silently reused across different prefill/decode contexts;
+- generation-phase v2 adds distinct prefill/decode inter-unit boundary payloads; v1 remains backward compatible but is explicitly insufficient for phase-transfer modeling;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
