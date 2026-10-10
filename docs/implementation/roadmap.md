@@ -201,7 +201,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - directional device-to-device path evidence is implemented with conservative payload buckets, exact runtime identity binding and no interpolation/extrapolation/multirail summation;
 - bounded legal-unit performance-aware advisory ranking is implemented as an ordered compute-chain + directional-boundary upper bound with full physical-pool memory accounting;
 - explicit scenario-bound prefill/decode-step, sampling, logits-payload and token-feedback evidence is implemented;
-- next combine phase evidence with directional paths into separate TTFT-scenario and single-decode-cycle upper bounds, still avoiding sustained-throughput claims and keeping finer-grained execution separately gated;
+- generation-phase v2 now supplies distinct prefill/decode boundary payload bytes; v1 remains usable only for its original compute/sampling evidence scope;
+- next combine v2 phase evidence with directional paths into separate TTFT-scenario and single-decode-cycle upper bounds, still avoiding sustained-throughput claims and keeping finer-grained execution separately gated;
 - add measured session/cache growth and prefill/decode/shared-round working-set contracts;
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
