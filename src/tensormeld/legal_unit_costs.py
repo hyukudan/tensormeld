@@ -16,6 +16,7 @@ from typing import Any
 from .config_v2 import Config
 from .legal_model_units import LegalModelUnitsProfile
 from .runtime_model_manifest import RuntimeModelManifest
+from .tensor_movability import TensorMovabilityProfile
 from .schema import (
     MAX_INPUT_BYTES,
     ValidationError,
@@ -106,6 +107,7 @@ def parse_legal_unit_costs(
     config: Config,
     legal_units: LegalModelUnitsProfile,
     runtime_manifest: RuntimeModelManifest,
+    movability: TensorMovabilityProfile,
 ) -> LegalUnitCostsProfile:
     root = record(
         data,
@@ -138,6 +140,15 @@ def parse_legal_unit_costs(
         raise ValidationError("legal-unit costs legal-unit identity mismatch")
     if root["runtime_manifest_sha256"] != runtime_manifest.fingerprint:
         raise ValidationError("legal-unit costs runtime-manifest identity mismatch")
+    if legal_units.tensor_movability_sha256 != movability.fingerprint:
+        raise ValidationError("legal-unit costs tensor-movability identity mismatch")
+    if movability.model_manifest_sha256 != runtime_manifest.model_manifest_sha256:
+        raise ValidationError("legal-unit costs model identity mismatch")
+    if (
+        movability.adapter_capabilities_sha256
+        != runtime_manifest.adapter_capabilities_sha256
+    ):
+        raise ValidationError("legal-unit costs adapter capability identity mismatch")
     if root["qualified"] is not False or root["executable"] is not False:
         raise ValidationError("legal-unit costs cannot self-promote")
 
@@ -332,6 +343,7 @@ def load_legal_unit_costs(
     config: Config,
     legal_units: LegalModelUnitsProfile,
     runtime_manifest: RuntimeModelManifest,
+    movability: TensorMovabilityProfile,
 ) -> LegalUnitCostsProfile:
     with Path(path).open("rb") as stream:
         raw = stream.read(MAX_INPUT_BYTES + 1)
@@ -346,4 +358,5 @@ def load_legal_unit_costs(
         config=config,
         legal_units=legal_units,
         runtime_manifest=runtime_manifest,
+        movability=movability,
     )
