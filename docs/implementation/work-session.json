@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-legal-unit-costs",
   "scope": "Add exact per-legal-unit adapter evidence for compute, persistent state, workspace, staging and boundary transfer payloads, bound to current legal-unit/config/runtime identities.",
   "started_at": "2026-10-10T09:53:00+02:00",
-  "expires_at": "2026-10-10T11:53:00+02:00",
+  "completed_at": "2026-10-10T10:01:00+02:00",
+  "expires_at": null,
   "base_commit": "a3e9374b9d8188f81bc7df0a0446b6c49851511c",
-  "branch": "chatgpt-legal-unit-costs",
+  "merged_pr": 34,
+  "merge_commit": "9fb0ce92be7f262c16d5d81fc551a09be483afb9",
+  "validation_record": "docs/implementation/validation/legal-unit-costs-2026-10-10.md",
   "completion_condition": "Evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no performance-aware planner integration yet.",
-  "next_step": "Implement strict legal-unit cost/memory evidence profiles and portable tests.",
-  "instructions": "Do not overlap this evidence slice. No inference from tensor size/name; no execution or performance claims."
+  "next_step": "Add exact directional path evidence and combine it with legal-unit costs in a bounded performance-aware advisory ranking, still non-executable.",
+  "instructions": "Do not repeat legal-unit cost evidence. No execution/performance claim until real native evidence exists."
 }
