@@ -85,6 +85,8 @@ the pre-alpha status or qualify any execution path.
 - path lookup never interpolates/extrapolates or sums parallel paths as multirail bandwidth;
 - bounded performance-aware legal-unit planner now combines explicit unit compute/memory evidence with directional transfer upper bounds;
 - legal-unit performance ranking is explicitly an ordered-chain upper bound, not token latency/TTFT/throughput, and remains non-executable;
+- generation-phase evidence now separates exact-scenario prefill, decode-step compute, sampling cost, logits payload and token-feedback payload;
+- phase evidence is context-position specific and cannot be silently reused across different prefill/decode contexts;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
