@@ -78,6 +78,15 @@ def raw_phase(config, legal, runtime, costs):
         "executable": False,
     }
 
+def raw_phase_v2(config, legal, runtime, costs):
+    value = raw_phase(config, legal, runtime, costs)
+    value["generation_phase_schema"] = "tensormeld/generation-phase-evidence-v2"
+    for unit in value["units"]:
+        is_last = unit["sequence"] == len(legal.units) - 1
+        unit["prefill_boundary_output_bytes"] = 0 if is_last else 4096
+        unit["decode_boundary_output_bytes"] = 0 if is_last else 64
+    return value
+
 
 class GenerationPhaseEvidenceTests(unittest.TestCase):
     def setUp(self):
@@ -209,6 +218,63 @@ class GenerationPhaseEvidenceTests(unittest.TestCase):
             reversed(list(b["sampling_profiles"].items()))
         )
         self.assertEqual(self.parse(a).fingerprint, self.parse(b).fingerprint)
+
+    def test_v2_requires_phase_specific_boundary_payloads(self):
+        raw = raw_phase_v2(self.config, self.legal, self.runtime, self.costs)
+        evidence = self.parse(raw)
+        self.assertEqual(
+            evidence.schema,
+            "tensormeld/generation-phase-evidence-v2",
+        )
+        self.assertEqual(evidence.units[0].prefill_boundary_output_bytes, 4096)
+        self.assertEqual(evidence.units[0].decode_boundary_output_bytes, 64)
+        summary = generation_phase_summary(evidence)
+        self.assertTrue(summary["phase_boundary_payloads_complete"])
+
+    def test_v1_remains_backward_compatible_and_marks_boundaries_incomplete(self):
+        raw = raw_phase(self.config, self.legal, self.runtime, self.costs)
+        evidence = self.parse(raw)
+        self.assertEqual(
+            evidence.schema,
+            "tensormeld/generation-phase-evidence-v1",
+        )
+        self.assertIsNone(evidence.units[0].prefill_boundary_output_bytes)
+        self.assertFalse(
+            generation_phase_summary(evidence)["phase_boundary_payloads_complete"]
+        )
+
+    def test_v2_last_unit_boundaries_must_be_zero(self):
+        for field in (
+            "prefill_boundary_output_bytes",
+            "decode_boundary_output_bytes",
+        ):
+            raw = raw_phase_v2(
+                self.config, self.legal, self.runtime, self.costs
+            )
+            raw["units"][-1][field] = 1
+            with self.subTest(field=field), self.assertRaises(ValidationError):
+                self.parse(raw)
+
+    def test_v2_boundary_payloads_are_nonnegative_integers(self):
+        for field in (
+            "prefill_boundary_output_bytes",
+            "decode_boundary_output_bytes",
+        ):
+            for bad in (-1, 1.5, True):
+                raw = raw_phase_v2(
+                    self.config, self.legal, self.runtime, self.costs
+                )
+                raw["units"][0][field] = bad
+                with self.subTest(field=field, bad=bad), self.assertRaises(
+                    ValidationError
+                ):
+                    self.parse(raw)
+
+    def test_v2_prefill_and_decode_payloads_are_distinct_identity(self):
+        a = raw_phase_v2(self.config, self.legal, self.runtime, self.costs)
+        b = copy.deepcopy(a)
+        b["units"][0]["decode_boundary_output_bytes"] += 1
+        self.assertNotEqual(self.parse(a).fingerprint, self.parse(b).fingerprint)
 
     def test_loader_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as d:

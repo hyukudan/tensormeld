@@ -30,7 +30,9 @@ from .schema import (
     unique,
 )
 
-PHASE_EVIDENCE_SCHEMA = "tensormeld/generation-phase-evidence-v1"
+PHASE_EVIDENCE_SCHEMA_V1 = "tensormeld/generation-phase-evidence-v1"
+PHASE_EVIDENCE_SCHEMA_V2 = "tensormeld/generation-phase-evidence-v2"
+PHASE_EVIDENCE_SCHEMAS = {PHASE_EVIDENCE_SCHEMA_V1, PHASE_EVIDENCE_SCHEMA_V2}
 MAX_UNITS = 100_000
 MAX_DEVICE_PROFILES = 128
 MAX_SAMPLERS = 128
@@ -49,6 +51,8 @@ class UnitPhaseEvidence:
     unit_id: str
     sequence: int
     device_profiles: tuple[UnitPhaseCost, ...]
+    prefill_boundary_output_bytes: int | None = None
+    decode_boundary_output_bytes: int | None = None
 
 
 @dataclass(frozen=True)
@@ -61,6 +65,7 @@ class SamplingProfile:
 
 @dataclass(frozen=True)
 class GenerationPhaseEvidence:
+    schema: str
     provenance: str
     config_sha256: str
     legal_model_units_sha256: str
@@ -100,9 +105,10 @@ def parse_generation_phase_evidence(
             "executable",
         },
     )
-    if root["generation_phase_schema"] != PHASE_EVIDENCE_SCHEMA:
+    phase_schema = text(root["generation_phase_schema"], "generation_phase_schema")
+    if phase_schema not in PHASE_EVIDENCE_SCHEMAS:
         raise ValidationError(
-            f"generation_phase_schema: expected {PHASE_EVIDENCE_SCHEMA}"
+            "generation_phase_schema: expected v1 or v2 generation phase evidence"
         )
     provenance = text(root["provenance"], "provenance")
     if provenance not in PROVENANCE_VALUES:
@@ -177,10 +183,16 @@ def parse_generation_phase_evidence(
     legal_by_id = {unit.id: unit for unit in legal_units.units}
     parsed_units: list[UnitPhaseEvidence] = []
     for i, raw in enumerate(items(root["units"], "units", MAX_UNITS, 1)):
+        unit_fields = {"id", "sequence", "device_profiles"}
+        if phase_schema == PHASE_EVIDENCE_SCHEMA_V2:
+            unit_fields |= {
+                "prefill_boundary_output_bytes",
+                "decode_boundary_output_bytes",
+            }
         unit_raw = record(
             raw,
             f"units[{i}]",
-            {"id", "sequence", "device_profiles"},
+            unit_fields,
         )
         unit_id = text(unit_raw["id"], f"units[{i}].id")
         legal = legal_by_id.get(unit_id)
@@ -228,10 +240,33 @@ def parse_generation_phase_evidence(
                     True,
                 )),
             ))
+        prefill_boundary = None
+        decode_boundary = None
+        if phase_schema == PHASE_EVIDENCE_SCHEMA_V2:
+            prefill_boundary = int(number(
+                unit_raw["prefill_boundary_output_bytes"],
+                f"units[{i}].prefill_boundary_output_bytes",
+                0,
+                True,
+            ))
+            decode_boundary = int(number(
+                unit_raw["decode_boundary_output_bytes"],
+                f"units[{i}].decode_boundary_output_bytes",
+                0,
+                True,
+            ))
+            if sequence == len(legal_units.units) - 1 and (
+                prefill_boundary != 0 or decode_boundary != 0
+            ):
+                raise ValidationError(
+                    "last legal unit phase boundary payloads must both be zero"
+                )
         parsed_units.append(UnitPhaseEvidence(
             unit_id,
             sequence,
             tuple(profiles),
+            prefill_boundary,
+            decode_boundary,
         ))
     unique([unit.unit_id for unit in parsed_units], "units.id")
     if set(unit.unit_id for unit in parsed_units) != set(legal_by_id):
@@ -280,8 +315,30 @@ def parse_generation_phase_evidence(
             )),
         ))
 
+    canonical_units = []
+    for unit in parsed_units:
+        item = {
+            "id": unit.unit_id,
+            "sequence": unit.sequence,
+            "device_profiles": {
+                p.device: {
+                    "prefill_us": p.prefill_us,
+                    "decode_step_us": p.decode_step_us,
+                }
+                for p in unit.device_profiles
+            },
+        }
+        if phase_schema == PHASE_EVIDENCE_SCHEMA_V2:
+            item["prefill_boundary_output_bytes"] = (
+                unit.prefill_boundary_output_bytes
+            )
+            item["decode_boundary_output_bytes"] = (
+                unit.decode_boundary_output_bytes
+            )
+        canonical_units.append(item)
+
     canonical = {
-        "generation_phase_schema": PHASE_EVIDENCE_SCHEMA,
+        "generation_phase_schema": phase_schema,
         "provenance": provenance,
         "config_sha256": config.fingerprint,
         "legal_model_units_sha256": legal_units.fingerprint,
@@ -292,20 +349,7 @@ def parse_generation_phase_evidence(
             "decode_context_tokens": decode_context_tokens,
             "concurrency": concurrency,
         },
-        "units": [
-            {
-                "id": unit.unit_id,
-                "sequence": unit.sequence,
-                "device_profiles": {
-                    p.device: {
-                        "prefill_us": p.prefill_us,
-                        "decode_step_us": p.decode_step_us,
-                    }
-                    for p in unit.device_profiles
-                },
-            }
-            for unit in parsed_units
-        ],
+        "units": canonical_units,
         "sampling_profiles": {
             p.device: {
                 "sampling_us": p.sampling_us,
@@ -327,6 +371,7 @@ def parse_generation_phase_evidence(
         ).encode("utf-8")
     ).hexdigest()
     return GenerationPhaseEvidence(
+        phase_schema,
         provenance,
         config.fingerprint,
         legal_units.fingerprint,
@@ -346,6 +391,7 @@ def generation_phase_summary(
 ) -> dict[str, Any]:
     return {
         "result_schema": "tensormeld/generation-phase-evidence-validation-v1",
+        "generation_phase_schema": evidence.schema,
         "generation_phase_evidence_sha256": evidence.fingerprint,
         "provenance": evidence.provenance,
         "config_sha256": evidence.config_sha256,
@@ -359,12 +405,16 @@ def generation_phase_summary(
         },
         "unit_count": len(evidence.units),
         "sampling_devices": [profile.device for profile in evidence.sampling_profiles],
+        "phase_boundary_payloads_complete": (
+            evidence.schema == PHASE_EVIDENCE_SCHEMA_V2
+        ),
         "qualified": False,
         "executable": False,
         "warnings": [
             "Prefill and decode-step costs apply only to the explicit phase workload/context position.",
             "No phase cost is inferred from tensor size, model family, backend label or generic legal-unit compute cost.",
             "Sampling profiles state sampling compute plus logits/feedback byte payloads; transfer time still requires directional path evidence.",
+            "v1 has no phase-specific inter-unit boundary payloads; only v2 can support phase-transfer modeling.",
             "This evidence alone is not a TTFT, token-latency, throughput or native-execution claim.",
         ],
     }
