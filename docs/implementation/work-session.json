@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-directional-path-evidence",
   "scope": "Add exact directional device-to-device path evidence with bounded conservative payload buckets and current config/runtime identity binding.",
   "started_at": "2026-10-10T10:03:00+02:00",
-  "expires_at": "2026-10-10T12:03:00+02:00",
+  "completed_at": "2026-10-10T10:12:00+02:00",
+  "expires_at": null,
   "base_commit": "c9760d367df02a64d552b0912e9da5c6d2e39f6c",
-  "branch": "chatgpt-directional-path-evidence",
+  "merged_pr": 35,
+  "merge_commit": "661fbd3d7a88d8af27bec5b4ce73f5825b5f5d6f",
+  "validation_record": "docs/implementation/validation/directional-path-evidence-2026-10-10.md",
   "completion_condition": "Directional path evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no transfer interpolation/extrapolation or performance-aware planner yet.",
-  "next_step": "Implement strict directional path evidence and exact conservative cost lookup.",
-  "instructions": "Do not overlap path evidence work. No nominal link-speed inference, multirail summation or real hardware claim."
+  "next_step": "Combine legal-unit compute/memory evidence and directional path evidence in a bounded unit-chain upper-bound advisory planner, still non-executable.",
+  "instructions": "Do not repeat directional path evidence. No real link-speed or hardware claim."
 }
