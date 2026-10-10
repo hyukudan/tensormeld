@@ -83,6 +83,8 @@ the pre-alpha status or qualify any execution path.
 - legal-unit cost profiles require complete explicit coverage for every legal device and reject cross-node memory pools or inferred costs;
 - exact directional device-to-device path evidence now uses bounded payload→upper-bound buckets tied to current runtime identities;
 - path lookup never interpolates/extrapolates or sums parallel paths as multirail bandwidth;
+- bounded performance-aware legal-unit planner now combines explicit unit compute/memory evidence with directional transfer upper bounds;
+- legal-unit performance ranking is explicitly an ordered-chain upper bound, not token latency/TTFT/throughput, and remains non-executable;
 - legacy analytical planner and bounded loopback diagnostics retained.
 
 ## Tested here / in portable CI
