@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-legal-unit-planner",
   "scope": "Add a bounded advisory planner over adapter-declared legal model units and explicit cut boundaries, with conservative tensor-resident physical-pool accounting only.",
   "started_at": "2026-10-10T09:45:00+02:00",
-  "expires_at": "2026-10-10T11:45:00+02:00",
+  "completed_at": "2026-10-10T09:52:00+02:00",
+  "expires_at": null,
   "base_commit": "9465db59e3d3f9c7b7a86d263c4f617699a64a36",
-  "branch": "chatgpt-legal-unit-planner",
+  "merged_pr": 33,
+  "merge_commit": "af7281016996f79fd7f97a8a0be593e496e32157",
+  "validation_record": "docs/implementation/validation/legal-unit-planner-2026-10-10.md",
   "completion_condition": "Planner contract, tests, ADR/status/roadmap and PR CI are green and merged; results remain advisory/non-executable and do not invent compute/state/workspace costs.",
-  "next_step": "Implement bounded legal-unit placement search with cut-boundary enforcement and physical-pool resident-byte accounting.",
-  "instructions": "Do not overlap this planner slice. Whole-block remains the validated executable baseline; no real hardware claim."
+  "next_step": "Add exact per-legal-unit adapter evidence for compute, persistent state, workspace, staging and boundary transfer payloads before adding any performance-aware legal-unit ranking.",
+  "instructions": "Do not repeat resident-capacity legal-unit planning. Whole-block remains the validated executable baseline."
 }
