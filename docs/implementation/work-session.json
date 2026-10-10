@@ -1,16 +1,13 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "completed",
-  "owner": "chatgpt-legal-unit-costs",
-  "scope": "Add exact per-legal-unit adapter evidence for compute, persistent state, workspace, staging and boundary transfer payloads, bound to current legal-unit/config/runtime identities.",
-  "started_at": "2026-10-10T09:53:00+02:00",
-  "completed_at": "2026-10-10T10:01:00+02:00",
-  "expires_at": null,
-  "base_commit": "a3e9374b9d8188f81bc7df0a0446b6c49851511c",
-  "merged_pr": 34,
-  "merge_commit": "9fb0ce92be7f262c16d5d81fc551a09be483afb9",
-  "validation_record": "docs/implementation/validation/legal-unit-costs-2026-10-10.md",
-  "completion_condition": "Evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no performance-aware planner integration yet.",
-  "next_step": "Add exact directional path evidence and combine it with legal-unit costs in a bounded performance-aware advisory ranking, still non-executable.",
-  "instructions": "Do not repeat legal-unit cost evidence. No execution/performance claim until real native evidence exists."
+  "status": "active",
+  "owner": "chatgpt-directional-path-evidence",
+  "scope": "Add exact directional device-to-device path evidence with bounded conservative payload buckets and current config/runtime identity binding.",
+  "started_at": "2026-10-10T10:03:00+02:00",
+  "expires_at": "2026-10-10T12:03:00+02:00",
+  "base_commit": "c9760d367df02a64d552b0912e9da5c6d2e39f6c",
+  "branch": "chatgpt-directional-path-evidence",
+  "completion_condition": "Directional path evidence contract, tests, ADR/status/roadmap and PR CI are green and merged; no transfer interpolation/extrapolation or performance-aware planner yet.",
+  "next_step": "Implement strict directional path evidence and exact conservative cost lookup.",
+  "instructions": "Do not overlap path evidence work. No nominal link-speed inference, multirail summation or real hardware claim."
 }
