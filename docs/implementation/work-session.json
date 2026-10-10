@@ -1,13 +1,16 @@
 {
   "schema": "tensormeld/work-session/v1",
-  "status": "active",
+  "status": "completed",
   "owner": "chatgpt-legal-unit-performance",
   "scope": "Combine legal-unit compute/memory evidence and directional path evidence in a bounded unit-chain upper-bound advisory planner, still non-executable.",
   "started_at": "2026-10-10T10:14:00+02:00",
-  "expires_at": "2026-10-10T12:14:00+02:00",
+  "completed_at": "2026-10-10T10:24:00+02:00",
+  "expires_at": null,
   "base_commit": "f084fa86fb085343039628c0d31e117bd176cbc8",
-  "branch": "chatgpt-legal-unit-performance",
+  "merged_pr": 36,
+  "merge_commit": "c06466ba9264cba1b2069784eddde0c8c6ac29e6",
+  "validation_record": "docs/implementation/validation/legal-unit-performance-2026-10-10.md",
   "completion_condition": "Performance-aware advisory planner, tests, ADR/status/roadmap and PR CI are green and merged; no token-latency or executable-path claim.",
-  "next_step": "Implement bounded unit-chain upper-bound ranking with exact memory aggregation and conservative directional transfer lookup.",
-  "instructions": "Do not overlap this planner slice. Objective is ordered unit-chain upper bound only; no sampling/feedback/overlap/prefill inference and no hardware claim."
+  "next_step": "Add explicit token-feedback/sampling and phase-specific evidence before any token-latency/TTFT/throughput claim; keep finer-grained native execution separately gated.",
+  "instructions": "Do not repeat ordered-chain ranking. No real hardware performance claim until native target evidence exists."
 }
