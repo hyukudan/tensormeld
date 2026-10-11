@@ -2,11 +2,21 @@
 
 Version: **0.2.0a2** — TensorMeld. Specification baseline: 0.2.0.
 
+Current cross-cutting gates: [implementation and qualification ledger](qualification-ledger.md).
+
 The canonical repository is public for engineering transparency. This does not change
 the pre-alpha status or qualify any execution path.
 
 ## Implemented
 
+- concrete C1 consumer of the existing exact authorized completion path with bounded
+  FIFO count/bytes, monotonic deadlines, attempt cancellation, process fencing,
+  ambiguous-failure quarantine and explicit drain; arbitrary-prompt family serving
+  and public HTTP/SSE remain separate unimplemented gates;
+- advisory concurrency-one generation scenario composition with phase-specific payloads,
+  directional logits/token feedback, explicit control costs and incomplete-evidence results;
+- native session run/cancel/release synchronization retains admission through synchronous
+  backend termination, with deterministic race regressions;
 - strict heterogeneous installation/policy contracts and bounded synthetic planner;
 - exact static adapter representability gate;
 - exact GGUF-backed model identity and qualification-evidence applicability contracts;
@@ -64,7 +74,7 @@ the pre-alpha status or qualify any execution path.
 - lease-bound native admitted session requires a live launched lease plus exact bundle/backend identity and deterministically releases the lease on completion, failure or cancellation cleanup;
 - unmapped engine devices remain visible but are never auto-bound;
 - dependency/license register and alternate pinned native-engine candidate;
-- pinned 2026-10-05 Strata/TensorFold code audit recorded as research-only prior art with explicit TensorMeld independence and adopt/adapt/defer/reject priorities;
+- independent optimization principles recorded with explicit ownership and qualification boundaries;
 - TensorMeld-owned managed llama-server child-process primitive with exact server/model/GGUF/placement identity, loopback-only readiness, bounded stderr tail, early-exit detection and terminate→kill shutdown;
 - immutable local placement-calibration store keyed by calibration fingerprint;
 - persisted calibration records carry timezone-aware age limits and are revalidated against current package/runtime/device/topology identities before reuse;

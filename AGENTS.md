@@ -5,8 +5,10 @@ changing code. Normative spec is 0.2.0; runtime is 0.2.0a2. The v2 configuration
 policy-only candidate resolver are implemented, but distributed inference is not.
 Do not treat a requirement or configuration example as execution qualification.
 
-Use English for maintained code, tests and documentation. Keep research provenance
-and third-party benchmark notes outside normative specs. Pin external adapters and
+Use English for maintained code, tests and documentation. Keep comparative research,
+external benchmark notes and source-identified inspection artifacts outside Git.
+Public documents describe project-owned contracts and evidence. Preserve required
+provenance, licenses and notices for actual adopted components. Pin external adapters and
 record licenses/security/provenance before adopting code. No model weights, personal
 inventories, prompts, keys, caches or credentials belong in Git.
 

@@ -21,6 +21,7 @@ from .schema import ValidationError
 from .target_host_admission import TargetHostAdmissionResult
 from .whole_block_execution import (
     AcceptedExecutionBundle,
+    MAX_INPUT_BYTES,
     ReferenceWholeBlockSession,
     WholeBlockBackend,
 )
@@ -131,36 +132,38 @@ class NativeAdmittedSession:
         self._reference = ReferenceWholeBlockSession(bundle, backend)
         self._lease_released = False
 
-    def _release_lease(self) -> dict[str, Any]:
-        with self._lock:
-            if self._lease_released:
-                return {
-                    "result_schema": "tensormeld/native-session-release-v1",
-                    "status": "ALREADY_RELEASED",
-                    "lease_id": self.lease_id,
-                    "released": True,
-                }
-            result = self.controller.release(self.lease_id)
-            self._lease_released = True
+    def _release_lease_locked(self) -> dict[str, Any]:
+        """Release only while holding the lifecycle lock at a safe boundary."""
+        if self._lease_released:
             return {
                 "result_schema": "tensormeld/native-session-release-v1",
-                "status": result["status"],
+                "status": "ALREADY_RELEASED",
                 "lease_id": self.lease_id,
                 "released": True,
             }
+        result = self.controller.release(self.lease_id)
+        self._lease_released = True
+        return {
+            "result_schema": "tensormeld/native-session-release-v1",
+            "status": result["status"],
+            "lease_id": self.lease_id,
+            "released": True,
+        }
 
     def cancel(self) -> dict[str, Any]:
         with self._lock:
             current = self.state
-            if current == "released":
+            if current in {"released", "completed", "failed", "cancelled"}:
                 return {
                     "result_schema": "tensormeld/native-session-cancel-v1",
-                    "status": "ALREADY_RELEASED",
+                    "status": "ALREADY_" + current.upper(),
                     "lease_id": self.lease_id,
-                    "cancelled": False,
+                    "cancelled": current == "cancelled",
+                    "lease_released": self._lease_released,
                 }
-        self._reference.cancel()
-        with self._lock:
+            # Keep the native ownership decision and reference cancellation atomic
+            # with run/release. Neither operation holds this lock during backend work.
+            self._reference.cancel()
             if current == "running":
                 return {
                     "result_schema": "tensormeld/native-session-cancel-v1",
@@ -169,16 +172,16 @@ class NativeAdmittedSession:
                     "cancelled": False,
                     "lease_released": False,
                 }
-            if self.state == "prepared":
-                self.state = "cancelled"
-        release = self._release_lease()
-        return {
-            "result_schema": "tensormeld/native-session-cancel-v1",
-            "status": "CANCELLED",
-            "lease_id": self.lease_id,
-            "cancelled": True,
-            "lease_release_status": release["status"],
-        }
+            self.state = "cancelled"
+            release = self._release_lease_locked()
+            return {
+                "result_schema": "tensormeld/native-session-cancel-v1",
+                "status": "CANCELLED",
+                "lease_id": self.lease_id,
+                "cancelled": True,
+                "lease_released": True,
+                "lease_release_status": release["status"],
+            }
 
     def run(self, payload: bytes) -> NativeSessionResult:
         with self._lock:
@@ -188,36 +191,55 @@ class NativeAdmittedSession:
                 )
             self.state = "running"
 
+        inference_started = True
         try:
             run_result = self._reference.run(payload)
-            status = run_result["status"]
+            inference_started = bool(run_result["segments_executed"])
+        except BaseException as exc:
             with self._lock:
-                self.state = "completed" if status == "COMPLETED" else "cancelled"
-            release = self._release_lease()
-            core = {
-                "session_schema": SESSION_SCHEMA,
-                "accepted_execution_bundle_sha256": self.bundle.bundle_sha256,
-                "lease_id": self.lease_id,
-                "lease_sha256": self.lease_sha256,
-                "status": status,
-                "segments_executed": run_result["segments_executed"],
-                "output_sha256": (
-                    hashlib.sha256(run_result["output"]).hexdigest()
-                    if run_result["output"] is not None
-                    else None
-                ),
-                "lease_release_status": release["status"],
-                "inference_started": True,
-                "real_model_inference": run_result["real_model_inference"],
-                "released": True,
-            }
-            core["session_result_sha256"] = _canonical_sha256(core)
-            return NativeSessionResult(core, run_result["output"])
-        except BaseException:
-            with self._lock:
-                self.state = "failed"
-            self._release_lease()
-            raise
+                # Cancellation may win after native run ownership is acquired but
+                # before reference.run starts. No backend has run in that case.
+                if (
+                    isinstance(exc, ValidationError)
+                    and self._reference.state == "cancelled"
+                    and isinstance(payload, bytes)
+                    and len(payload) <= MAX_INPUT_BYTES
+                ):
+                    inference_started = False
+                    run_result = {
+                        "status": "CANCELLED",
+                        "segments_executed": [],
+                        "output": None,
+                        "real_model_inference": False,
+                    }
+                else:
+                    self.state = "failed"
+                    self._release_lease_locked()
+                    raise
+
+        status = run_result["status"]
+        with self._lock:
+            self.state = "completed" if status == "COMPLETED" else "cancelled"
+            release = self._release_lease_locked()
+        core = {
+            "session_schema": SESSION_SCHEMA,
+            "accepted_execution_bundle_sha256": self.bundle.bundle_sha256,
+            "lease_id": self.lease_id,
+            "lease_sha256": self.lease_sha256,
+            "status": status,
+            "segments_executed": run_result["segments_executed"],
+            "output_sha256": (
+                hashlib.sha256(run_result["output"]).hexdigest()
+                if run_result["output"] is not None
+                else None
+            ),
+            "lease_release_status": release["status"],
+            "inference_started": inference_started,
+            "real_model_inference": run_result["real_model_inference"],
+            "released": True,
+        }
+        core["session_result_sha256"] = _canonical_sha256(core)
+        return NativeSessionResult(core, run_result["output"])
 
     def release(self) -> dict[str, Any]:
         with self._lock:
@@ -225,13 +247,9 @@ class NativeAdmittedSession:
                 raise ValidationError(
                     "running native session cannot be released directly"
                 )
-        try:
+            # Do not ignore a reference rejection: it must never authorize lease
+            # release. Holding the native lock prevents run from starting here.
             self._reference.release()
-        except ValidationError:
-            # The reference session can already be terminal/released. Lease cleanup is
-            # the authoritative resource action here.
-            pass
-        result = self._release_lease()
-        with self._lock:
+            result = self._release_lease_locked()
             self.state = "released"
-        return result
+            return result

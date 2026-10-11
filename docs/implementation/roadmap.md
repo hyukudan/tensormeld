@@ -176,7 +176,7 @@ A real target-host run must still supply the actual llama.cpp worker backend and
 
 ### Prior-art-informed M3 priorities
 
-The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownership:
+The optimization priorities below preserve project ownership:
 
 **P0 — measured llama.cpp backend baseline**
 - managed child-process ownership with bounded logs, readiness and terminate/kill is implemented and portable-tested with a real fixture server;
@@ -207,8 +207,8 @@ The 2026-10-05 TensorFold/Strata audit changes implementation order, not ownersh
 - add E4 equivalence for fresh/resumed, solo/concurrent and serial/optimized execution before enabling advanced scheduling or cache reuse;
 - define cache/snapshot identity over model, runtime, kernel/precision route, placement and chunk/prefill plan.
 
-These are independent TensorMeld implementations informed by prior art. Strata and
-TensorFold are research references, not planner/runtime dependencies.
+These are independent TensorMeld implementations. Private evaluations do not become
+planner/runtime dependencies or qualification records.
 
 Exit gate: a model larger than the entrypoint GPU can execute through a verified native plan.
 

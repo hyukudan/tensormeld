@@ -1,9 +1,9 @@
 # Documentation
 
 This directory separates normative product decisions from implementation notes and
-research. External project names and benchmark anecdotes belong in `research/`, not in
-normative architecture documents unless they are required to explain a compatibility
-constraint.
+research. Comparative evaluations and third-party benchmark records remain outside Git.
+Public documentation records project-owned contracts; actual adopted components retain
+required provenance and license notices.
 
 ## Architecture
 
@@ -50,17 +50,28 @@ installation contract.
 
 - [Roadmap](implementation/roadmap.md)
 - [Current status](implementation/status.md)
+- [Implementation and qualification ledger](implementation/qualification-ledger.md)
 - [Testing strategy](implementation/testing.md)
 
 - [v2 planner contract](implementation/planner-v2.md)
 - [Open-source adapter status](implementation/open-source-adapters.md)
+- [Serial generation scenario evaluator](implementation/generation-scenario.md)
+- [Durable request-family preflight](implementation/request-envelope.md)
+- [Bounded C1 exact replay consumer](implementation/llamacpp-c1-serving.md)
+- [Numerical profile contract](implementation/numerical-profile-contract.md)
 
 ## Research
 
-Research notes are non-normative inputs to TensorMeld design. They do not make the
-reviewed projects TensorMeld dependencies.
+Public investigation notes describe project-owned optimization principles. Comparative
+records and external benchmark/source observations remain private outside Git.
 
-- [TensorFold and Strata audit — 2026-10-05](research/tensorfold-strata-2026-10-05.md)
+- [Runtime optimization principles](research/runtime-optimization-principles.md)
+
+## Draft numerical capabilities
+
+- [Phase specific numerical capability proposal](proposals/2026-10-11-numerical-plan-capabilities.md).
+
+This is an unqualified draft and does not change current execution support.
 
 ## Examples
 

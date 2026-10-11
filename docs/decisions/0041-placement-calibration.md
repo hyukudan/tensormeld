@@ -9,7 +9,7 @@ TensorMeld's synthetic planner estimates decode cost and produces bounded whole-
 candidates. Those estimates are useful for candidate generation but are not target-hardware
 measurements.
 
-The TensorFold/Strata prior-art audit reinforced a useful principle: placement should be
+Placement calibration follows a project-owned principle: placement should be
 measured on the actual runtime, with prefill and decode treated separately, while avoiding
 machine-specific constants becoming global policy.
 

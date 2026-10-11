@@ -33,6 +33,31 @@ to reach the next safe terminal boundary, after which the session releases the l
 
 Explicit release is idempotent and cannot directly release a session marked running.
 
+### Concurrent lifecycle operations
+
+The native session serializes run ownership, cancellation and explicit release under
+one lifecycle lock. Calls into the reference lifecycle acquire locks in native-to-reference
+order. Backend execution does not hold the native lifecycle lock. A cancellation or
+release decision made before execution cannot subsequently release resources owned by a
+concurrent run.
+
+`CANCEL_REQUESTED` acknowledges cooperative cancellation while the run still owns its
+lease; it reports `cancelled=false` and `lease_released=false`. Ownership persists until
+the synchronous reference run returns or raises, including cancellation during startup.
+Cancellation that prevents all backend work returns a terminal `CANCELLED` run result
+with `inference_started=false`.
+
+Cancellation after a terminal outcome preserves that outcome. It returns
+`ALREADY_COMPLETED`, `ALREADY_FAILED`, `ALREADY_CANCELLED` or `ALREADY_RELEASED`, according
+to the native state. Only `ALREADY_CANCELLED` reports `cancelled=true`. Each response
+reports `lease_released` from actual lease cleanup. A rejected reference release is
+propagated and cannot authorize lease cleanup.
+
+Terminal state publication and lease cleanup are serialized with lifecycle operations.
+Deterministic portable tests cover concurrent startup, cancellation, explicit release,
+backend failure and cleanup. They provide software lifecycle evidence, not hardware or
+real model inference qualification.
+
 ## Consequences
 
 - Resources are not deliberately made available while synchronous backend work may still
