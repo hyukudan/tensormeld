@@ -219,6 +219,126 @@ class TransportCommissioningTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             campaign.expected_payload_sha256(0, 0)
 
+    def session(self, alternate=True):
+        plan = deepcopy(self.plan)
+        plan.update(schema=campaign.SESSION_PLAN_SCHEMA, session_id="reuse", schedule="alternating" if alternate else "sequential", concurrency=1)
+        first = plan["runs"][0]; plan["runs"] = []
+        receipts = {node: {"schema": campaign.SESSION_RECEIPT_SCHEMA, "campaign_id": plan["campaign_id"],
+                    "session_id": "reuse", "schedule": plan["schedule"], "concurrency": 1, "requested_transfers": 3,
+                    "completed_count": 3, "pool_binding_identity": 2, "import_generation": 3,
+                    "cleanup": "released", "error": "", "production_qualified": False, "transfers": []} for node in ("a", "b")}
+        for index, size in enumerate((1, 4097, 5120)):
+            run = {**first, "run_id": "reuse.s" + str(index), "sequence": index + 1, "payload_bytes": size}
+            if alternate and index % 2:
+                run.update(sender="b", receiver="a")
+            run["shape_fingerprint"] = campaign.expected_shape_fingerprint(plan["campaign_id"], run)
+            plan["runs"].append(run)
+            for node in ("a", "b"):
+                role = "sender" if node == run["sender"] else "receiver"
+                receipt = deepcopy(self.sender if role == "sender" else self.receiver)
+                receipt.update({field: run[field] for field in campaign.RUN_FIELDS - {"sender", "receiver"}})
+                expected = plan["nodes"][0 if node == "a" else 1]["expected"]
+                peer = plan["nodes"][1 if node == "a" else 0]["expected"]
+                receipt.update(expected)
+                receipt.update(schema=campaign.TRANSFER_RECEIPT_SCHEMA, cleanup="import_held", device_identity="synthetic-open-" + node,
+                               peer_endpoint_identity=peer["local_endpoint_identity"])
+                sha = campaign.expected_payload_sha256(size, run["pattern_seed"], run["sequence"])
+                receipt.update(expected_payload_sha256=sha, observed_payload_sha256=sha if role == "receiver" else None)
+                receipts[node]["transfers"].append(receipt)
+        return plan, receipts
+
+    def test_session_same_import_reuse_and_alternating_roles(self):
+        for alternate in (True, False):
+            plan, receipts = self.session(alternate)
+            review = campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])
+            self.assertEqual(review["outcome"], "OBSERVATIONS_MATCH")
+            self.assertEqual(len(review["transfers"]), 3)
+            self.assertFalse(review["production_qualified"])
+            self.assertFalse(review["launch_authorized"])
+            self.assertFalse(review["external_dma_visibility_qualified"])
+            prepared = campaign.prepare_session(plan, self.root / ("session-" + str(alternate)))
+            self.assertFalse(prepared["executed"])
+
+    def test_session_drift_partial_suffix_and_each_stage_fail_closed(self):
+        for field, value in (("import_generation", 4), ("pool_binding_identity", 4), ("device_identity", "replaced"),
+                             ("device_instance_generation", 2), ("sequence", 1), ("run_id", "reuse.s0"),
+                             ("consumer_credit", False), ("observed_payload_sha256", "a" * 64)):
+            plan, receipts = self.session()
+            receipts["a"]["transfers"][1][field] = value  # a is receiver on the second transfer.
+            with self.subTest(field=field):
+                self.assertEqual(campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])["outcome"], "FAILED")
+        for field, value in (("completed_count", 1), ("cleanup", "retained"), ("error", "late drain failure"), ("transfers", [])):
+            plan, receipts = self.session()
+            receipts["a"][field] = value
+            self.assertEqual(campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])["outcome"], "FAILED")
+
+    def test_session_schema_is_explicit_and_not_duplex_or_mixed_self_qualification(self):
+        plan, receipts = self.session()
+        with self.assertRaises(ValidationError):
+            campaign.validate_plan(plan)
+        with self.assertRaises(ValidationError):
+            campaign._validate_receipt(receipts["a"]["transfers"][0])
+        for field, value in (("concurrency", 2), ("concurrency", True), ("production_qualified", True), ("schedule", "duplex")):
+            modified = deepcopy(plan); modified[field] = value
+            with self.subTest(field=field), self.assertRaises(ValidationError):
+                campaign.validate_session_plan(modified)
+        for field, value in (("sequence", 1), ("connection_epoch", 21), ("sender", "a"), ("shape_fingerprint", 1)):
+            modified = deepcopy(plan); modified["runs"][1][field] = value
+            with self.subTest(field=field), self.assertRaises(ValidationError):
+                campaign.validate_session_plan(modified)
+        plan["nodes"][1]["expected"]["gpu_architecture"] = "cuda"
+        with self.assertRaises(ValidationError):
+            campaign.validate_session_plan(plan)
+
+    def session_inputs(self):
+        plan, receipts = self.session()
+        inputs = {"schema": "tensormeld/direct-gpu-commissioning-session-config-inputs-v2", "campaign_id": plan["campaign_id"],
+                  "session_id": plan["session_id"], "node_a": "a", "node_b": "b",
+                  "nodes": [{"id": node["id"], "artifacts": node["artifacts"]} for node in plan["nodes"]]}
+        for node, name in (("a", "node_a_config"), ("b", "node_b_config")):
+            config = {field: receipts[node][field] for field in ("campaign_id", "session_id", "schedule", "concurrency", "production_qualified")}
+            config.update(schema=campaign.SESSION_CONFIG_SCHEMA, executed=False, transfers=[])
+            for receipt in receipts[node]["transfers"]:
+                transfer = {field: receipt[field] for field in campaign.CONFIG_FIELDS}
+                transfer.update(schema="strix-direct-gpu-commissioning-config-v1", executed=False)
+                config["transfers"].append(transfer)
+            path = self.root / (name + ".json"); path.write_text(json.dumps(config))
+            inputs[name] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        return plan, inputs
+
+    def test_session_config_assembly_exact_oracle_schedule_and_stable_endpoints(self):
+        plan, inputs = self.session_inputs()
+        self.assertEqual(campaign.assemble_session_plan(inputs), plan)
+        for field, value in (("role", "sender"), ("sequence", 1), ("gpu_uuid", "3" * 32),
+                             ("expected_payload_sha256", "a" * 64), ("peer_endpoint_identity", "3" * 32)):
+            _, inputs = self.session_inputs(); ref = inputs["node_a_config"]; path = Path(ref["path"])
+            config = json.loads(path.read_text()); config["transfers"][1][field] = value
+            path.write_text(json.dumps(config)); ref["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            with self.subTest(field=field), self.assertRaises(ValidationError):
+                campaign.assemble_session_plan(inputs)
+
+    def test_explicit_duplex_pairs_checks_each_direction_and_same_import(self):
+        plan, receipts = self.session()
+        # Two opposite operations are simultaneous; a third incomplete pair is
+        # rejected rather than silently interpreted as sequential scheduling.
+        plan.update(schedule="duplex_pairs", concurrency=2)
+        with self.assertRaises(ValidationError):
+            campaign.validate_session_plan(plan)
+        plan["runs"] = plan["runs"][:2]
+        for receipt in receipts.values():
+            receipt.update(schedule="duplex_pairs", concurrency=2, requested_transfers=2, completed_count=2)
+            receipt["transfers"] = receipt["transfers"][:2]
+        review = campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])
+        self.assertEqual(review["outcome"], "OBSERVATIONS_MATCH")
+        self.assertFalse(review["production_qualified"])
+        self.assertEqual(review["physical_overlap_status"], "UNKNOWN")
+        self.assertFalse(review["controller_overlap_qualified"])
+        receipts["b"]["transfers"][1]["transport_ack"] = False
+        self.assertEqual(campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])["outcome"], "FAILED")
+        receipts["b"]["concurrency"] = 1
+        with self.assertRaises(ValidationError):
+            campaign.evaluate_session(plan, "a", receipts["a"], "b", receipts["b"])
+
 
 if __name__ == "__main__":
     unittest.main()

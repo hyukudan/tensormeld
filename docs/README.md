@@ -60,6 +60,7 @@ installation contract.
 - [Bounded C1 exact replay consumer](implementation/llamacpp-c1-serving.md)
 - [Closed local qualification campaign runner](implementation/qualification-campaign.md)
 - [Private direct-GPU commissioning preparation](implementation/direct-gpu-commissioning.md)
+- [Pinned vocabulary tokenization](implementation/llamacpp-tokenization.md)
 - [Numerical profile contract](implementation/numerical-profile-contract.md)
 
 ## Research

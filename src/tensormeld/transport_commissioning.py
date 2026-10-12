@@ -15,6 +15,10 @@ from .schema import MAX_INPUT_BYTES, ValidationError, _no_duplicates, items, rec
 
 PLAN_SCHEMA = "tensormeld/direct-gpu-commissioning-plan-v1"
 RECEIPT_SCHEMA = "strix-direct-gpu-commissioning-v1"
+SESSION_PLAN_SCHEMA = "tensormeld/direct-gpu-commissioning-session-plan-v2"
+SESSION_RECEIPT_SCHEMA = "strix-direct-gpu-commissioning-session-v2"
+SESSION_CONFIG_SCHEMA = "strix-direct-gpu-commissioning-session-config-v2"
+TRANSFER_RECEIPT_SCHEMA = "strix-direct-gpu-commissioning-transfer-v2"
 MAX_RUNS = 128
 MAX_PAYLOAD = 4095 * 4096
 MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
@@ -126,16 +130,9 @@ def expected_shape_fingerprint(campaign_id, run):
     return int.from_bytes(hashlib.sha256(canonical.encode()).digest()[:8], "little") or 1
 
 
-def validate_plan(raw):
-    root = record(raw, "commissioning plan", {"schema", "campaign_id", "nodes", "runs",
-                                              "production_qualified", "launch_authorized"})
-    if root["schema"] != PLAN_SCHEMA:
-        raise ValidationError("unsupported commissioning plan")
-    _identifier(root["campaign_id"], "campaign_id")
-    if root["production_qualified"] is not False or root["launch_authorized"] is not False:
-        raise ValidationError("commissioning plan cannot self-promote")
+def _validate_nodes(raw):
     nodes = {}
-    for value in items(root["nodes"], "nodes", 2, 2):
+    for value in items(raw, "nodes", 2, 2):
         node = record(value, "node", {"id", "expected", "artifacts"})
         node_id = text(node["id"], "node.id")
         if node_id in nodes:
@@ -172,6 +169,18 @@ def validate_plan(raw):
         raise ValidationError("endpoints must differ")
     if len({node["expected"]["gpu_uuid"] for node in nodes.values()}) != 2:
         raise ValidationError("two-host GPU identities must differ")
+    return nodes
+
+
+def validate_plan(raw):
+    root = record(raw, "commissioning plan", {"schema", "campaign_id", "nodes", "runs",
+                                              "production_qualified", "launch_authorized"})
+    if root["schema"] != PLAN_SCHEMA:
+        raise ValidationError("unsupported commissioning plan")
+    _identifier(root["campaign_id"], "campaign_id")
+    if root["production_qualified"] is not False or root["launch_authorized"] is not False:
+        raise ValidationError("commissioning plan cannot self-promote")
+    nodes = _validate_nodes(root["nodes"])
     run_ids, epochs = [], []
     for raw_run in items(root["runs"], "runs", MAX_RUNS):
         run = record(raw_run, "run", RUN_FIELDS)
@@ -215,9 +224,9 @@ def expected_payload_sha256(payload_bytes, seed, sequence=1):
     return digest.hexdigest()
 
 
-def _validate_receipt(raw):
+def _validate_receipt(raw, *, session_transfer=False):
     receipt = record(raw, "native commissioning receipt", RECEIPT_FIELDS)
-    if receipt["schema"] != RECEIPT_SCHEMA or receipt["role"] not in {"sender", "receiver"}:
+    if receipt["schema"] != (TRANSFER_RECEIPT_SCHEMA if session_transfer else RECEIPT_SCHEMA) or receipt["role"] not in ("sender", "receiver"):
         raise ValidationError("unsupported native receipt schema/role")
     if receipt["production_qualified"] is not False:
         raise ValidationError("commissioning receipt cannot qualify production")
@@ -235,7 +244,7 @@ def _validate_receipt(raw):
     _sha(receipt["expected_payload_sha256"], "expected_payload_sha256")
     if receipt["observed_payload_sha256"] is not None:
         _sha(receipt["observed_payload_sha256"], "observed_payload_sha256")
-    if receipt["cleanup"] not in {"released", "retained"}:
+    if receipt["cleanup"] not in (("import_held",) if session_transfer else ("released", "retained")):
         raise ValidationError("invalid cleanup status")
     if not isinstance(receipt["error"], str) or len(receipt["error"]) > 4096:
         raise ValidationError("invalid native error")
@@ -244,15 +253,11 @@ def _validate_receipt(raw):
     return receipt
 
 
-def evaluate_pair(plan, run_id, sender, receiver):
-    plan = validate_plan(plan)  # Rehash all bound local artifacts on every evaluation.
-    runs = [run for run in plan["runs"] if run["run_id"] == run_id]
-    if len(runs) != 1:
-        raise ValidationError("unknown run ID")
-    run = runs[0]
+def _pair_blockers(plan, run, sender, receiver, *, session_transfer=False):
     nodes = {node["id"]: node for node in plan["nodes"]}
-    receipts = {"sender": _validate_receipt(sender), "receiver": _validate_receipt(receiver)}
-    expected_sha = expected_payload_sha256(run["payload_bytes"], run["pattern_seed"])
+    receipts = {"sender": _validate_receipt(sender, session_transfer=session_transfer),
+                "receiver": _validate_receipt(receiver, session_transfer=session_transfer)}
+    expected_sha = expected_payload_sha256(run["payload_bytes"], run["pattern_seed"], run["sequence"])
     blockers = []
     for role, receipt in receipts.items():
         endpoint = nodes[run[role]]["expected"]
@@ -267,7 +272,7 @@ def evaluate_pair(plan, run_id, sender, receiver):
             "COMPLETE": receipt["iterations"] == receipt["completed_count"] == 1,
             "PATTERN": receipt["expected_payload_sha256"] == expected_sha,
             "CONTROLLER": receipt["controller_frames_complete"] is True,
-            "CLEANUP": receipt["cleanup"] == "released",
+            "CLEANUP": receipt["cleanup"] == ("import_held" if session_transfer else "released"),
             "ERROR": receipt["error"] == "",
             "IMPORT": receipt["import_generation"] > 0,
         }
@@ -278,6 +283,15 @@ def evaluate_pair(plan, run_id, sender, receiver):
         checks["READBACK"] = (receipt["observed_payload_sha256"] == expected_sha if role == "receiver"
                               else receipt["observed_payload_sha256"] is None)
         blockers.extend(role.upper() + "_" + code for code, passed in checks.items() if not passed)
+    return blockers
+
+
+def evaluate_pair(plan, run_id, sender, receiver):
+    plan = validate_plan(plan)  # Rehash all bound local artifacts on every evaluation.
+    runs = [run for run in plan["runs"] if run["run_id"] == run_id]
+    if len(runs) != 1:
+        raise ValidationError("unknown run ID")
+    blockers = _pair_blockers(plan, runs[0], sender, receiver)
     # Revalidate all provenance after computing results; local inputs must be quiescent.
     validate_plan(plan)
     result = {"schema": "tensormeld/direct-gpu-commissioning-pair-review-v1",
@@ -312,6 +326,187 @@ def evaluate_campaign(plan, pairs):
             "outcome": "OBSERVATIONS_MATCH" if all(result["outcome"] == "OBSERVATIONS_MATCH" for result in results) else "FAILED",
             "production_qualified": False, "launch_authorized": False,
             "external_dma_visibility_qualified": False, "requires_independent_native_review": True}
+
+
+def validate_session_plan(raw):
+    """Explicit v2 C1 reuse/paired C2; v1 fresh-epoch semantics stay unchanged."""
+    root = record(raw, "commissioning session plan", {"schema", "campaign_id", "session_id", "schedule",
+                  "concurrency", "nodes", "runs", "production_qualified", "launch_authorized"})
+    if root["schema"] != SESSION_PLAN_SCHEMA or root["schedule"] not in ("sequential", "alternating", "duplex_pairs"):
+        raise ValidationError("unsupported commissioning session schema/schedule")
+    _identifier(root["campaign_id"], "campaign_id")
+    session_id = _identifier(root["session_id"], "session_id")
+    concurrency = 2 if root["schedule"] == "duplex_pairs" else 1
+    if len(session_id) > 122 or type(root["concurrency"]) is not int or root["concurrency"] != concurrency:
+        raise ValidationError("session requires exact bounded schedule concurrency")
+    if root["production_qualified"] is not False or root["launch_authorized"] is not False:
+        raise ValidationError("commissioning session cannot self-promote")
+    nodes = _validate_nodes(root["nodes"])
+    runs = items(root["runs"], "session transfers", MAX_RUNS, 2)
+    if concurrency == 2 and len(runs) % 2:
+        raise ValidationError("duplex_pairs requires complete opposite-direction pairs")
+    total = 0
+    for index, value in enumerate(runs):
+        run = record(value, "session transfer", RUN_FIELDS)
+        if run["run_id"] != session_id + ".s" + str(index):
+            raise ValidationError("session transfer ID/order mismatch")
+        text(run["sender"], "sender")
+        text(run["receiver"], "receiver")
+        if run["sender"] not in nodes or run["receiver"] not in nodes or run["sender"] == run["receiver"]:
+            raise ValidationError("transfer requires two distinct known endpoints")
+        text(run["physical_link_id"], "physical_link_id")
+        for field in RUN_FIELDS - {"run_id", "sender", "receiver", "physical_link_id", "payload_bytes", "pattern_seed", "dtype_id"}:
+            _uint(run[field], field)
+        total += _uint(run["payload_bytes"], "payload_bytes", MAX_PAYLOAD)
+        _uint(run["pattern_seed"], "pattern_seed", minimum=0)
+        _uint(run["dtype_id"], "dtype_id", (1 << 32) - 1)
+        if run["sequence"] != index + 1 or total > 128 * 1024 * 1024:
+            raise ValidationError("session sequence/aggregate payload bound violated")
+        if run["shape_fingerprint"] != expected_shape_fingerprint(root["campaign_id"], run):
+            raise ValidationError("session transfer fingerprint mismatch")
+        if index:
+            first = runs[0]
+            if any(run[field] != first[field] for field in ("connection_epoch", "physical_link_id")):
+                raise ValidationError("session cannot replace its physical epoch/link")
+            roles = (first["receiver"], first["sender"]) if root["schedule"] in {"alternating", "duplex_pairs"} and index % 2 else (first["sender"], first["receiver"])
+            if (run["sender"], run["receiver"]) != roles:
+                raise ValidationError("session direction schedule mismatch")
+    return root
+
+
+def _session_receipt(raw):
+    receipt = record(raw, "native session receipt", {"schema", "campaign_id", "session_id", "schedule", "concurrency",
+                     "requested_transfers", "completed_count", "pool_binding_identity", "import_generation",
+                     "cleanup", "error", "production_qualified", "transfers"})
+    if receipt["schema"] != SESSION_RECEIPT_SCHEMA or receipt["schedule"] not in ("sequential", "alternating", "duplex_pairs"):
+        raise ValidationError("unsupported session receipt schema/schedule")
+    _identifier(receipt["campaign_id"], "campaign_id")
+    _identifier(receipt["session_id"], "session_id")
+    if receipt["production_qualified"] is not False or type(receipt["concurrency"]) is not int or receipt["concurrency"] != (2 if receipt["schedule"] == "duplex_pairs" else 1):
+        raise ValidationError("session receipt cannot qualify production or change bounded schedule concurrency")
+    _uint(receipt["requested_transfers"], "requested_transfers", MAX_RUNS, 2)
+    if receipt["schedule"] == "duplex_pairs" and receipt["requested_transfers"] % 2:
+        raise ValidationError("duplex receipt requires complete requested pairs")
+    _uint(receipt["completed_count"], "completed_count", receipt["requested_transfers"], 0)
+    _uint(receipt["pool_binding_identity"], "pool_binding_identity")
+    _uint(receipt["import_generation"], "import_generation", minimum=0)
+    if receipt["cleanup"] not in ("released", "retained") or not isinstance(receipt["error"], str) or len(receipt["error"]) > 4096:
+        raise ValidationError("invalid session cleanup/error")
+    transfers = items(receipt["transfers"], "native session transfers", receipt["requested_transfers"], 0)
+    for transfer in transfers:
+        _validate_receipt(transfer, session_transfer=True)
+    return receipt
+
+
+def evaluate_session(plan, node_a, receipt_a, node_b, receipt_b):
+    """Require exact ordered coverage and stable imported owners on both hosts."""
+    plan = validate_session_plan(plan)
+    text(node_a, "node_a")
+    text(node_b, "node_b")
+    ids = {node["id"] for node in plan["nodes"]}
+    if node_a == node_b or {node_a, node_b} != ids:
+        raise ValidationError("session review requires both exact node IDs")
+    receipts = {node_a: _session_receipt(receipt_a), node_b: _session_receipt(receipt_b)}
+    blockers, results = [], []
+    count = len(plan["runs"])
+    for node_id, receipt in receipts.items():
+        checks = {"IDENTITY": all(receipt[field] == plan[field] for field in ("campaign_id", "session_id", "schedule", "concurrency")),
+                  "COVERAGE": receipt["requested_transfers"] == receipt["completed_count"] == len(receipt["transfers"]) == count,
+                  "CLEANUP": receipt["cleanup"] == "released", "ERROR": receipt["error"] == "", "IMPORT": receipt["import_generation"] > 0}
+        stable_fields = ENDPOINT_FIELDS | {"peer_endpoint_identity", "device_identity", "device_instance_generation", "pool_binding_identity", "import_generation"}
+        first = receipt["transfers"][0] if receipt["transfers"] else None
+        for transfer in receipt["transfers"]:
+            if any(transfer[field] != first[field] for field in stable_fields) or any(transfer[field] != receipt[field] for field in ("pool_binding_identity", "import_generation")):
+                checks["IMPORT_OWNER_STABLE"] = False
+        blockers.extend(node_id + "_" + code for code, passed in checks.items() if not passed)
+    for index, run in enumerate(plan["runs"]):
+        a, b = receipts[run["sender"]]["transfers"], receipts[run["receiver"]]["transfers"]
+        failures = ["MISSING_TRANSFER"] if index >= len(a) or index >= len(b) else _pair_blockers(plan, run, a[index], b[index], session_transfer=True)
+        blockers.extend(run["run_id"] + "_" + code for code in failures)
+        results.append({"run_id": run["run_id"], "outcome": "FAILED" if failures else "OBSERVATIONS_MATCH", "blockers": failures})
+    validate_session_plan(plan)  # Provenance must remain stable across the whole independent oracle.
+    result = {"schema": "tensormeld/direct-gpu-commissioning-session-review-v2", "campaign_id": plan["campaign_id"],
+              "session_id": plan["session_id"], "outcome": "FAILED" if blockers else "OBSERVATIONS_MATCH", "blockers": blockers,
+              "transfers": results, "plan_sha256": _digest(plan), "receipts_sha256": {node: _digest(receipt) for node, receipt in receipts.items()},
+              "production_qualified": False, "launch_authorized": False, "external_dma_visibility_qualified": False,
+              # Two owned operations/complete directions are lifecycle evidence.
+              # The current receipt has no matched controller DMA start/end
+              # intervals and cannot establish physical overlap from capacity2.
+              "physical_overlap_status": "UNKNOWN", "controller_overlap_qualified": False,
+              "requires_independent_native_review": True}
+    result["review_sha256"] = _digest(result)
+    return result
+
+
+def assemble_session_plan(inputs):
+    inputs = record(inputs, "session config input bundle", {"schema", "campaign_id", "session_id", "nodes",
+                    "node_a", "node_b", "node_a_config", "node_b_config"})
+    if inputs["schema"] != "tensormeld/direct-gpu-commissioning-session-config-inputs-v2":
+        raise ValidationError("unsupported session config inputs")
+    nodes = {}
+    for raw in items(inputs["nodes"], "nodes", 2, 2):
+        node = record(raw, "node artifacts", {"id", "artifacts"})
+        if text(node["id"], "node ID") in nodes:
+            raise ValidationError("duplicate session node")
+        nodes[node["id"]] = {**node, "expected": None}
+    node_a, node_b = inputs["node_a"], inputs["node_b"]
+    text(node_a, "node_a")
+    text(node_b, "node_b")
+    if node_a == node_b or {node_a, node_b} != set(nodes):
+        raise ValidationError("both exact session nodes required")
+    configs, pins = {}, []
+    for node_id, name in ((node_a, "node_a_config"), (node_b, "node_b_config")):
+        pin = inputs[name]; path = _artifact(pin, name); pins.append(pin)
+        config = record(_json(path), "native session config", {"schema", "campaign_id", "session_id", "schedule", "concurrency", "executed", "production_qualified", "transfers"})
+        if config["schema"] != SESSION_CONFIG_SCHEMA or config["executed"] is not False or config["production_qualified"] is not False:
+            raise ValidationError("session config schema/status mismatch")
+        if any(config[field] != inputs[field] for field in ("campaign_id", "session_id")):
+            raise ValidationError("session config identity mismatch")
+        transfers = items(config["transfers"], "session config transfers", MAX_RUNS, 2)
+        for transfer in transfers:
+            record(transfer, "host-only transfer config", CONFIG_FIELDS)
+            if transfer["schema"] != "strix-direct-gpu-commissioning-config-v1" or transfer["executed"] is not False or transfer["production_qualified"] is not False or type(transfer["pattern_version"]) is not int or transfer["pattern_version"] != 1 or transfer["role"] not in ("sender", "receiver") or transfer["campaign_id"] != inputs["campaign_id"]:
+                raise ValidationError("invalid host-only transfer config")
+            endpoint = {field: transfer[field] for field in ENDPOINT_FIELDS}
+            if nodes[node_id]["expected"] is not None and nodes[node_id]["expected"] != endpoint:
+                raise ValidationError("session config endpoint changed")
+            nodes[node_id]["expected"] = endpoint
+        configs[node_id] = config
+    a, b = configs[node_a], configs[node_b]
+    if any(a[field] != b[field] for field in ("schedule", "concurrency")) or len(a["transfers"]) != len(b["transfers"]):
+        raise ValidationError("session config schedule mismatch")
+    runs = []
+    for left, right in zip(a["transfers"], b["transfers"]):
+        if left["role"] == right["role"] or any(left[field] != right[field] for field in RUN_FIELDS - {"sender", "receiver"}):
+            raise ValidationError("session config direction/descriptor mismatch")
+        if left["peer_endpoint_identity"] != right["local_endpoint_identity"] or right["peer_endpoint_identity"] != left["local_endpoint_identity"]:
+            raise ValidationError("session config peer mismatch")
+        sha = expected_payload_sha256(left["payload_bytes"], left["pattern_seed"], left["sequence"])
+        if left["expected_payload_sha256"] != sha or right["expected_payload_sha256"] != sha:
+            raise ValidationError("session config independent pattern hash mismatch")
+        runs.append({**{field: left[field] for field in RUN_FIELDS - {"sender", "receiver"}},
+                     "sender": node_a if left["role"] == "sender" else node_b,
+                     "receiver": node_b if left["role"] == "sender" else node_a})
+    plan = validate_session_plan({"schema": SESSION_PLAN_SCHEMA, "campaign_id": inputs["campaign_id"], "session_id": inputs["session_id"],
+                "schedule": a["schedule"], "concurrency": a["concurrency"], "nodes": list(nodes.values()), "runs": runs,
+                "production_qualified": False, "launch_authorized": False})
+    for pin in pins:
+        _artifact(pin, "session config after assembly")
+    return plan
+
+
+def prepare_session(plan, directory):
+    plan = validate_session_plan(plan)
+    destination = _private(directory)
+    destination.mkdir(parents=True, exist_ok=False)
+    frozen = json.loads(json.dumps(plan, allow_nan=False))
+    validate_session_plan(frozen)
+    (destination / "plan.json").write_text(json.dumps(frozen, indent=2) + "\n", encoding="utf-8")
+    result = {"schema": "tensormeld/direct-gpu-commissioning-session-prepared-v2", "plan_sha256": _digest(frozen),
+              "session_id": plan["session_id"], "transfers": len(plan["runs"]), "concurrency": plan["concurrency"],
+              "executed": False, "production_qualified": False, "launch_authorized": False}
+    (destination / "prepared.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return result
 
 
 def prepare_campaign(plan, directory):
@@ -426,6 +621,19 @@ def main(argv=None):
     config_prepare = sub.add_parser("prepare-from-configs")
     config_prepare.add_argument("--inputs", required=True)
     config_prepare.add_argument("--out", required=True)
+    session_prepare = sub.add_parser("prepare-session")
+    session_prepare.add_argument("--plan", required=True)
+    session_prepare.add_argument("--out", required=True)
+    session_configs = sub.add_parser("prepare-session-from-configs")
+    session_configs.add_argument("--inputs", required=True)
+    session_configs.add_argument("--out", required=True)
+    session_review = sub.add_parser("review-session")
+    session_review.add_argument("--plan", required=True)
+    session_review.add_argument("--node-a", required=True)
+    session_review.add_argument("--node-b", required=True)
+    session_review.add_argument("--receipt-a", required=True)
+    session_review.add_argument("--receipt-b", required=True)
+    session_review.add_argument("--out", required=True)
     review = sub.add_parser("review-pair")
     review.add_argument("--plan", required=True)
     review.add_argument("--run-id", required=True)
@@ -444,9 +652,16 @@ def main(argv=None):
             result = prepare_campaign(_json(args.plan), args.out)
         elif args.command == "prepare-from-configs":
             result = prepare_campaign(assemble_plan(_json(args.inputs)), args.out)
+        elif args.command == "prepare-session":
+            result = prepare_session(_json(args.plan), args.out)
+        elif args.command == "prepare-session-from-configs":
+            result = prepare_session(assemble_session_plan(_json(args.inputs)), args.out)
         else:
-            result = (evaluate_pair(_json(args.plan), args.run_id, _json(args.sender), _json(args.receiver))
-                      if args.command == "review-pair" else evaluate_campaign(_json(args.plan), _json(args.pairs)))
+            if args.command == "review-session":
+                result = evaluate_session(_json(args.plan), args.node_a, _json(args.receipt_a), args.node_b, _json(args.receipt_b))
+            else:
+                result = (evaluate_pair(_json(args.plan), args.run_id, _json(args.sender), _json(args.receiver))
+                          if args.command == "review-pair" else evaluate_campaign(_json(args.plan), _json(args.pairs)))
             output = _private(args.out)
             with output.open("x", encoding="utf-8") as stream:
                 stream.write(json.dumps(result, indent=2) + "\n")

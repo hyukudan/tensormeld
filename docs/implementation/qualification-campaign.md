@@ -102,7 +102,8 @@ experiment. Review its build/source record and the raw result independently.
 `strix-linux-direct-transport-driver-tests`, `strix-direct-gpu-boundary-staging-tests`
 `strix-hip-direct-gpu-stream-gpu-tests` and
 `strix-direct-gpu-stream-commissioning-tests`, `strix-raw-baseline-recording-tests`
-and `strix-direct-gpu-stream-driver-observation-tests`. Caller-supplied
+`strix-direct-gpu-stream-driver-observation-tests` and
+`strix-decode-execution-options-tests` and `strix-native-setup-quiescence-tests`. Caller-supplied
 regular expressions, labels, test arguments, presets, dashboard scripts and
 fixture setup are not supported. The runner generates a new private CTest file
 from only the exact pinned selected binary records, disables automatic fixture

@@ -9,6 +9,11 @@ the pre-alpha status or qualify any execution path.
 
 ## Implemented
 
+- bounded pinned-vocabulary tokenization through the registered local upstream
+  tool, with exact rendered-byte/model/source/build bindings and contained
+  processes; chat rendering and detokenization remain independent gates;
+- repeated imported-pool and paired direct-GPU commissioning review, with exact
+  per-transfer coverage and explicit unknown physical DMA overlap;
 - closed local qualification campaign runner with pinned artifacts/source/runtime
   bindings, fixed native experiment arguments, exact selected CTest inventory and
   approved model-trial/reference checks, bounded private evidence, Windows

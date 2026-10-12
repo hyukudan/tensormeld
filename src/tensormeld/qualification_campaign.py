@@ -56,7 +56,8 @@ CTEST_NAMES = frozenset({"strix-integer-projection-tests", "strix-graph-inputs-t
     "strix-linux-direct-gpu-stream-logic-tests", "strix-linux-direct-transport-driver-tests",
     "strix-direct-gpu-boundary-staging-tests", "strix-hip-direct-gpu-stream-gpu-tests",
     "strix-direct-gpu-stream-commissioning-tests", "strix-raw-baseline-recording-tests",
-    "strix-direct-gpu-stream-driver-observation-tests"})
+    "strix-direct-gpu-stream-driver-observation-tests", "strix-decode-execution-options-tests",
+    "strix-native-setup-quiescence-tests"})
 SUITES = {"configuration": "test_config_v2.py", "numerical": "test_numerical_profile.py",
           "request_envelope": "test_request_envelope.py", "native_session": "test_native_session.py",
           "c1_serving": "test_llamacpp_c1_serving.py"}
