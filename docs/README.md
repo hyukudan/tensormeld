@@ -58,6 +58,7 @@ installation contract.
 - [Serial generation scenario evaluator](implementation/generation-scenario.md)
 - [Durable request-family preflight](implementation/request-envelope.md)
 - [Bounded C1 exact replay consumer](implementation/llamacpp-c1-serving.md)
+- [Closed local qualification campaign runner](implementation/qualification-campaign.md)
 - [Numerical profile contract](implementation/numerical-profile-contract.md)
 
 ## Research

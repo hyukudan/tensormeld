@@ -9,6 +9,10 @@ the pre-alpha status or qualify any execution path.
 
 ## Implemented
 
+- closed local qualification campaign runner with pinned artifacts/source/runtime
+  bindings, fixed native experiment arguments, bounded private evidence, Windows
+  Job and Linux parent-death/process-group containment; reports orchestration
+  without granting qualification, resource admission or serving authorization;
 - concrete C1 consumer of the existing exact authorized completion path with bounded
   FIFO count/bytes, monotonic deadlines, attempt cancellation, process fencing,
   ambiguous-failure quarantine and explicit drain; arbitrary-prompt family serving
