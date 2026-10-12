@@ -22,7 +22,7 @@ native model, transport or performance qualification.
 The last completed Windows TensorMeld portable suite ran 686 tests, with five optional
 tests skipped; Linux ran the same 686 tests with six optional skips. Skips do not
 count as native qualification. The native repository's
-portable Release integration passed 142 CTest entries. Results are local engineering
+portable Release integration passed 143 CTest entries. Results are local engineering
 checks, not a public model-performance claim.
 
 ## Immediate development order
