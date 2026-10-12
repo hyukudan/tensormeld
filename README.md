@@ -75,6 +75,11 @@ At this stage, TensorMeld is primarily concerned with getting the foundations ri
 
 Some components may already execute or have automated tests, but that **does not mean the complete distributed inference system is ready or validated**.
 
+The [local qualification campaign runner](docs/implementation/qualification-campaign.md)
+supports pinned operator experiments, selected CTest suites and exact approved
+model trials. It retains bounded results privately; running a campaign does not
+grant model qualification, resource admission or serving authorization.
+
 In particular, current code and documentation must not be interpreted as proof that a given model, GPU combination, network topology, or placement strategy will work correctly or outperform a simpler setup.
 
 ## Development principles

@@ -2,7 +2,8 @@
 
 `python -m tensormeld.qualification_campaign /absolute/private/campaign.json`
 executes an explicitly configured sequence of existing local TensorMeld commands,
-selected portable test suites and three fixed native experiment invocations. It
+selected portable test suites, three fixed native experiment invocations, pinned
+CTest selections and an exact reference-bound native model trial. It
 returns a small JSON summary and writes bounded raw evidence and a hashed report
 to a new private directory outside Git. Python callers can use
 `load_campaign()` and `run_qualification_campaign()` from
@@ -37,8 +38,9 @@ remote devices, and match their configured nodes and runtime worker artifact.
 Backend self-test bindings must also match the configured host node and runtime
 worker artifact; a result from another node or worker fails before execution.
 These files are explicit bindings, not fresh driver/device measurements. The
-model manifest is bound; this runner does not independently open or hash model
-weights. A native campaign requires a `native-adapter` runtime manifest, but that
+model manifest is bound; stages other than `native_model_trial` do not independently
+open or hash model weights. The model trial also validates the exact local GGUF
+through the existing approval contract. A native campaign requires a `native-adapter` runtime manifest, but that
 declaration alone remains insufficient to qualify hardware or execution.
 
 Each stage has `id`, `kind`, boolean `enabled`, `timeout_s` in 0.1–300,
@@ -72,6 +74,8 @@ For example, a configured validation stage is:
 | `native_platform_probe` | Trusted configured platform-probe executable, no arguments | Pinned `binary` and `source_record` |
 | `native_projection_lab` | Trusted configured integer-projection executable, fixed `--run` | Pinned `binary` and `source_record` |
 | `native_graph_fixture` | Trusted configured graph-input fixture executable, no arguments | Pinned `binary` and `source_record` |
+| `native_ctest` | Pinned CTest inventory followed by serial execution of exact selected tests | Pinned `binary`, typed pinned `source_record`, allowlisted `tests` |
+| `native_model_trial` | Existing closed llama.cpp native trial specification and runner, exact stdout reference comparison | Pinned `binary`, `gguf`, `planning`, `candidate`, `placement_binding`, `bound_result`, `gguf_index`, `controls`, `reference` |
 
 The native stages require `mode: native`; fixture campaigns cannot launch them.
 Their binary is an explicit local trust decision made by the configured operator,
@@ -81,6 +85,74 @@ the copied campaign input, rather than interpreted as native qualification proof
 Native lab output may be plain text; its bounded raw bytes and hashes are stored.
 Names, hashes and exit codes do not prove that a binary implemented the intended
 experiment. Review its build/source record and the raw result independently.
+
+`native_ctest` accepts only these fixed names: `strix-integer-projection-tests`,
+`strix-graph-inputs-tests`, `strix-host-upload-tests`,
+`strix-projection-reduction-tests`, `strix-low-precision-tests`,
+`strix-low-precision-vectors`, `strix-hip-graph-inputs-tests`,
+`strix-integer-projection-execution-tests`, `strix-graph-attention-state-tests`,
+`strix-hip-graph-attention-state-tests` and `strix-copied-stream-transport-tests`. Caller-supplied
+regular expressions, labels, test arguments, presets, dashboard scripts and
+fixture setup are not supported. The runner generates a new private CTest file
+from only the exact pinned selected binary records, disables automatic fixture
+additions and validates that generated file's JSON inventory before running tests.
+It never evaluates the original `CTestTestfile.cmake`, `CTestCustom.cmake` or
+included scripts, even during inventory: CTest's original show-only mode can run
+CMake commands. Commands must use the exact pinned local executable with no
+arguments, except the fixed `vectors` argument for `strix-low-precision-vectors`.
+Environment, fixture and result-inversion controls cannot enter generated tests.
+
+Its `source_record` contains exactly `record_schema:
+"tensormeld/ctest-build-record-v1"`, an absolute `build_directory`, lists of
+SHA-pinned `source_files` and `build_files`, and `test_binaries` records with
+`name`, pinned `artifact` and optional closed `properties`. The properties accept
+only finite `timeout_s` in (0,300], boolean `disabled`, explicit
+`skip_return_code: 77`, and an absolute existing `working_directory` within the
+private build directory. `WILL_FAIL`, pass/fail/skip regular expressions and every
+unknown property are rejected. Original CMake properties are provenance only and
+are never copied; an original `WILL_FAIL` cannot turn a failing selected binary
+into a pass. Build files and test binaries remain inside the
+build directory. The build directory must be a private out-of-source build
+outside every Git checkout, and a nested working directory cannot itself be a
+Git checkout. CTest runs with the fresh private metadata directory as its current
+and test directory, so its automatic logs also remain outside Git.
+Every `CTestTestfile.cmake` beneath the declared build directory must be
+pinned for provenance, without evaluating it. The binary records cover exactly
+the selected names. These are trusted local binary/build inputs, not a sandbox
+for hostile test executables or a proof that a
+declared source list reproduces every linked dependency. They are revalidated
+between inventory and dispatch and after execution. The generated metadata is
+also checked before dispatch and after execution, then retained with its hash.
+
+CTest's bounded JUnit XML is retained with a hash alongside raw CTest output.
+Per-test outcomes and timeouts remain explicit. A passed aggregate requires
+nonzero executed tests, complete selected-test coverage, and no failures. Empty
+selections fail. All-disabled or all-skipped selections remain `SKIPPED`, even
+when CTest returns its no-tests error for a disabled selection. Skips are never
+counted as successful test execution.
+Unsupported JUnit roots and error-tag cases cannot pass. Retained stdout, stderr
+and JUnit are bounded; this does not establish a bound on all CTest internal
+collection memory or temporary logs. The trusted executable/process lifetime
+boundary and stage deadline remain separate from host memory qualification.
+
+`native_model_trial` rebuilds placement and the native trial specification through
+the existing planning, candidate-integrity, exact representability, placement
+binding, approved-worker and single-file GGUF contracts. It accepts no serialized
+argv. The pinned `controls` JSON contains only `prompt`, `context_tokens` and
+`predict_tokens`; context matches the exact planned workload and output length
+stays within its limit. The pinned `reference` uses the existing
+`tensormeld/llamacpp-e3-reference-v1` parser and must bind the rebuilt spec, worker,
+model, placement and exact C1 trial workload. The bound worker/node and selected
+local owners must match campaign runtime bindings before dispatch.
+
+The existing trial runner invokes the actual bounded subprocess and records its
+unchanged narrow trial provenance. Success requires zero exit, nonempty stdout
+and an exact match to the configured reference stdout hash. The result retains
+the trial and comparison; it does not emit E3 `QualificationEvidence`, upgrade
+the campaign to hardware readiness, create admission, or authorize a server
+request. E3 evaluation and E4 CLI/server equivalence keep their independent
+existing gates. An approved literal reference is a correctness input, not a
+new execution authorization path.
 
 ## Lifetime and provenance
 
@@ -122,10 +194,11 @@ Library paths and selected devices remain visible in this evidence for review.
 Each result row separates `executed` from `outcome`: `PASSED`, `FAILED`, `SKIPPED`
 or `NOT_RUN`. `executed` requires the worker's validated stage-start record. A
 spawn alone does not establish execution. Disabled stages are skipped, and an
-all-skipped portable suite is skipped. A failure or timeout prevents subsequent
+all-skipped portable or CTest suite is skipped. A failure or timeout prevents subsequent
 enabled stages, which remain not run. Malformed/mismatched worker records fail
 closed. Portable output is labeled `portable-fixture-tests`; native experiments
-use `trusted-local-experiment`; existing commands use `local-cli`.
+and CTest use `trusted-local-experiment`; the bound model trial uses
+`trusted-local-model-trial`; existing commands use `local-cli`.
 
 Every run creates a unique directory containing `campaign-input.json`, bounded
 stage `.stdout`/`.stderr`, any native raw evidence files, and `campaign.json`.
@@ -140,13 +213,22 @@ Portable tests exercise actual local stage progression, malformed configuration,
 fixture/native separation, output provenance, artifact/code drift, native pin
 checks, failure/timeout progression, bounded output and real Windows process
 cleanup, including descendant survival attempts and campaign-parent death.
+New integration controls execute actual pinned local CTest processes, validate
+nonzero passed counts, disabled and empty selections, per-test timeout and hidden
+command/environment omission. Marker controls verify original `execute_process`,
+includes and `CTestCustom` files never execute; failing binaries cannot be
+promoted through original `WILL_FAIL`, and typed result transformers are rejected.
+Tiny model-shaped fixtures validate trial
+reconstruction, reference/control/GGUF drift and a real failing subprocess;
+mocked success remains portable contract evidence, not model execution.
 The same campaign suite also passed on Linux through a local WSL environment,
 including real process-group parent-death cleanup; its Windows Job failure test
-is explicitly skipped there. That validates the Linux software lifecycle without
+is explicitly skipped there. The extension's actual CTest and failed model-trial
+subprocess controls also passed on Windows and Linux. That validates the software lifecycle without
 claiming native companion GPU execution or hardware qualification.
 
-This slice does not orchestrate CTest, arbitrary shell tools, E3 model correctness,
-E4 performance campaigns, multi-host transport, sustained serving, fresh runtime
+This slice does not orchestrate arbitrary shell tools, produce E3 qualification,
+run E4 performance campaigns, multi-host transport, sustained serving, fresh runtime
 identity collection, or independent family-serving authorization. Those need
 separate closed input contracts and concrete qualification evidence. Hardware
 execution remains explicitly configured future work.

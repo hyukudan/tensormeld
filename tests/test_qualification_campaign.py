@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 from contextlib import redirect_stdout
 import copy
+from dataclasses import asdict
 import hashlib
 import io
 import json
@@ -11,6 +12,7 @@ from pathlib import Path
 import platform
 import socket
 import subprocess
+import shutil
 import sys
 import tempfile
 import unittest
@@ -407,6 +409,328 @@ class CampaignTests(unittest.TestCase):
                 else:
                     with self.assertRaisesRegex(ValidationError, "host/runtime worker"):
                         QualificationCampaign.parse(self.raw)
+
+    def ctest_fixture(self, *, properties="", command_extra="", passive=None, failing=False):
+        executable = shutil.which("ctest")
+        if executable is None:
+            self.skipTest("explicit installed local CTest fixture executable is unavailable")
+        self.native_worker_fixture()
+        directory = self.root / "ctest-build"
+        directory.mkdir()
+        empty = directory / "empty"
+        empty.mkdir()
+        child = directory / ("fixture-test.exe" if os.name == "nt" else "fixture-test")
+        test_executable = shutil.which("where.exe" if os.name == "nt" else "false") if failing else executable
+        if test_executable is None:
+            self.skipTest("explicit failing native process fixture executable is unavailable")
+        shutil.copy2(test_executable, child)
+        ctest_file = directory / "CTestTestfile.cmake"
+        name = "strix-integer-projection-tests"
+        ctest_file.write_text(f'add_test({name} "{child.as_posix()}" {command_extra})\n'
+                             f'set_tests_properties({name} PROPERTIES WORKING_DIRECTORY "{empty.as_posix()}" {properties})\n', encoding="utf-8")
+        ref = lambda path: {"path": str(path), "sha256": _file_sha(path)}
+        controls = {"working_directory": str(empty)}
+        if properties == "DISABLED TRUE":
+            controls["disabled"] = True
+        if properties == "TIMEOUT 0.000001":
+            controls["timeout_s"] = 0.000001
+        controls.update(passive or {})
+        build = {"record_schema": "tensormeld/ctest-build-record-v1", "build_directory": str(directory),
+                 "source_files": [ref(Path(__file__))], "build_files": [ref(ctest_file)],
+                 "test_binaries": [{"name": name, "artifact": ref(child), "properties": controls}]}
+        source_record = self.root / "ctest-build-record.json"
+        source_record.write_text(json.dumps(build), encoding="utf-8")
+        self.raw["stages"] = [stage("ctest", "native_ctest", parameters={
+            "binary": ref(Path(executable)), "source_record": ref(source_record), "tests": [name]})]
+        return directory, build, source_record
+
+    def test_actual_ctest_success_has_nonzero_execution_and_private_junit(self):
+        self.ctest_fixture()
+        report = run_qualification_campaign(self.save())
+        item = report["stages"][0]
+        self.assertEqual(item["outcome"], "PASSED", item)
+        detail = item["stage_result"]["detail"]
+        self.assertEqual(detail["tests_executed"], 1)
+        self.assertEqual(detail["tests_failed"], 0)
+        self.assertEqual(detail["tests"][0]["outcome"], "PASSED")
+        self.assertEqual(_file_sha(Path(report["results_directory"]) / detail["junit_file"]), detail["junit_sha256"])
+        self.assertEqual(len(item["stage_result"]["native_invocations"]), 2)
+        self.assertFalse(report["native_qualified"])
+
+    def test_actual_ctest_all_disabled_is_skipped_not_passed(self):
+        self.ctest_fixture(properties="DISABLED TRUE")
+        report = run_qualification_campaign(self.save())
+        item = report["stages"][0]
+        self.assertEqual(item["outcome"], "SKIPPED", item)
+        detail = item["stage_result"]["detail"]
+        self.assertEqual(detail["tests_executed"], 0)
+        self.assertEqual(detail["tests_skipped"], 1)
+
+    def test_actual_ctest_timeout_is_failure_and_preserves_test_timeout(self):
+        self.ctest_fixture(properties="TIMEOUT 0.000001")
+        report = run_qualification_campaign(self.save())
+        item = report["stages"][0]
+        self.assertEqual(item["outcome"], "FAILED", item)
+        detail = item["stage_result"]["detail"]
+        self.assertEqual(detail["tests_failed"], 1)
+        self.assertTrue(detail["tests"][0]["timed_out"])
+        self.assertTrue(item["timed_out"])
+
+    def test_ctest_original_arguments_and_environment_are_never_evaluated(self):
+        for extra, properties in (("--version", ""), ("", 'ENVIRONMENT "HSA_OVERRIDE_GFX_VERSION=11.5.1"')):
+            with self.subTest(extra=extra, properties=properties):
+                # Each configuration needs distinct fixture directories.
+                if (self.root / "ctest-build").exists():
+                    shutil.rmtree(self.root / "ctest-build")
+                self.ctest_fixture(command_extra=extra, properties=properties)
+                report = run_qualification_campaign(self.save())
+                item = report["stages"][0]
+                self.assertEqual(item["outcome"], "PASSED", item)
+                self.assertEqual(len(item["stage_result"]["native_invocations"]), 2)
+                detail = item["stage_result"]["detail"]
+                metadata = (Path(report["results_directory"]) / detail["generated_metadata_file"]).read_text()
+                self.assertNotIn("--version", metadata)
+                self.assertNotIn("ENVIRONMENT", metadata)
+                self.assertEqual(hashlib.sha256(metadata.encode()).hexdigest(), detail["generated_metadata_sha256"])
+
+    def test_ctest_build_metadata_binaries_and_names_are_pinned(self):
+        directory, build, source_record = self.ctest_fixture()
+        for mutation in (lambda params: params.update(tests=["arbitrary-test"]),
+                         lambda params: params.update(tests=[]),
+                         lambda params: params.update(tests=["strix-integer-projection-tests"] * 2)):
+            candidate = copy.deepcopy(self.raw)
+            mutation(candidate["stages"][0]["parameters"])
+            with self.assertRaises(ValidationError):
+                QualificationCampaign.parse(candidate)
+        (directory / "CTestTestfile.cmake").write_text("changed", encoding="utf-8")
+        with self.assertRaises(ValidationError):
+            QualificationCampaign.parse(self.raw)
+
+    def test_actual_ctest_empty_generated_inventory_never_passes(self):
+        self.ctest_fixture()
+        def empty_inventory(argv, **kwargs):
+            if "--show-only=json-v1" in argv:
+                metadata = Path(argv[argv.index("--test-dir") + 1]) / "CTestTestfile.cmake"
+                metadata.write_text("# injected missing selection\n", encoding="utf-8")
+            return original(argv, **kwargs)
+        original = campaign_module._run_process
+        campaign = QualificationCampaign.parse(self.raw)
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(b"1"))), redirect_stdout(io.StringIO()) as out, patch(
+                "tensormeld.qualification_campaign._run_process", side_effect=empty_inventory):
+            code = _worker(self.save(), "ctest", campaign.fingerprint, code_identity()["source_sha256"])
+        self.assertEqual(code, 1)
+        self.assertEqual(len(json.loads(out.getvalue().splitlines()[1])["native_invocations"]), 1)
+
+    def test_ctest_original_execute_process_include_and_custom_files_never_execute(self):
+        directory, build, source_record = self.ctest_fixture()
+        marker = directory / "must-not-exist"
+        cmake = shutil.which("cmake")
+        if cmake is None:
+            self.skipTest("explicit local CMake marker fixture unavailable")
+        command = f'execute_process(COMMAND "{Path(cmake).as_posix()}" -E touch "{marker.as_posix()}")\n'
+        included = directory / "hidden-include.cmake"
+        custom = directory / "CTestCustom.cmake"
+        included.write_text(command, encoding="utf-8")
+        custom.write_text(command, encoding="utf-8")
+        metadata = directory / "CTestTestfile.cmake"
+        metadata.write_text(command + f'include("{included.as_posix()}")\n' + metadata.read_text(), encoding="utf-8")
+        build["build_files"] = [{"path": str(path), "sha256": _file_sha(path)} for path in (metadata, included, custom)]
+        source_record.write_text(json.dumps(build), encoding="utf-8")
+        self.raw["stages"][0]["parameters"]["source_record"]["sha256"] = _file_sha(source_record)
+        report = run_qualification_campaign(self.save())
+        self.assertEqual(report["stages"][0]["outcome"], "PASSED", report["stages"][0])
+        self.assertFalse(marker.exists(), "original CMake must never execute during inventory or test dispatch")
+
+    def test_ctest_original_will_fail_cannot_invert_native_failure(self):
+        self.ctest_fixture(properties="WILL_FAIL TRUE", failing=True)
+        report = run_qualification_campaign(self.save())
+        item = report["stages"][0]
+        self.assertEqual(item["outcome"], "FAILED", item)
+        self.assertEqual(item["stage_result"]["detail"]["tests_failed"], 1)
+        self.assertEqual(item["stage_result"]["detail"]["tests_executed"], 1)
+
+    def test_ctest_outcome_transformers_or_other_unclosed_properties_rejected(self):
+        _, build, source_record = self.ctest_fixture()
+        original = copy.deepcopy(build)
+        for property_name, value in (("WILL_FAIL", True), ("PASS_REGULAR_EXPRESSION", ".*"),
+                                     ("FAIL_REGULAR_EXPRESSION", ".*"), ("SKIP_REGULAR_EXPRESSION", ".*"),
+                                     ("ENVIRONMENT", "HSA_OVERRIDE_GFX_VERSION=11.5.1"),
+                                     ("skip_return_code", 0), ("disabled", 1), ("timeout_s", True)):
+            build = copy.deepcopy(original)
+            build["test_binaries"][0]["properties"][property_name] = value
+            source_record.write_text(json.dumps(build), encoding="utf-8")
+            self.raw["stages"][0]["parameters"]["source_record"]["sha256"] = _file_sha(source_record)
+            with self.subTest(property_name=property_name), self.assertRaises(ValidationError):
+                QualificationCampaign.parse(self.raw)
+
+    def test_ctest_unsupported_junit_root_or_error_case_cannot_pass(self):
+        self.ctest_fixture()
+        original = campaign_module._run_process
+        for root, inner in (("unsupported", ""), ("testsuite", '<error message="fixture error"/>')):
+            def mutate_junit(argv, **kwargs):
+                outcome = original(argv, **kwargs)
+                if "--output-junit" in argv:
+                    path = Path(argv[argv.index("--output-junit") + 1])
+                    path.write_text(f'<{root}><testcase name="strix-integer-projection-tests" status="run">{inner}</testcase></{root}>', encoding="utf-8")
+                return outcome
+            campaign = QualificationCampaign.parse(self.raw)
+            with self.subTest(root=root), patch("sys.stdin", io.TextIOWrapper(io.BytesIO(b"1"))), redirect_stdout(io.StringIO()) as out, patch(
+                    "tensormeld.qualification_campaign._run_process", side_effect=mutate_junit):
+                code = _worker(self.save(), "ctest", campaign.fingerprint, code_identity()["source_sha256"])
+            self.assertEqual(code, 1)
+
+    def test_ctest_known_generated_metadata_drift_never_dispatches_tests(self):
+        self.ctest_fixture()
+        original = campaign_module._run_process
+        def mutate_after_inventory(argv, **kwargs):
+            outcome = original(argv, **kwargs)
+            if "--show-only=json-v1" in argv:
+                path = Path(argv[argv.index("--test-dir") + 1]) / "CTestTestfile.cmake"
+                path.write_text("execute_process(COMMAND ignored)\n", encoding="utf-8")
+            return outcome
+        campaign = QualificationCampaign.parse(self.raw)
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(b"1"))), redirect_stdout(io.StringIO()) as out, patch(
+                "tensormeld.qualification_campaign._run_process", side_effect=mutate_after_inventory) as runner:
+            code = _worker(self.save(), "ctest", campaign.fingerprint, code_identity()["source_sha256"])
+        self.assertEqual(code, 1)
+        self.assertEqual(runner.call_count, 1)
+
+    def test_ctest_nested_git_working_directory_is_rejected(self):
+        directory, _, _ = self.ctest_fixture()
+        (directory / "empty" / ".git").write_text("gitdir: elsewhere", encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "outside Git"):
+            QualificationCampaign.parse(self.raw)
+
+    def test_ctest_build_directory_must_remain_outside_git(self):
+        directory, _, _ = self.ctest_fixture()
+        (directory / ".git").write_text("gitdir: elsewhere", encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "outside Git"):
+            QualificationCampaign.parse(self.raw)
+
+    def model_trial_fixture(self):
+        from test_llamacpp_native_trial import make_model, qualification_context, PIN
+        from test_planner_v2 import fixture as planner_fixture
+        from tensormeld.llamacpp_native_trial import approve_single_file_gguf, build_llamacpp_native_trial_spec
+        from tensormeld.native_worker import approved_worker_artifact
+        gguf = self.root / "fixture.gguf"
+        gguf.write_bytes(b"GGUF" + b"x" * 32)
+        model = make_model(gguf)
+        config, planning, candidate, adapter, placement = qualification_context(model)
+        raw_config, raw_planning = planner_fixture(count=1, units=1)
+        raw_config["profiles"]["interactive"]["model_manifest_ref"] = model.manifest_sha256
+        raw_planning["manifest_ref"] = model.manifest_sha256
+        raw_planning["units"][0]["id"] = "blk.0"
+        raw_adapter = {
+            "adapter_schema": "tensormeld/adapter-capabilities-v1", "adapter_id": adapter.adapter_id,
+            "engine": adapter.engine, "engine_revision": adapter.engine_revision,
+            "placement": {"strategies": sorted(adapter.strategies), **{name: getattr(adapter, name) for name in (
+                "exact_owner_binding", "explicit_unit_ranges", "mixed_backends", "remote_compute", "coordinator_outside_compute",
+                "max_compute_devices", "max_compute_nodes", "max_segments")}},
+            "route_modes": sorted(adapter.route_modes), "coordinator_nodes": [node.id for node in config.nodes],
+            "devices": [{"id": device.id, "node": device.node, "backend": device.backend} for device in adapter.devices]}
+        raw_model = asdict(model)
+        raw_model.pop("manifest_sha256")
+        raw_model["model_manifest_schema"] = "tensormeld/model-manifest-v1"
+        ref = lambda path: {"path": str(path), "sha256": _file_sha(path)}
+        def artifact(name, raw):
+            path = self.root / (name + ".json")
+            path.write_text(json.dumps(raw), encoding="utf-8")
+            return ref(path)
+        worker = ref(Path(sys.executable))
+        raw_runtime = manifest(config, model, adapter)
+        raw_runtime.update(provenance="native-adapter", worker_artifact_sha256=worker["sha256"])
+        self.raw["artifacts"] = {"config": artifact("model-config", raw_config), "model_manifest": artifact("model-manifest", raw_model),
+            "adapter_capabilities": artifact("model-adapter", raw_adapter), "runtime_manifest": artifact("model-runtime", raw_runtime),
+            "runtime_identities": [artifact("model-identity", runtime_identity("n0", "g0", worker["sha256"]).as_record())]}
+        self.raw["mode"] = "native"
+        self.raw["host"]["node_id"] = "n0"
+        controls = {"prompt": "bounded fixture trial", "context_tokens": planning.context_tokens, "predict_tokens": 1}
+        spec = build_llamacpp_native_trial_spec(model=model, placement=placement,
+            llama_cli=approved_worker_artifact(sys.executable, expected_sha256=worker["sha256"], where="fixture launcher"),
+            gguf=approve_single_file_gguf(model, gguf), **controls)
+        expected = b"bounded fixture stdout\n"
+        reference = {"reference_schema": "tensormeld/llamacpp-e3-reference-v1", "reference_id": "campaign-fixture-reference",
+            "trial_spec_sha256": spec.spec_sha256, "llama_cli_sha256": spec.llama_cli_sha256,
+            "model_manifest_sha256": model.manifest_sha256, "placement_sha256": placement.fingerprint,
+            "expected_stdout_sha256": hashlib.sha256(expected).hexdigest(),
+            "workload": {"context_tokens": spec.context_tokens, "max_output_tokens": 1, "concurrency": 1}}
+        params = {"binary": worker, "gguf": ref(gguf), "planning": artifact("trial-planning", raw_planning),
+            "candidate": artifact("trial-candidate", candidate), "controls": artifact("trial-controls", controls),
+            "reference": artifact("trial-reference", reference),
+            "placement_binding": artifact("trial-placement-binding", {"placement_binding_schema": "tensormeld/llamacpp-placement-binding-v1",
+                "adapter_id": adapter.adapter_id, "adapter_capabilities_sha256": adapter.fingerprint, "source_revision": PIN,
+                "native_binding_sha256": "d" * 64, "devices": [{"device_id": "g0", "engine_device_name": "CPU", "buffer_type": "CPU"}]}),
+            "bound_result": artifact("trial-bound", {"result_schema": "tensormeld/llamacpp-device-binding-result-v1", "config_sha256": config.fingerprint,
+                "binding_sha256": "d" * 64, "node_id": "n0", "probe_artifact_sha256": worker["sha256"],
+                "resolved_mappings": [{"tensormeld_device_id": "g0", "engine_device_name": "CPU", "backend_from_config": config.devices[0].backend}]}),
+            "gguf_index": artifact("trial-index", {"index_schema": "tensormeld/gguf-index-v1", "architecture": "llama", "complete_shard_set": True,
+                "tensor_count": 2, "index_sha256": model.tensor_index_sha256,
+                "files": [{"tensors": [{"name": "blk.0.attn_q.weight"}, {"name": "blk.0.ffn_up.weight"}]}]})}
+        self.raw["stages"] = [stage("model", "native_model_trial", parameters=params)]
+        return spec, expected
+
+    def test_model_trial_rebuilds_existing_spec_and_checks_literal_reference_without_qualification(self):
+        from tensormeld import llamacpp_native_trial
+        original_runner = llamacpp_native_trial._default_runner
+        spec, expected = self.model_trial_fixture()
+        campaign = QualificationCampaign.parse(self.raw)
+        outcome = dict(captured(), stdout=expected)
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(b"1"))), redirect_stdout(io.StringIO()) as out, patch(
+                "tensormeld.qualification_campaign._run_process", return_value=outcome) as runner:
+            code = _worker(self.save(), "model", campaign.fingerprint, code_identity()["source_sha256"])
+        self.assertEqual(code, 0)
+        self.assertIs(llamacpp_native_trial._default_runner, original_runner)
+        self.assertEqual(runner.call_args.args[0], list(spec.argv))
+        detail = json.loads(out.getvalue().splitlines()[1])["detail"]
+        self.assertTrue(detail["reference_stdout_match"])
+        self.assertFalse(detail["trial"]["qualified"])
+        self.assertFalse(detail["trial"]["real_model_inference"])
+
+    def test_actual_model_trial_failed_fixture_process_cannot_pass(self):
+        self.model_trial_fixture()
+        # The pinned interpreter is deliberately not a model engine; its closed
+        # trial arguments fail without loading a model or touching hardware.
+        report = run_qualification_campaign(self.save())
+        item = report["stages"][0]
+        self.assertEqual(item["outcome"], "FAILED")
+        self.assertFalse(item["stage_result"]["detail"]["trial"]["process_succeeded"])
+        self.assertEqual(len(item["stage_result"]["native_invocations"]), 1)
+        self.assertFalse(report["inference_request_authorized"])
+
+    def test_model_trial_reference_mismatch_is_failure_even_for_successful_process(self):
+        self.model_trial_fixture()
+        campaign = QualificationCampaign.parse(self.raw)
+        with patch("sys.stdin", io.TextIOWrapper(io.BytesIO(b"1"))), redirect_stdout(io.StringIO()) as out, patch(
+                "tensormeld.qualification_campaign._run_process", return_value=dict(captured(), stdout=b"wrong output")):
+            code = _worker(self.save(), "model", campaign.fingerprint, code_identity()["source_sha256"])
+        self.assertEqual(code, 1)
+        self.assertFalse(json.loads(out.getvalue().splitlines()[1])["detail"]["reference_stdout_match"])
+
+    def test_model_trial_reference_controls_and_model_drift_fail_before_launch(self):
+        self.model_trial_fixture()
+        original = copy.deepcopy(self.raw)
+        for key, mutation in (("reference", lambda value: value.update(trial_spec_sha256="f" * 64)),
+                              ("controls", lambda value: value.update(argv=["arbitrary"])),
+                              ("controls", lambda value: value.update(context_tokens=1)),
+                              ("controls", lambda value: value.update(predict_tokens=True))):
+            self.raw = copy.deepcopy(original)
+            value_ref = self.raw["stages"][0]["parameters"][key]
+            value_path = Path(value_ref["path"])
+            before = value_path.read_bytes()
+            value = json.loads(before)
+            mutation(value)
+            value_path.write_text(json.dumps(value), encoding="utf-8")
+            value_ref["sha256"] = _file_sha(value_path)
+            try:
+                with self.subTest(key=key), self.assertRaises(ValidationError):
+                    QualificationCampaign.parse(self.raw)
+            finally:
+                value_path.write_bytes(before)
+        self.raw = original
+        gguf = Path(self.raw["stages"][0]["parameters"]["gguf"]["path"])
+        gguf.write_bytes(b"changed GGUF")
+        with self.assertRaises(ValidationError):
+            QualificationCampaign.parse(self.raw)
 
 
 class BoundedProcessTests(unittest.TestCase):

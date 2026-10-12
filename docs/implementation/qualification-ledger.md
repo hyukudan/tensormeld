@@ -18,9 +18,9 @@ native model, transport or performance qualification.
 | Numerical experiments | Native repository has scalar arithmetic references and offline instruction emission | Executable fragment mapping, full-model quality, state equivalence and committed-token benefit |
 | CUDA and heterogeneous pairs | Core resource model and adapter boundaries accommodate distinct backends | Each CUDA device/backend qualified independently; mixed pair compatibility and performance |
 
-The last completed TensorMeld portable suite ran 636 tests, with five optional
+The last completed TensorMeld portable suite ran 653 tests, with five optional
 tests skipped. Skips do not count as native qualification. The native repository's
-portable Release integration passed 123 CTest entries. Results are local engineering
+portable Release integration passed 126 CTest entries. Results are local engineering
 checks, not a public model-performance claim.
 
 ## Immediate development order
