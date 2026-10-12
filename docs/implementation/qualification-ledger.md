@@ -14,13 +14,13 @@ native model, transport or performance qualification.
 | C1 serving consumer | Actual existing authorized completion path with bounded FIFO count/bytes, deadlines, attempt cancellation, original-process fencing, quarantine and drain | Exact replay scope only; arbitrary-prompt family serving, public HTTP/SSE and native cancellation remain unqualified |
 | Numerical profiles | Canonical identity and exact phase/shape/runtime/state/wire applicability; same-profile authoritative verify gate | Native arithmetic/quality/equivalence and measured complete-cost evidence; scaled FP4/FP8 formats remain unsupported in v1 |
 | Local mature-engine placement | Exact block mapping through the pinned local adapter; remote/RPC devices rejected | Target-native tensor/state ownership and qualified serving |
-| Native distributed worker | Separate engine repository implements portable placement/control/transport seams | Same-family two-host model/state continuity and boundary qualification |
-| Numerical experiments | Native repository has scalar arithmetic references and offline instruction emission | Executable fragment mapping, full-model quality, state equivalence and committed-token benefit |
+| Native distributed worker | Separate engine implements placement/control, a compiled experimental Linux DMA-BUF extension, concrete syscall/HIP providers and C1 GPU boundary staging | Same-family two-host model/state continuity, external-DMA coherence and boundary qualification |
+| Numerical experiments | Native repository has arithmetic references, offline instruction emission, a tiled integer LM-head adapter and complete C1 graph capture/replay with compiled native fixtures | Native fragment correctness, full-model quality, state equivalence and committed-token benefit |
 | CUDA and heterogeneous pairs | Core resource model and adapter boundaries accommodate distinct backends | Each CUDA device/backend qualified independently; mixed pair compatibility and performance |
 
 The last completed TensorMeld portable suite ran 653 tests, with five optional
 tests skipped. Skips do not count as native qualification. The native repository's
-portable Release integration passed 126 CTest entries. Results are local engineering
+portable Release integration passed 134 CTest entries. Results are local engineering
 checks, not a public model-performance claim.
 
 ## Immediate development order
@@ -30,8 +30,9 @@ checks, not a public model-performance claim.
    the exact-replay C1 consumer is implemented. Next extend it only with trusted
    rendering/tokenization, family evidence and a bounded public terminal protocol.
    Keep unsupported requests non-executable and require genuine family evidence.
-2. Prepare the direct-transport ABI and pair capability preflight for actual host
-   qualification. Device discovery alone must not imply GPU import, visibility or DMA.
+2. Qualify the implemented experimental direct-transport ABI and pair capability
+   preflight on actual hosts. Device discovery alone must not imply GPU import,
+   visibility or DMA.
 3. On the configured target hosts, collect artifact-bound operator/model and
    transport evidence. Preserve negative results and exact provenance.
 4. Qualify local-only and whole-model companion baselines before selecting real

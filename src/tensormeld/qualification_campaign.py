@@ -47,7 +47,14 @@ CTEST_NAMES = frozenset({"strix-integer-projection-tests", "strix-graph-inputs-t
     "strix-projection-reduction-tests", "strix-low-precision-tests", "strix-low-precision-vectors",
     "strix-hip-graph-inputs-tests", "strix-integer-projection-execution-tests",
     "strix-graph-attention-state-tests", "strix-hip-graph-attention-state-tests",
-    "strix-copied-stream-transport-tests"})
+    "strix-copied-stream-transport-tests", "strix-integer-projection-runtime-tests",
+    "strix-graph-operator-control-tests", "strix-graph-ple-tests",
+    "strix-direct-transport-gpu-export-tests", "strix-hip-integer-projection-runtime-tests",
+    "strix-hip-direct-transport-gpu-export-tests", "strix-hip-direct-gpu-pool-allocator-tests", "strix-hip-gdn-launcher-tests",
+    "strix-hip-indexed-attention-launcher-tests", "strix-hip-serial-graph-tests",
+    "strix-hip-launch-context-tests", "strix-linux-direct-gpu-stream-uapi-tests",
+    "strix-linux-direct-gpu-stream-logic-tests", "strix-linux-direct-transport-driver-tests",
+    "strix-direct-gpu-boundary-staging-tests", "strix-hip-direct-gpu-stream-gpu-tests"})
 SUITES = {"configuration": "test_config_v2.py", "numerical": "test_numerical_profile.py",
           "request_envelope": "test_request_envelope.py", "native_session": "test_native_session.py",
           "c1_serving": "test_llamacpp_c1_serving.py"}

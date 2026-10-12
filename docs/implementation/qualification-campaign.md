@@ -91,7 +91,16 @@ experiment. Review its build/source record and the raw result independently.
 `strix-projection-reduction-tests`, `strix-low-precision-tests`,
 `strix-low-precision-vectors`, `strix-hip-graph-inputs-tests`,
 `strix-integer-projection-execution-tests`, `strix-graph-attention-state-tests`,
-`strix-hip-graph-attention-state-tests` and `strix-copied-stream-transport-tests`. Caller-supplied
+`strix-hip-graph-attention-state-tests`, `strix-copied-stream-transport-tests`,
+`strix-integer-projection-runtime-tests`, `strix-graph-operator-control-tests`,
+`strix-graph-ple-tests`, `strix-direct-transport-gpu-export-tests`,
+`strix-hip-integer-projection-runtime-tests`, `strix-hip-direct-transport-gpu-export-tests`,
+`strix-hip-direct-gpu-pool-allocator-tests`,
+`strix-hip-gdn-launcher-tests`, `strix-hip-indexed-attention-launcher-tests`,
+`strix-hip-serial-graph-tests`, `strix-hip-launch-context-tests`,
+`strix-linux-direct-gpu-stream-uapi-tests`, `strix-linux-direct-gpu-stream-logic-tests`,
+`strix-linux-direct-transport-driver-tests`, `strix-direct-gpu-boundary-staging-tests`
+and `strix-hip-direct-gpu-stream-gpu-tests`. Caller-supplied
 regular expressions, labels, test arguments, presets, dashboard scripts and
 fixture setup are not supported. The runner generates a new private CTest file
 from only the exact pinned selected binary records, disables automatic fixture
