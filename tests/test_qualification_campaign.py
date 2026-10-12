@@ -420,9 +420,12 @@ class CampaignTests(unittest.TestCase):
         empty = directory / "empty"
         empty.mkdir()
         child = directory / ("fixture-test.exe" if os.name == "nt" else "fixture-test")
-        test_executable = shutil.which("where.exe" if os.name == "nt" else "false") if failing else executable
+        # CTest's executable may locate resources relative to its installation;
+        # a copied CTest is not a portable successful child process fixture.
+        fixture_name = ("where.exe" if failing else "hostname.exe") if os.name == "nt" else ("false" if failing else "true")
+        test_executable = shutil.which(fixture_name)
         if test_executable is None:
-            self.skipTest("explicit failing native process fixture executable is unavailable")
+            self.skipTest("explicit local system process fixture executable is unavailable")
         shutil.copy2(test_executable, child)
         ctest_file = directory / "CTestTestfile.cmake"
         name = "strix-integer-projection-tests"
