@@ -17,10 +17,11 @@ native model, transport or performance qualification.
 | Native distributed worker | Separate engine implements placement/control, a compiled experimental Linux DMA-BUF extension, concrete syscall/HIP providers and C1 GPU boundary staging | Same-family two-host model/state continuity, external-DMA coherence and boundary qualification |
 | Numerical experiments | Native repository has arithmetic references, offline instruction emission, a tiled integer LM-head adapter and complete C1 graph capture/replay with compiled native fixtures | Native fragment correctness, full-model quality, state equivalence and committed-token benefit |
 | CUDA and heterogeneous pairs | Core resource model and adapter boundaries accommodate distinct backends | Each CUDA device/backend qualified independently; mixed pair compatibility and performance |
+| Hardware campaign preparation | Closed private commissioning templates, exact paired receipt/oracle checks, native full-kernel staging and eager RAW collection/import tools | Actual target configuration/boot and native evidence; matching recordings never authorize production |
 
-The last completed TensorMeld portable suite ran 653 tests, with five optional
+The last completed TensorMeld portable suite ran 669 tests, with five optional
 tests skipped. Skips do not count as native qualification. The native repository's
-portable Release integration passed 134 CTest entries. Results are local engineering
+portable Release integration passed 140 CTest entries. Results are local engineering
 checks, not a public model-performance claim.
 
 ## Immediate development order

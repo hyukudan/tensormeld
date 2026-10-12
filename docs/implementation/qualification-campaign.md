@@ -100,7 +100,9 @@ experiment. Review its build/source record and the raw result independently.
 `strix-hip-serial-graph-tests`, `strix-hip-launch-context-tests`,
 `strix-linux-direct-gpu-stream-uapi-tests`, `strix-linux-direct-gpu-stream-logic-tests`,
 `strix-linux-direct-transport-driver-tests`, `strix-direct-gpu-boundary-staging-tests`
-and `strix-hip-direct-gpu-stream-gpu-tests`. Caller-supplied
+`strix-hip-direct-gpu-stream-gpu-tests` and
+`strix-direct-gpu-stream-commissioning-tests`, `strix-raw-baseline-recording-tests`
+and `strix-direct-gpu-stream-driver-observation-tests`. Caller-supplied
 regular expressions, labels, test arguments, presets, dashboard scripts and
 fixture setup are not supported. The runner generates a new private CTest file
 from only the exact pinned selected binary records, disables automatic fixture
