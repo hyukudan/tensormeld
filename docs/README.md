@@ -5,6 +5,23 @@ research. Comparative evaluations and third-party benchmark records remain outsi
 Public documentation records project-owned contracts; actual adopted components retain
 required provenance and license notices.
 
+## Reading paths
+
+- **First experiment:** [developer setup](../README.md#developer-setup),
+  [configuration examples](examples/README.md), then [the v2 planner](implementation/planner-v2.md).
+- **Current support:** [status](implementation/status.md),
+  [qualification ledger](implementation/qualification-ledger.md) and
+  [testing strategy](implementation/testing.md).
+- **Implementation work:** the relevant architecture/specification, its accepted ADRs,
+  and [contributor instructions](../AGENTS.md).
+- **Native experiments:** [adapter boundaries](implementation/open-source-adapters.md)
+  and [qualification campaign](implementation/qualification-campaign.md), with explicitly
+  configured trusted artifacts and private evidence destinations.
+
+Normative requirements describe the intended contract, not proof of an implemented or
+qualified feature. Dated validation notes and ADR context retain their historical scope;
+use the current ledger when assessing today's gates.
+
 ## Architecture
 
 - [System overview](architecture/system-overview.md)
@@ -14,6 +31,10 @@ required provenance and license notices.
 - [Security model](architecture/security-model.md)
 
 ## Decisions
+
+The links below are selected entry points. The full [decision directory](decisions/)
+also covers identity, enrollment, TLS control, admission, native adapters, calibration
+and legal-unit/phase evidence through ADR-0053.
 
 - [ADR-0001 — Separate control, placement and execution](decisions/0001-separate-control-placement-and-execution.md)
 - [ADR-0002 — Model nodes, devices and physical pools separately](decisions/0002-resource-identity-and-memory-pools.md)
@@ -38,10 +59,12 @@ and runtime requirements. Start with:
 - [03 — Placement](specification/03-placement.md)
 - [04 — Network and security](specification/04-network-security.md)
 - [05 — Platforms and validation](specification/05-platforms-validation.md)
+- [06 — Roadmap](specification/06-roadmap.md)
 - [08 — Configuration](specification/08-configuration.md)
 - [09 — Resources and sessions](specification/09-resource-sessions.md)
 - [10 — Model API and UX](specification/10-model-api-ux.md)
 - [11 — Feature acceptance matrix](specification/11-feature-acceptance-matrix.md)
+- [12 — Review and migration](specification/12-review-and-migration.md)
 
 `07-m0-contract.md` documents the retained legacy analytical planner. It is not the v2
 installation contract.

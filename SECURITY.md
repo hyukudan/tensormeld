@@ -1,14 +1,26 @@
 # Security status
 
-M0.2 remains offline except for a short-lived diagnostic listener bound exclusively to
-127.0.0.1. There is no remote agent, execution service or authentication implementation.
-Do not expose or repurpose the diagnostic as a network service.
+TensorMeld is a pre-alpha control-plane prototype, not a qualified production security
+boundary. The local `HostAgent` implements explicit enrollment, authenticated capability
+envelopes and a fixed operation allowlist; it opens no listener itself. Separate private
+endpoint helpers implement bounded control dispatch over mutual TLS with CA verification,
+enrolled certificate pinning, dedicated ALPN and epoch/sequence replay rejection.
+
+Real loopback and separate-process tests exercise this control stack. They do not establish
+a secure multi-machine deployment, GPU execution or distributed model inference. Persistent
+OS-protected secret storage, rotation/revocation and deployment hardening remain separate
+gates; see the [current status](docs/implementation/status.md) and
+[security contract](docs/specification/04-network-security.md).
+
+The short-lived `bench-loopback` diagnostic binds exclusively to IPv4 loopback. It is
+separate from authenticated control and must not be repurposed as a network service.
 
 Untrusted scenario JSON has strict keys, finite numeric bounds, unique identifiers,
 size limits and no executable expressions. Local inventory uses fixed read-only
 commands with shell=False and timeouts. Hardware/model names do not become commands.
 
-Future agents must meet docs/specification/04-network-security.md before LAN testing. Legacy
+Private-LAN deployments must meet [the network/security contract](docs/specification/04-network-security.md)
+with explicit endpoint and enrollment configuration before testing. Legacy
 inference RPC requires an authenticated private wrapper; never publish it directly.
 Do not commit model weights, prompts, diagnostic inventories, credentials or TLS keys.
 Use the public repository issue tracker only for non-secret findings. Never post credentials,

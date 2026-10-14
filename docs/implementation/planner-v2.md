@@ -4,7 +4,19 @@ Implemented in `planning_contract.py` and `planner_v2.py` since 0.2.0a2.
 
 ## Usage
 
+From the repository root, install the development package with Python 3.11+
+in an activated virtual environment:
+
 ```bash
+python -m pip install -e .
+```
+
+See the [developer setup](../../README.md#developer-setup) for environment activation.
+Validate the installation policy before planning:
+
+```bash
+python -m tensormeld validate-config docs/examples/12gb-pc-one-companion.config.json
+python -m tensormeld select docs/examples/12gb-pc-one-companion.config.json
 python -m tensormeld plan-v2 docs/examples/12gb-pc-one-companion.config.json examples/v2/12gb-dense.planning.json
 python -m tensormeld plan-v2 examples/v2/high-capacity.config.json examples/v2/high-capacity.planning.json --top-k 3
 ```
@@ -58,5 +70,8 @@ workers sharing a pool. No two workers are assumed to alias allocator workspaces
 
 Outputs include config/input/plan hashes, segment boundaries, physical-pool usage,
 chosen links, cyclic feedback, rejection counts and the exact exhausted budget.
-They are never executable plans. Adapters, model-specific support, real measurements,
-loading/transient admission and active-session reservations remain unimplemented.
+They are never executable plans. This command does not load a model, measure a backend,
+reserve memory or authorize a session. Adapter, qualification and local admission
+foundations exist elsewhere in the project, but are independent of this synthetic
+search. Consult the [current status](status.md) and [qualification ledger](qualification-ledger.md)
+for their implemented contracts and outstanding native gates.
