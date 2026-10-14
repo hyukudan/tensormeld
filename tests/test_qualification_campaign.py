@@ -427,6 +427,11 @@ class CampaignTests(unittest.TestCase):
         if test_executable is None:
             self.skipTest("explicit local system process fixture executable is unavailable")
         shutil.copy2(test_executable, child)
+        if properties == "TIMEOUT 0.05" and os.name != "nt":
+            # A fast `true` process can exit before CTest notices a tiny timeout.
+            # Use a pinned, deliberately slow local fixture for this contract.
+            child.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(5)\n", encoding="utf-8")
+            child.chmod(0o755)
         ctest_file = directory / "CTestTestfile.cmake"
         name = "strix-integer-projection-tests"
         ctest_file.write_text(f'add_test({name} "{child.as_posix()}" {command_extra})\n'
@@ -435,8 +440,8 @@ class CampaignTests(unittest.TestCase):
         controls = {"working_directory": str(empty)}
         if properties == "DISABLED TRUE":
             controls["disabled"] = True
-        if properties == "TIMEOUT 0.000001":
-            controls["timeout_s"] = 0.000001
+        if properties.startswith("TIMEOUT "):
+            controls["timeout_s"] = float(properties.split()[1])
         controls.update(passive or {})
         build = {"record_schema": "tensormeld/ctest-build-record-v1", "build_directory": str(directory),
                  "source_files": [ref(Path(__file__))], "build_files": [ref(ctest_file)],
@@ -470,7 +475,7 @@ class CampaignTests(unittest.TestCase):
         self.assertEqual(detail["tests_skipped"], 1)
 
     def test_actual_ctest_timeout_is_failure_and_preserves_test_timeout(self):
-        self.ctest_fixture(properties="TIMEOUT 0.000001")
+        self.ctest_fixture(properties="TIMEOUT 0.000001" if os.name == "nt" else "TIMEOUT 0.05")
         report = run_qualification_campaign(self.save())
         item = report["stages"][0]
         self.assertEqual(item["outcome"], "FAILED", item)
@@ -764,8 +769,12 @@ class BoundedProcessTests(unittest.TestCase):
                 finally:
                     os.close(descriptor)
             stat = Path(f"/proc/{pid}/stat")
-            if stat.exists():
-                self.assertEqual(stat.read_text().split()[2], "Z")
+            try:
+                state = stat.read_text().split()[2]
+            except (FileNotFoundError, ProcessLookupError):
+                # The process may disappear after pidfd readiness or during read.
+                return
+            self.assertEqual(state, "Z")
 
     def test_actual_timeout_stops_gated_child_and_inherited_descendant(self):
         # Fixtures only: no configurable campaign command executes Python -c.
