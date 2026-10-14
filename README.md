@@ -1,161 +1,146 @@
 # TensorMeld
 
 > [!CAUTION]
-> **TensorMeld is in very early, active development.**
->
-> This repository is public **for transparency and open technical discussion only**. It is **not an alpha release**, is **not ready for general use**, and should not currently be relied on for production workloads, benchmarking claims, security-sensitive deployments, or stable APIs.
->
-> Expect incomplete features, breaking changes, experimental code paths, incorrect planning decisions, unfinished documentation, and repository history that may change substantially while the architecture is being developed.
+> TensorMeld is in early, active development. This public repository documents an experimental engineering project, not a supported release. APIs, schemas and execution paths may change. It is not ready for production or security-sensitive deployment.
 
-## What TensorMeld is trying to become
+TensorMeld is a local-first, hardware-neutral orchestration project for heterogeneous AI inference resources. Its goal is to choose useful placements across devices and machines while respecting physical memory, communication costs and owner policies.
 
-TensorMeld is an experimental local AI inference orchestration project for combining heterogeneous compute resources across one or more machines.
+The current package is **0.2.0a2**, with a **0.2.0 specification baseline**. The version identifier does not establish product readiness. The usable starting point is the control-plane prototype: configuration validation, resource selection, advisory planning and explicit evidence contracts. **End-to-end distributed model inference is not implemented or qualified.**
 
-The long-term goal is to let a user start with the hardware they already have—for example a PC with a discrete GPU—and add one or more companion systems to expand usable model capacity and, where the topology makes it worthwhile, inference performance.
+## Purpose and scope
 
-TensorMeld is intended to remain hardware-neutral at its core. Early development is focusing on combinations such as:
+A fast discrete GPU may lack capacity; a companion may offer more memory but different compute and transfer costs. TensorMeld models those resources separately rather than treating remote memory as extra local VRAM.
 
-- Windows and Linux hosts;
-- NVIDIA CUDA devices;
-- AMD ROCm/HIP devices;
-- unified-memory systems such as AMD Strix Halo;
-- multiple GPUs in one host;
-- multiple compute nodes;
-- different interconnects with very different latency and bandwidth characteristics.
+The intended scope includes dense and mixture-of-experts workloads, low-VRAM hosts, multiple devices per node and variable node counts. Strix Halo is an initial companion profile, not a product dependency. Windows/Linux, CUDA/HIP and heterogeneous execution are design targets whose actual support must be established per adapter and workload.
 
-The project is not limited to very large models. The same architecture should eventually support anything from a 12 GB desktop GPU assisted by one companion node to much larger heterogeneous systems.
+A valid future placement may use the local device, companions only, a subset of available resources or a genuine split. More nodes, memory or cables do not automatically improve latency or throughput. Requested model semantics, context, precision and owner limits must remain explicit.
 
-## Why TensorMeld?
+## Architecture
 
-Local AI hardware is increasingly heterogeneous.
+The design separates three responsibilities:
 
-A desktop GPU may provide very high compute throughput and fast local VRAM, but its memory capacity can limit the models, quantizations, contexts, or workloads it can run. A companion system may have much more usable memory—especially unified-memory machines such as Strix Halo—while being slower for some operations than the discrete GPU.
+1. **Control:** installation identity, enrollment, resource policy, authenticated communication and lifecycle.
+2. **Placement:** model units, physical-pool accounting, directional paths and bounded candidate search.
+3. **Execution:** approved backend artifacts, exact model/runtime bindings, admission and session ownership.
 
-Those resources should not necessarily be treated as interchangeable, and TensorMeld is not trying to pretend that remote memory is simply extra VRAM.
+Nodes, physical devices, backend views and physical memory pools have distinct identities. Shared RAM or unified memory is counted once. Planning preserves execution order and cyclic token feedback rather than considering only one-way transfers. Search bounds and incomplete evidence remain visible in the result.
 
-The idea is instead to **place each part of a workload where it makes the most sense**.
+An advisory plan is not an executable manifest. Native execution requires applicable readiness and model-correctness evidence, exact adapter representation, runtime memory/operator coverage and fresh admission. Local atomic leases implement an in-process ownership boundary; they are not a distributed lock service.
 
-For example, a future TensorMeld plan could decide to:
+Read the [architecture overview](docs/architecture/system-overview.md), [planning pipeline](docs/architecture/planning-pipeline.md) and [configuration contract](docs/specification/08-configuration.md) for the normative boundaries.
 
-- keep compute-heavy or latency-sensitive operations on a fast discrete GPU;
-- place model blocks, experts, state, or other memory-heavy components on a high-capacity companion;
-- use more than one companion when the additional capacity or parallelism justifies the communication cost;
-- keep an entire model on a companion when splitting it would be slower;
-- leave a device unused when involving it would make the workload worse;
-- reserve part of the main GPU for the desktop or another application;
-- choose a different placement for capacity, latency, throughput, or long-context goals.
+## Current capabilities and limits
 
-A simple example is a PC with a 12 GB GPU plus a 128 GB unified-memory companion. The discrete GPU may be substantially faster for suitable kernels, while the companion makes models possible that cannot fit in 12 GB at all.
+| Area | Available implementation | Boundary |
+| --- | --- | --- |
+| Configuration and policy | Strict v2 parser, static selection and advisory runtime-snapshot intersection | Configuration does not prove availability or compatibility |
+| Placement | Bounded synthetic whole-block search; legal-unit and generation-scenario evidence contracts | Synthetic costs and ordered-chain estimates are not measured token performance |
+| Inventory and models | Local inventory, optional system discovery, optional upstream GGUF indexing and exact model identities | Discovery and parsing do not qualify inference |
+| Agents and control | Enrollment, signed capability envelopes, bounded authenticated control, TLS/mTLS helpers and local pool leases | Protocol/fixture tests do not qualify a deployment or GPU path |
+| Native adapter foundations | Pinned local probes, explicit device binding, narrow backend self-test and model-trial contracts | The initial placement shim is local/single-node; arbitrary remote execution is not enabled |
+| Request lifecycle | Accepted bundles, bounded worker/session seams, managed local server primitive and exact C1 completion consumer | Arbitrary-prompt family serving and public HTTP/SSE remain separate gates |
+| Qualification tooling | Closed local campaign runner with pinned artifacts and bounded private records | Running a campaign does not grant qualification, admission or serving authorization |
 
-At the other end of the spectrum, a workstation with a 96 GB discrete GPU may already run many models locally, but one or more high-memory companions could make larger models, higher-precision quantizations, longer contexts, or different placement strategies possible.
+The [current status](docs/implementation/status.md) and [qualification ledger](docs/implementation/qualification-ledger.md) distinguish implemented contracts, portable tests and outstanding native evidence. Hosted CI and synthetic fixtures establish software behavior, not CUDA/HIP execution, model fidelity, topology independence or speedups.
 
-The hard part is that **more aggregate memory and more devices do not automatically mean better inference**. Every split introduces communication, synchronization, memory-placement, backend-compatibility, and scheduling costs. A mathematically balanced partition can still be much slower than a simpler one.
+## Developer setup
 
-TensorMeld therefore aims to answer a more useful question than “how do we use every GPU?”:
+Use Python **3.11 or newer**. The base package has no runtime dependencies; install from a local checkout in an isolated environment. This is a developer workflow, not a stable end-user installer.
 
-> **Given this model, this workload, these devices, these memory pools, and these links, which resources should participate, what should each one own, and is the resulting plan actually worthwhile?**
-
-That decision should eventually be based on measured capabilities and explicit constraints rather than fixed assumptions about vendor names or device classes.
-
-## Current status
-
-**Status: pre-alpha / architecture and implementation work in progress.**
-
-At this stage, TensorMeld is primarily concerned with getting the foundations right:
-
-- resource discovery and capability descriptions;
-- explicit node, device, and physical-memory-pool modelling;
-- memory-aware placement planning;
-- configurable participation of local and remote devices;
-- bounded planning across multiple nodes;
-- topology and communication-cost modelling;
-- backend adapter boundaries;
-- correctness, observability, recovery, and security contracts;
-- evaluation of existing open-source runtimes that can be reused instead of reimplemented.
-
-Some components may already execute or have automated tests, but that **does not mean the complete distributed inference system is ready or validated**.
-
-The [local qualification campaign runner](docs/implementation/qualification-campaign.md)
-supports pinned operator experiments, selected CTest suites and exact approved
-model trials. It retains bounded results privately; running a campaign does not
-grant model qualification, resource admission or serving authorization.
-
-In particular, current code and documentation must not be interpreted as proof that a given model, GPU combination, network topology, or placement strategy will work correctly or outperform a simpler setup.
-
-## Development principles
-
-TensorMeld is being developed around a few rules:
-
-1. **Do not require every available device to participate.** More hardware is useful only when it improves the requested objective or enables the workload.
-2. **Treat capacity, latency, and throughput as different goals.**
-3. **Model physical memory honestly.** Shared or unified memory must not be counted more than once.
-4. **Account for communication.** Remote memory is not local VRAM, and link bandwidth alone does not describe distributed inference cost.
-5. **Prefer measured placement decisions over hardware-name heuristics.**
-6. **Keep the core hardware-neutral.** Vendor-specific execution belongs behind explicit backend/worker interfaces.
-7. **Reuse good open-source components where appropriate.** TensorMeld should not reimplement mature model readers, runtimes, kernels, or system libraries without a reason.
-8. **Make fallback and uncertainty explicit.** An incomplete search or unsupported placement must not be presented as proof that no solution exists.
-9. **Preserve user control.** Automatic planning must respect resource limits, excluded devices, privacy boundaries, and workload requirements.
-
-## Open-source reuse
-
-TensorMeld will deliberately build on suitable open-source projects when their licenses, behaviour, and architecture fit the project.
-
-Potential and current areas of reuse include model-format tooling, hardware discovery, inference runtimes, GPU backends, networking primitives, and observability libraries.
-
-Third-party code or dependencies should be recorded with their source, version or revision, license, integration status, and any relevant limitations. Reuse does not imply that TensorMeld inherits the upstream project's support guarantees or that an upstream feature has been validated in TensorMeld.
-
-## What not to expect yet
-
-Please do **not** expect, at this stage:
-
-- a stable installation procedure;
-- a stable configuration schema;
-- stable CLI or API compatibility;
-- supported releases;
-- production security guarantees;
-- validated Windows/Linux feature parity;
-- validated CUDA/ROCm heterogeneous execution across arbitrary hardware;
-- reliable performance comparisons;
-- automatic optimal placement;
-- compatibility with every GGUF/model architecture;
-- migration guarantees between development snapshots.
-
-If you experiment with the repository, assume that you may need to read the source, inspect plans manually, and rebuild configurations after changes.
-
-## Repository layout
-
-The repository is being organised so that architecture decisions remain separate from implementation details:
-
-```text
-docs/
-  architecture/      System contracts and architecture
-  decisions/         Architecture Decision Records (ADRs)
-  implementation/    Roadmap, implementation notes and status
-  specification/     Product and behavioural specifications
-  examples/          Example configurations and scenarios
-
-src/                 TensorMeld implementation
-tests/               Automated tests
-research/            Evaluations and non-normative technical research
-third_party/         Third-party dependency and license records
+```bash
+python -m venv .venv
 ```
 
-Documentation under `docs/architecture/` and accepted ADRs should be treated as the intended design contract. Research notes and experimental results are non-normative unless promoted into an explicit architecture decision.
+Activate it on Linux/macOS:
 
-## Why publish this so early?
+```bash
+source .venv/bin/activate
+```
 
-Because distributed local inference is full of hidden assumptions: memory may be shared, links may not aggregate, execution backends may differ across operating systems, and a mathematically balanced partition can still be slower because of communication.
+Or in Windows PowerShell:
 
-Publishing the project during development makes those assumptions, experiments, mistakes, and design changes visible rather than presenting a polished result after the fact.
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-**The repository is public to make the engineering process transparent—not to imply that TensorMeld is already a usable product.**
+Then install and inspect the current command surface:
 
-## Contributions and discussion
+```bash
+python -m pip install -e .
+python -m tensormeld --version
+python -m tensormeld --help
+```
 
-Technical discussion, issue reports, references to relevant research, and pointers to reusable open-source work are welcome while the architecture is evolving.
+The installed `tensormeld` command exposes the same CLI. Optional integrations have pinned dependencies:
 
-Before investing significant effort in an implementation, please assume interfaces may change and check the current architecture and ADRs first.
+```bash
+python -m pip install -e ".[system,gguf]"
+```
+
+The `system` extra adds psutil discovery; `gguf` adds the upstream GGUF reader. Neither installs a GPU inference engine, drivers or model weights. Native adapters require separately approved, pinned local artifacts; follow the [adapter guide](docs/implementation/open-source-adapters.md).
+
+## First control-plane experiment
+
+Run from the repository root:
+
+```bash
+python -m tensormeld validate-config docs/examples/12gb-pc-one-companion.config.json
+python -m tensormeld select docs/examples/12gb-pc-one-companion.config.json
+python -m tensormeld plan-v2 docs/examples/12gb-pc-one-companion.config.json examples/v2/12gb-dense.planning.json --top-k 3
+```
+
+These examples illustrate policy and synthetic placement. Their capacities, names and costs are not measurements of your host. See [configuration examples](docs/examples/README.md) for companion-only and multi-node/multi-GPU policies and the [v2 planner contract](docs/implementation/planner-v2.md) for inputs and result semantics.
+
+Read-only inventory and a bounded local socket diagnostic are also available:
+
+```bash
+python -m tensormeld probe
+python -m tensormeld bench-loopback --iterations 20
+```
+
+Loopback timing does not measure a physical network, USB4 path or model inference. Commands support `--out` for JSON output; keep personal inventories and experimental records outside Git. For optional GGUF indexing of an approved local file:
+
+```bash
+python -m tensormeld inspect-gguf /path/to/model.gguf --trusted-local-file
+```
+
+Use `python -m tensormeld COMMAND --help` before more advanced operations. Legacy `validate` and `plan` commands retain the v1 analytical oracle; they do not replace the v2 configuration workflow.
+
+## Tests and evidence
+
+Run the portable suite from the repository root:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests cover policy, memory aliasing, bounded search, identity invalidation, admission, cancellation and transport contracts. Some integrations need optional packages or platform tools. A skipped optional test is not a passed integration; consult the [testing strategy](docs/implementation/testing.md) and CI definitions for prerequisites.
+
+Native qualification is separate: exact backend, model, workload, numerical contract and runtime identity must be bound to genuine target evidence. No README command authorizes driver/firmware changes, network reconfiguration or large model downloads. See the [qualification campaign runner](docs/implementation/qualification-campaign.md) for the explicit operator workflow.
+
+## Repository and documentation
+
+| Path | Purpose |
+| --- | --- |
+| `src/tensormeld/` | Python control plane, planners, adapters and runtime contracts |
+| `tests/` | Portable contracts, fixtures and bounded integrations |
+| `docs/architecture/` | System architecture |
+| `docs/specification/` | Numbered normative product/runtime contracts |
+| `docs/decisions/` | Architecture Decision Records |
+| `docs/implementation/` | Current support, tests, roadmap and qualification boundaries |
+| `docs/examples/`, `examples/` | Configuration and analytical planning inputs |
+| `third_party/` | Dependency registry, provenance and licenses |
+
+Start at the [documentation index](docs/README.md), [roadmap](docs/implementation/roadmap.md), [implementation status](IMPLEMENTATION_STATUS.md) and [security policy](SECURITY.md). Proposals and research are not adopted execution capabilities.
+
+## Contributing and publication policy
+
+Read [AGENTS.md](AGENTS.md), the implementation ledger and the relevant specification before changing behavior. Maintained code, tests and documentation use English. Preserve the legacy analytical fixtures until explicitly migrated, and report implemented, tested and qualified separately.
+
+Comparative research, external benchmark records, personal inventories, prompts, credentials, caches and model weights stay outside Git. Public documents describe project-owned contracts and qualified evidence. Adopted components retain their required provenance, licenses and notices; reuse does not inherit upstream support guarantees.
+
+Technical discussion and focused issue reports are welcome. Interfaces remain unstable; check current architecture decisions before investing in a large implementation.
 
 ## License
 
-TensorMeld's original code is released under the [MIT License](LICENSE). Third-party components keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `third_party/` for provenance and retained notices.
+Original TensorMeld code is released under the [MIT License](LICENSE). Third-party components retain their own terms; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `third_party/`.
