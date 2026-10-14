@@ -11,6 +11,13 @@ GPU allocation limit.
 TensorMeld reuses upstream `gguf==0.19.0` for trusted local GGUF inspection. A metadata
 index is not a checkpoint hash, runtime memory manifest or execution qualification.
 
+Shards may store architecture metadata only in a metadata-only first file. The
+inspector resolves the common architecture from supplied nonempty values, retains
+each shard's own metadata and rejects conflicting known architectures. Split counts,
+indexes, declared tensor totals and duplicate/range checks remain enforced. The
+pinned upstream merge tool's `split.count=0` marker is treated as one unsplit file
+only when its split index is zero; the full tensor-total check still applies.
+
 ## llama.cpp native probe, binding and backend readiness
 
 The third-party registry pins llama.cpp source revision
