@@ -2,6 +2,32 @@
 
 Tests are layered by claim strength.
 
+## Running the portable suite
+
+Use Python 3.11+ from the repository root in an activated virtual environment:
+
+```bash
+python -m pip install -e .
+python -m unittest discover -s tests -v
+```
+
+See the [developer setup](../../README.md#developer-setup) for activation commands.
+For the optional upstream GGUF integration, install the pinned extras first:
+
+```bash
+python -m pip install -e ".[system,gguf]"
+python -m unittest discover -s tests -p test_open_source_adapters.py -v
+```
+
+Use discovery for focused suites rather than assuming `tests` is an importable package.
+Real mTLS tests additionally require OpenSSL and their configured platform prerequisites;
+inspect [the CI workflow](../../.github/workflows/portable-tests.yml) for the dedicated job.
+Do not count skipped optional integrations as passes. A portable run needs no model
+download or GPU, and cannot establish native qualification.
+
+Historical validation records retain their original dates and counts; use
+[the qualification ledger](qualification-ledger.md) for current cross-cutting gates.
+
 ## Contract tests
 
 Pure tests for malformed input, unknown references, conflicting policies, shared memory
