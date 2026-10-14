@@ -59,6 +59,9 @@ def _extract(reader: Any, size: int) -> dict:
         tensors.append({'name': name, 'gguf_shape': shape, 'encoding': tensor.tensor_type.name,
                         'n_elements': elements, 'n_bytes': nbytes, 'data_offset': offset})
     count, part, total = field('split.count', 1), field('split.no', 0), field('split.tensors.count', len(tensors))
+    # The pinned upstream merge tool retains split.count=0 to mark an unsplit file.
+    if type(count) is int and count == 0 and type(part) is int and part == 0:
+        count = 1
     if any(type(x) is not int for x in (count, part, total)) or not 1 <= count <= MAX_SHARDS or not 0 <= part < count or total < len(tensors):
         raise ValidationError('invalid split metadata')
     return {'architecture': architecture, 'split_count': count, 'split_index': part,
@@ -106,8 +109,12 @@ def inspect_gguf(paths: list[Path], *, trusted_local_file: bool = False,
             raise ValidationError('total tensor count exceeds inspector limit')
         records.append({'file_name': path.name, 'file_size_bytes': before.st_size, **info})
     first = records[0]
+    architectures = {r['architecture'] for r in records if r['architecture'] is not None}
+    if len(architectures) > 1:
+        raise ValidationError('inconsistent shard metadata')
+    architecture = next(iter(architectures), None)
     for rec in records:
-        if any(rec[k] != first[k] for k in ('architecture', 'split_count', 'declared_total_tensors')):
+        if any(rec[k] != first[k] for k in ('split_count', 'declared_total_tensors')):
             raise ValidationError('inconsistent shard metadata')
     indexes = [r['split_index'] for r in records]
     if len(set(indexes)) != len(indexes):
@@ -116,7 +123,7 @@ def inspect_gguf(paths: list[Path], *, trusted_local_file: bool = False,
     if complete and len(seen_names) != first['declared_total_tensors']:
         raise ValidationError('complete shard set has an inconsistent total tensor count')
     result = {'index_schema': 'tensormeld/gguf-index-v1', 'reader': f'gguf=={GGUF_VERSION_PIN}',
-              'architecture': first['architecture'], 'complete_shard_set': complete,
+              'architecture': architecture, 'complete_shard_set': complete,
               'tensor_count': len(seen_names), 'files': sorted(records, key=lambda r: r['split_index']),
               'tensor_payload_bytes': sum(t['n_bytes'] for r in records for t in r['tensors']),
               'checkpoint_sha256': None, 'qualified': False, 'executable': False,
@@ -127,5 +134,7 @@ def inspect_gguf(paths: list[Path], *, trusted_local_file: bool = False,
                   'Index hash covers metadata only, not weights; state/workspace/aliases require an adapter.',
                   'Explicit trusted local files only; upstream parsing is not sandboxed.',
               ]}
+    if architecture is not None and any(r['architecture'] is None for r in records):
+        result['warnings'].append('Some shards omit architecture metadata; the common value comes from supplied shards.')
     result['index_sha256'] = hashlib.sha256(json.dumps(result, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     return result

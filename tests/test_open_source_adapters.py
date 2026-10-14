@@ -77,6 +77,53 @@ class GGUFAdapterContractTests(unittest.TestCase):
         r=inspect_gguf([other,self.path],trusted_local_file=True,reader_factory=factory)
         self.assertTrue(r['complete_shard_set']);self.assertEqual(r['tensor_count'],2)
 
+    def test_metadata_only_first_shard_and_omitted_architecture(self):
+        other = self.path.with_name('weights.gguf');other.write_bytes(self.path.read_bytes())
+        def factory(path, mode):
+            index = 0 if Path(path).samefile(self.path) else 1
+            value = reader(split=2, index=index, total=1)
+            if index == 0:
+                value.tensors = []
+            else:
+                del value.fields['general.architecture']
+            return value
+        for paths in ([self.path, other], [other, self.path]):
+            result = inspect_gguf(paths, trusted_local_file=True, reader_factory=factory)
+            self.assertEqual(result['architecture'], 'test')
+            self.assertTrue(result['complete_shard_set'])
+            self.assertEqual(result['tensor_count'], 1)
+            self.assertEqual(result['files'][0]['tensors'], [])
+            self.assertIsNone(result['files'][1]['architecture'])
+            self.assertFalse(result['qualified']);self.assertFalse(result['executable'])
+            self.assertTrue(any('omit architecture' in w for w in result['warnings']))
+
+    def test_conflicting_known_shard_architectures_rejected(self):
+        other = self.path.with_name('other.gguf');other.write_bytes(self.path.read_bytes())
+        def factory(path, mode):
+            index = 0 if Path(path).samefile(self.path) else 1
+            value = reader(name=f'blk.{index}.weight', split=2, index=index, total=2)
+            value.fields['general.architecture'] = Field('first' if index == 0 else 'second')
+            return value
+        with self.assertRaisesRegex(ValidationError, 'inconsistent shard metadata'):
+            inspect_gguf([self.path, other], trusted_local_file=True, reader_factory=factory)
+
+    def test_upstream_merged_zero_split_count_means_one_file(self):
+        result = self.inspect(reader(split=0))
+        self.assertTrue(result['complete_shard_set'])
+        self.assertEqual(result['files'][0]['split_count'], 1)
+
+    def test_zero_split_count_with_nonzero_index_rejected(self):
+        with self.assertRaisesRegex(ValidationError, 'invalid split metadata'):
+            self.inspect(reader(split=0, index=1))
+
+    def test_merged_zero_split_count_still_checks_tensor_total(self):
+        with self.assertRaisesRegex(ValidationError, 'inconsistent total tensor count'):
+            self.inspect(reader(split=0, total=2))
+
+    def test_boolean_split_count_is_not_a_merged_marker(self):
+        with self.assertRaisesRegex(ValidationError, 'invalid split metadata'):
+            self.inspect(reader(split=False))
+
 
     def test_complete_shards_with_noncanonical_input_path(self):
         nested = self.path.parent / 'nested'
@@ -117,6 +164,22 @@ class SystemReuseTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec('gguf'), 'upstream gguf is unavailable: integration not executed')
 class GGUFUpstreamIntegrationTests(unittest.TestCase):
+    def test_upstream_writer_merged_marker_roundtrip(self):
+        import gguf
+        import numpy as np
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'merged.gguf'
+            writer = gguf.GGUFWriter(str(path), 'llama')
+            writer.add_uint16('split.count', 0)
+            writer.add_uint16('split.no', 0)
+            writer.add_int32('split.tensors.count', 1)
+            writer.add_tensor('blk.0.test.weight', np.ones((2, 2), dtype=np.float32))
+            writer.write_header_to_file();writer.write_kv_data_to_file();writer.write_tensors_to_file();writer.close()
+            result = inspect_gguf([path], trusted_local_file=True)
+            self.assertTrue(result['complete_shard_set'])
+            self.assertEqual(result['architecture'], 'llama')
+            self.assertEqual(result['tensor_count'], 1)
+
     def test_upstream_writer_reader_roundtrip(self):
         import gguf
         import numpy as np
