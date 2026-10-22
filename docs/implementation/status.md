@@ -1,0 +1,176 @@
+# Current implementation status
+
+Version: **0.2.0a2** — TensorMeld. Specification baseline: 0.2.0.
+
+Current cross-cutting gates: [implementation and qualification ledger](qualification-ledger.md).
+
+The canonical repository is public for engineering transparency. This does not change
+the pre-alpha status or qualify any execution path.
+
+## Implemented
+
+- heterogeneous part placement planning (`plan-hetero`, ADR-0055): model parts, device/link
+  and engine self-description contracts, a ranked planner over whole/replica/pipeline/part-split/
+  prefill-decode modes with explicit cost breakdowns, availability-aware fallback and a bounded
+  token-authenticated link probe; advisory only, tested with fixtures;
+- two-stage layer pipeline deployment (`deploy-pipeline`, ADR-0056): per-process manifests
+  (`tensormeld/deployment-manifest-v1`) bound to one approved binary, engine instance and group
+  mode; local and operator-SSH launchers with a dead-man switch, `0600` session-token files,
+  ordered start on `READY` and `/health`, router front end, and a planned switchover to the
+  fallback with state export/import; tested end to end with fake engines on loopback, not yet
+  with a real engine;
+- opt-in fixed-corpus HTTP benchmark (`bench-protocol`) with network-free dry run,
+  synchronized bounded concurrency, authoritative streaming usage, wall/TTFT and
+  per-stream metrics, explicit protocol violations and three-needle recall;
+  original corpora and comparative recordings remain private outside Git;
+- bounded least-loaded HTTP router over whole-model engine replicas (`serve-replicas`,
+  ADR-0054): health-gated rotation, bounded wait queue, streaming relay with disconnect
+  propagation, connect-stage-only failover and per-replica credentials; it launches no
+  engine process and claims no execution qualification;
+- bounded pinned-vocabulary tokenization through the registered local upstream
+  tool, with exact rendered-byte/model/source/build bindings and contained
+  processes; chat rendering and detokenization remain independent gates;
+- repeated imported-pool and paired direct-GPU commissioning review, with exact
+  per-transfer coverage and explicit unknown physical DMA overlap;
+- closed local qualification campaign runner with pinned artifacts/source/runtime
+  bindings, fixed native experiment arguments, exact selected CTest inventory and
+  approved model-trial/reference checks, bounded private evidence, Windows
+  Job and Linux parent-death/process-group containment; reports orchestration
+  without granting qualification, resource admission or serving authorization;
+- concrete C1 consumer of the existing exact authorized completion path with bounded
+  FIFO count/bytes, monotonic deadlines, attempt cancellation, process fencing,
+  ambiguous-failure quarantine and explicit drain; arbitrary-prompt family serving
+  and public HTTP/SSE remain separate unimplemented gates;
+- advisory concurrency-one generation scenario composition with phase-specific payloads,
+  directional logits/token feedback, explicit control costs and incomplete-evidence results;
+- native session run/cancel/release synchronization retains admission through synchronous
+  backend termination, with deterministic race regressions;
+- strict heterogeneous installation/policy contracts and bounded synthetic planner;
+- exact static adapter representability gate;
+- exact GGUF-backed model identity and qualification-evidence applicability contracts;
+- advisory runtime-observation and conservative runtime-pool budget resolution;
+- optional psutil host inventory and upstream GGUF catalog reuse;
+- trusted-local pinned llama.cpp no-model probe with artifact/source identity;
+- explicit approved one-to-one llama.cpp engine-device ↔ TensorMeld-device binding;
+- backend identity taken from TensorMeld config, never inferred from engine labels;
+- optional single memory reporter per physical pool to avoid shared-memory double counting;
+- bound native devices enter runtime observations as `observed`, not `ready`;
+- strict pinned llama.cpp `test-backend-ops` readiness adapter for one bound device;
+- positive target-backend execution proof is required in addition to exit code;
+- successful narrow E2 readiness can promote only that bound device to runtime `ready`;
+- native-only retained E2 backend-readiness records with deterministic fingerprints;
+- exact config/probe/binding/test-artifact/device/backend applicability checks for retained E2;
+- retained E2 v2 records bind stable worker/OS/driver/runtime/device/topology identity;
+- exact current runtime identity plus fresh binding can reuse only the narrow retained E2 backend-ready fact;
+- strict runtime model/operator/memory manifests tied to exact config/model/profile/workload/adapter identities;
+- runtime memory is represented once per physical pool with resident/state/workspace/preparation peaks;
+- operator coverage is explicit per device and cannot self-promote qualification/execution;
+- CLI validation for runtime manifests without creating resource reservations;
+- in-process atomic physical-pool leases for exact runtime manifests;
+- launch-time re-admission requires a newly identified runtime observation;
+- active leases can be explicitly marked reflected in telemetry to avoid double subtraction;
+- deterministic local lease release and concurrent admission serialization;
+- enrolled local host-agent skeleton with explicit node/key identity and signed capability envelopes;
+- replay-safe monotonic capability envelopes using standard-library HMAC-SHA256;
+- host agents reserve/recheck only their own node's physical pools;
+- drain/disable/revoke lifecycle without arbitrary peer-supplied execution surface;
+- TLS/mTLS context policy builders using Python ssl/OpenSSL with CA verification and client certificates;
+- exact peer-certificate SHA-256 pinning plus dedicated control-channel ALPN;
+- bounded private control framing with connection epoch and monotonic replay rejection;
+- real ephemeral-certificate mTLS loopback integration in Linux CI;
+- enrolled peer identity can be bound to an exact TLS certificate SHA-256;
+- explicit private/loopback endpoint policy rejects public, hostname and link-local targets;
+- bounded remote HostAgent dispatch over the private control channel with request correlation;
+- remote reserve/recheck accepts only locally registered manifest/snapshot identities, never peer-supplied paths or payload objects;
+- real loopback mTLS integration now exercises RemoteAgentClient/Dispatcher end-to-end, including host-local reserve;
+- explicit private endpoint client/server helpers run the authenticated control stack across separate OS processes;
+- immutable accepted-execution bundles combine exact plan integrity, adapter representability, E3 model qualification, runtime manifest identity, per-device backend readiness and per-node launch admission;
+- first bounded whole-block executable reference session iterates exact plan segments with cancel/release lifecycle;
+- revision-pinned local subprocess worker foundation validates launcher/program SHA-256, engine revision, accepted-bundle identity and fixed no-shell argv;
+- bounded native-worker JSON protocol binds request, segment, device/unit ownership and payload identity across a real subprocess boundary;
+- pinned llama.cpp model-aware placement shim maps exact `blk.N` units to generated `--override-tensor` rules only after current native device binding and complete GGUF tensor-index checks;
+- initial llama.cpp placement shim is single-node/local-device only and rejects RPC devices, non-primary buffers, partial block coverage and caller-supplied patterns;
+- pre-E3 llama.cpp qualification placement translates an exact representable planner candidate without requiring an AcceptedExecutionBundle, avoiding E3 bootstrap circularity;
+- strict llama.cpp native trial spec binds approved llama-cli/GGUF SHA-256 identities, qualification placement, deterministic prompt/context/predict controls and scrubbed `LLAMA_ARG_*` environment;
+- QualificationEvidence v2 binds E3 to candidate plan, placement, trial spec, correctness contract and exact runtime-identity fingerprints while preserving v1 parsing compatibility;
+- native llama.cpp E3 correctness evaluator requires genuine `native-subprocess` trial provenance, exact stdout SHA-256 match to an approved reference contract and exact runtime worker/device identity before emitting E3;
+- AcceptedExecutionBundle now requires E3 v2 applicability to the same plan and same runtime identities as current backend-readiness evidence;
+- target-host qualification orchestrator recomputes current probe/binding and pre-E3 placement, validates retained E2 for every compute device, reruns E3 evaluation, combines ready-state observations and emits a deterministic non-executable runtime-manifest/admission handoff;
+- native runtime-manifest collector validates an intact qualification handoff, independent operator-requirement contract, per-device runtime identities/operator observations and one memory record per physical pool before producing RuntimeModelManifest;
+- runtime manifest provenance is `native-adapter` only when both measurement and operator-requirement sources are native; mixed/fixture inputs degrade to fixture provenance;
+- target-host admission orchestrator requires an intact admission-ready native collection, distinct reservation/launch observations, performs atomic reserve + fresh launch recheck, and constructs AcceptedExecutionBundle only after both gates pass;
+- lease-bound native admitted session requires a live launched lease plus exact bundle/backend identity and deterministically releases the lease on completion, failure or cancellation cleanup;
+- unmapped engine devices remain visible but are never auto-bound;
+- dependency/license register and alternate pinned native-engine candidate;
+- independent optimization principles recorded with explicit ownership and qualification boundaries;
+- TensorMeld-owned managed llama-server child-process primitive with exact server/model/GGUF/placement identity, loopback-only readiness, bounded stderr tail, early-exit detection and terminate→kill shutdown;
+- immutable local placement-calibration store keyed by calibration fingerprint;
+- persisted calibration records carry timezone-aware age limits and are revalidated against current package/runtime/device/topology identities before reuse;
+- expired, future-dated, fixture-only or context-mismatched calibration records are excluded from measured preference without mutating planner candidates;
+- predictive memory refinement splits runtime resident memory into hard-resident and reclaimable/file-backed classes while preserving exact v1 preparation peaks;
+- predictive hard/state/workspace/staging accounting is per physical pool and cannot reduce current admission requirements;
+- exact per-tensor storage/movability evidence is bound to model/tensor-index, adapter/build and current runtime identities;
+- tensor movability requires complete explicit coverage and never infers policy from tensor names, size, backend labels or model family;
+- auditable per-device and physical-pool movability envelopes separate legal placement potential from measured resident memory;
+- shared physical-pool envelopes use tensor unions so multiple logical devices do not multiply the same eligible tensor bytes;
+- adapter-declared legal model units provide explicit tensor grouping, execution sequence and cut-after boundaries with complete tensor coverage;
+- legal unit devices can only narrow the tensor-level device intersection, and alias groups cannot cross unit boundaries;
+- bounded advisory legal-unit planner explores only adapter-declared cut boundaries and policy-eligible owners;
+- legal-unit planning counts hard-resident plus reclaimable/file-backed tensor bytes per physical pool and keeps results non-executable;
+- exact per-legal-unit device cost evidence now binds compute, persistent state, workspace, staging and boundary payload bytes to legal/model/adapter/runtime identities;
+- legal-unit cost profiles require complete explicit coverage for every legal device and reject cross-node memory pools or inferred costs;
+- exact directional device-to-device path evidence now uses bounded payload→upper-bound buckets tied to current runtime identities;
+- path lookup never interpolates/extrapolates or sums parallel paths as multirail bandwidth;
+- bounded performance-aware legal-unit planner now combines explicit unit compute/memory evidence with directional transfer upper bounds;
+- legal-unit performance ranking is explicitly an ordered-chain upper bound, not token latency/TTFT/throughput, and remains non-executable;
+- generation-phase evidence now separates exact-scenario prefill, decode-step compute, sampling cost, logits payload and token-feedback payload;
+- phase evidence is context-position specific and cannot be silently reused across different prefill/decode contexts;
+- generation-phase v2 adds distinct prefill/decode inter-unit boundary payloads; v1 remains backward compatible but is explicitly insufficient for phase-transfer modeling;
+- legacy analytical planner and bounded loopback diagnostics retained.
+
+## Tested here / in portable CI
+
+Contract tests cover policy, planner, adapter representability, exact model/evidence
+identity, runtime availability, llama.cpp probe parsing/safety, explicit device binding,
+strict backend-self-test parsing/promotion behavior, retained-E2 identity rules and
+runtime-manifest identity/pool/operator invariants.
+
+GitHub Actions separately validates portable Windows/Linux Python behavior and the real
+optional GGUF dependency integration. Hosted CI is not GPU qualification.
+
+The llama.cpp probe, binding, backend-self-test and retained-evidence portable tests use
+harmless fixtures or synthetic records where appropriate. Runtime-manifest tests use
+fixture provenance and do not claim native runtime measurements. Injected-runner
+self-test results remain rejected from retained hardware evidence.
+
+No real llama.cpp CUDA/HIP `test-backend-ops` execution, real llama-cli GGUF trial, or real native runtime-model
+manifest has been recorded by TensorMeld in this development environment. Runtime-identity
+CI uses fixtures and therefore proves invalidation/control semantics, not real driver or
+GPU identity capture.
+
+## Serving mode control
+
+The opt-in serving policy now selects per-load/domain modes with safe-boundary
+hysteresis and a joint prefill/decode opportunity cost. The HTTP replica router can
+use atomic active-count balancing and a shared process-local reservation to fence
+prefill against a resident decode FRONT. Portable tests use synthetic fixtures;
+external recordings and private dry-run results remain outside Git. This does not
+implement native mode switching, cross-process resource authority or split inference.
+See [serving mode policy](serving-mode-policy.md) for the supervisor contract.
+
+## Not tested / not implemented
+
+- real target-host llama.cpp probe/binding/backend self test on CUDA/HIP hardware;
+- real native-adapter model/operator/memory manifest capture on target hardware;
+- native Windows GPU inference;
+- native CUDA/HIP/distributed inference on real target hardware; the correctness evaluator exists but no real target-host E3 has yet been recorded;
+- retained hardware/backend E2-E5 evidence from real target devices;
+- expert/tensor/phase placement, multirail, GUI/API.
+
+Runtime manifests are evidence inputs, not reservations. The local admission controller can
+now reserve their exact preparation peaks atomically within one process and recheck before
+launch, but this is not yet a distributed/agent lease service. Explicit reflected-lease IDs
+separate telemetry that already includes an allocation from pending logical reservations so
+committed bytes are not necessarily subtracted twice.
+
+No measured RTX, Strix or model speed is claimed. The calibration store has portable fixture coverage only until real target-host measurements are collected.

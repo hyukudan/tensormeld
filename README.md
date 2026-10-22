@@ -1,0 +1,228 @@
+# TensorMeld
+
+> [!CAUTION]
+> **TensorMeld is in very early, active development.**
+>
+> This repository is public **for transparency and open technical discussion only**. It is **not an alpha release**, is **not ready for general use**, and should not currently be relied on for production workloads, benchmarking claims, security-sensitive deployments, or stable APIs.
+>
+> Expect incomplete features, breaking changes, experimental code paths, incorrect planning decisions, unfinished documentation, and repository history that may change substantially while the architecture is being developed.
+
+## AMD-first implementation, independent inference roadmap
+
+**AMD-first in engineering priority; hardware-neutral in the orchestration core.**
+Our first native implementation and performance-qualification target is AMD Ryzen AI
+Max / Strix Halo (`gfx1151`), with ROCm/HIP, unified memory and direct USB4
+interconnects. We design and measure for this hardware first, while keeping
+resource discovery, placement and control contracts capable of accommodating
+CUDA and other devices later. AMD-first is a development priority, not a claim
+that every AMD GPU or distributed topology is already supported.
+
+**Our own inference engine is the intended primary AMD execution path.**
+[Strix Halo Engine Lab](https://github.com/hyukudan/strix-halo-engine-lab)
+develops the native C++/HIP model execution and token-generation kernels used
+for the published single-node Strix Halo experiments. TensorMeld is the
+companion orchestration project: it is **not** currently the engine executing
+those native generation benchmarks, and integration of that engine as a
+qualified TensorMeld backend and real multi-node inference remain future work.
+
+**No mandatory third-party inference runtime for the intended native path.**
+The current pinned llama.cpp adapter serves bounded compatibility,
+qualification and reference experiments; it is not the dependency behind
+our standalone Strix Halo engine's generation results. External inference
+engines may remain optional adapters, comparison baselines or sources of
+technical ideas, but they should not be required to keep our own native
+AMD-first execution path running. This does not mean eliminating necessary
+AMD ROCm/HIP, Linux, compiler, model-format or other infrastructure
+dependencies. We distinguish independently implemented execution code
+from adopted components and preserve third-party attribution.
+
+## What TensorMeld is trying to become
+
+TensorMeld is an experimental local AI inference orchestration project for combining heterogeneous compute resources across one or more machines.
+
+The long-term goal is to let a user start with the hardware they already have—for example a PC with a discrete GPU—and add one or more companion systems to expand usable model capacity and, where the topology makes it worthwhile, inference performance.
+
+TensorMeld is intended to remain hardware-neutral at its core. Early development is focusing on combinations such as:
+
+- Windows and Linux hosts;
+- NVIDIA CUDA devices;
+- AMD ROCm/HIP devices;
+- unified-memory systems such as AMD Strix Halo;
+- multiple GPUs in one host;
+- multiple compute nodes;
+- different interconnects with very different latency and bandwidth characteristics.
+
+The project is not limited to very large models. The same architecture should eventually support anything from a 12 GB desktop GPU assisted by one companion node to much larger heterogeneous systems.
+
+## Why TensorMeld?
+
+Local AI hardware is increasingly heterogeneous.
+
+A desktop GPU may provide very high compute throughput and fast local VRAM, but its memory capacity can limit the models, quantizations, contexts, or workloads it can run. A companion system may have much more usable memory—especially unified-memory machines such as Strix Halo—while being slower for some operations than the discrete GPU.
+
+Those resources should not necessarily be treated as interchangeable, and TensorMeld is not trying to pretend that remote memory is simply extra VRAM.
+
+The idea is instead to **place each part of a workload where it makes the most sense**.
+
+For example, a future TensorMeld plan could decide to:
+
+- keep compute-heavy or latency-sensitive operations on a fast discrete GPU;
+- place model blocks, experts, state, or other memory-heavy components on a high-capacity companion;
+- use more than one companion when the additional capacity or parallelism justifies the communication cost;
+- keep an entire model on a companion when splitting it would be slower;
+- leave a device unused when involving it would make the workload worse;
+- reserve part of the main GPU for the desktop or another application;
+- choose a different placement for capacity, latency, throughput, or long-context goals.
+
+A simple example is a PC with a 12 GB GPU plus a 128 GB unified-memory companion. The discrete GPU may be substantially faster for suitable kernels, while the companion makes models possible that cannot fit in 12 GB at all.
+
+At the other end of the spectrum, a workstation with a 96 GB discrete GPU may already run many models locally, but one or more high-memory companions could make larger models, higher-precision quantizations, longer contexts, or different placement strategies possible.
+
+The hard part is that **more aggregate memory and more devices do not automatically mean better inference**. Every split introduces communication, synchronization, memory-placement, backend-compatibility, and scheduling costs. A mathematically balanced partition can still be much slower than a simpler one.
+
+TensorMeld therefore aims to answer a more useful question than “how do we use every GPU?”:
+
+> **Given this model, this workload, these devices, these memory pools, and these links, which resources should participate, what should each one own, and is the resulting plan actually worthwhile?**
+
+That decision should eventually be based on measured capabilities and explicit constraints rather than fixed assumptions about vendor names or device classes.
+
+## Current status
+
+**Status: pre-alpha / architecture and implementation work in progress.**
+
+At this stage, TensorMeld is primarily concerned with getting the foundations right:
+
+- resource discovery and capability descriptions;
+- explicit node, device, and physical-memory-pool modelling;
+- memory-aware placement planning;
+- configurable participation of local and remote devices;
+- bounded planning across multiple nodes;
+- topology and communication-cost modelling;
+- backend adapter boundaries;
+- correctness, observability, recovery, and security contracts;
+- evaluation of existing open-source runtimes that can be reused instead of reimplemented.
+
+Some components may already execute or have automated tests, but that **does not mean the complete distributed inference system is ready or validated**.
+
+The [local qualification campaign runner](docs/implementation/qualification-campaign.md)
+supports pinned operator experiments, selected CTest suites and exact approved
+model trials. It retains bounded results privately; running a campaign does not
+grant model qualification, resource admission or serving authorization.
+
+In particular, current code and documentation must not be interpreted as proof that a given model, GPU combination, network topology, or placement strategy will work correctly or outperform a simpler setup.
+
+## Heterogeneous placement: working decisions
+
+This section records the placement decisions we are currently working under, and the evidence behind each. They are working decisions, not accepted ADRs: they may change as measurements come in. The execution code lives in the [engine](https://github.com/hyukudan/strix-halo-engine-lab) branches and is not yet a qualified TensorMeld backend.
+
+**Test system.** One Windows workstation with a 96 GB RTX PRO 6000 and an RTX 4090, plus two Strix Halo nodes (128 GB unified memory each). The two nodes are joined by two direct USB4 cables. The workstation reaches them over 1 GbE.
+
+**First target model.** DeepSeek V4.1 Flash 1017. Its experts use the Q2 GGUF quantization published by [@kyuz0](https://huggingface.co/kyuz0). Today the model runs on the two Strix Halo nodes, with experts split between nodes and tensor-parallel dense parts.
+
+**Second model.** Qwen3.8-Flash-Next, in a 4-bit GGUF quantization. Each Strix Halo node holds a complete copy, and the router sends each request to one of them (decision 24).
+
+| # | Decision | Status / evidence (2026-10-22) |
+|---|---|---|
+| 1 | **Prefill and decode may use different placements.** The plan is chosen per phase, and the request state is handed over between them. | The handoff format is implemented. A 2,048-token prompt exports to 4.72 MB of state. |
+| 2 | **Prefill runs on the discrete GPU.** Its dense parts are resident, experts are streamed from host RAM over PCIe, and the resulting state is exported to the Strix Halo pair for decode. | The CUDA prefill is bit-exact with the AMD reference at 2K and 8K tokens. The pair decodes from the imported state with the same tokens and logits at every step. Timings on a quiet PC, with 17 of 40 layers' experts resident and the rest streamed from pinned RAM over PCIe. The exact path gives 833 / 2,626 / 3,073 tok/s at 2K / 8K / 32K. The fast path (INT8 tensor-core dense and MoE, fused attention from 8K) gives **889 / 3,184 / 6,018 tok/s**; the AMD pair alone gives ~470 / ~640 / —. The fast path's mean KL against the exact prefill is 0.004 at 8K. At 2K the prompt is bound by the ~84 GB of expert bytes crossing PCIe (~36 GB/s). Which path runs at which length: decision 22. |
+| 3 | **Decode keeps the dense parts and the hot experts on the discrete GPU**, chosen by how experts are routed *together*. A layer only stays local when all its top-6 experts are local, so the placement objective is supermodular. We optimize complete co-activated sets, not per-expert frequency, and validate on held-out whole prompts. | Measured end to end, one user, greedy, exact (256/256 steps equal to the nodes-only reference): the GPU holds the dense part of all 40 layers, ~80 GB of hot experts and a 10 GiB dynamic expert cache fed from pinned host RAM; the remaining experts are served by the two AMD nodes over 1 GbE (~11 remote layers per token, 0.37 ms each). **40.1 tok/s vs 27.2 on the two nodes alone (×1.47).** A pipeline split (GPU runs layers 0-21 with everything resident, the nodes run the rest) reaches 38.4 tok/s; 22 layers is the most the card's memory allows. Speculative decoding through the split: decision 21. |
+| 4 | **The Strix Halo nodes act as expert servers for the GPU host**, with an exact combine. | One hybrid MoE layer, with 50 % or 80 % of its experts on the GPU and the rest served by an AMD node over 1 GbE, matches the all-resident reference bit for bit at 1, 2, 4 and 8 rows, for any residency split. One remote expert costs about 0.46 ms round trip over 1 GbE (network 0.35 + AMD compute 0.11); windows of 4-8 rows are link-bound. |
+| 5 | **No expert replicas across the AMD nodes.** The free memory is kept for long context (up to 512K tokens, two requests). | The measured gain was about 1–3 %, or ~4 % at 30 GiB per node. Not worth the memory. |
+| 6 | **Expert quantization stays as published (Q2).** Our work goes into the dense parts and the kernels instead. A different expert format is adopted only if it is at least as fast on the AMD nodes. | Tested on 4 layers against today's experts (12,759 paired rows): better rounding at the same bytes gives no measurable gain (ΔKL −0.00004); a lookup-table 2-bit format keeps quality (+0.0002) with 7.6 % fewer bytes but its kernel takes 210 µs per layer against 103–109 µs; a 2-bit trellis improves quality (ΔKL −0.0018) but runs at ~198 µs. Q2 stays, and the expert-format work is closed (2026-10-22): it reopens only if a lookup-table kernel proves clearly faster than Q2's. The trellis expert kernel reaches 182–205 GB/s on wide matrices but only 133 GB/s at the per-expert shapes. |
+| 7 | **Converge on one trellis (QTIP/EXL3-style) weight format on both sides.** Existing CUDA kernels serve the NVIDIA GPU; our own `gfx1151` kernels serve the AMD nodes. Trellis is used mainly for **decode**, which is memory-bound. **Bit width:** 5 bits for the dense parts as the baseline; 4 or 3 bits per tensor class where the quality gate holds. Experts stay as published. **Prefill:** if the AMD nodes run a prefill (for example short prompts, or no discrete GPU) and trellis decoding makes it slower than the current format, they keep a second copy of the dense weights in the faster prefill format. The cost is memory, so it is decided per measurement and per memory budget. The discrete-GPU prefill uses whatever format is fastest there. | Fused trellis GEMV on `gfx1151` reads the real model head at 218 GB/s at 1 row (about the memory roof) and 164–189 GB/s at 8 rows. Prefill-shape trellis GEMMs reach 11–15 useful TOPS, so a separate prefill copy may pay off. Full-model KL against the original checkpoint (104K tokens, experts at 2 bits as in production): dense at 5-bit trellis 0.0444 vs 0.0447 with our 6.5-bit format, no category worse by more than +0.004, while reading 2.79 instead of 3.63 GB per token per node. A per-class sweep shows every dense class holds at 4 bits; **adopted: every dense class at 4 bits with the head at 5** (2.27 GB per token per node, full-set KL equal to our 6.5-bit format, paired −0.0001). Pushing three classes to 3 bits (1.92 GB) costs +0.0024; all at 3 bits fails the gate. Most of our remaining distance to the original comes from the 2-bit experts, not the dense part. In the engine, a split-K trellis kernel for the dense projections is bit-exact with the previous one and gives, on the two nodes, 27.0 → 28.3 tok/s at 1 row, 69.4 → 65.7 ms per 6-row speculative window and 79.6 → 82.6 tok/s aggregate at 8 requests. |
+| 8 | **Training and distillation run on the discrete GPU.** The AMD nodes only generate data and run inference. | — |
+| 9 | **Correctness before speed.** Every split or fusion must reproduce the single-placement tokens and logits bit for bit before it is measured. **Exception: prefill on the discrete GPU** may use faster, non-identical arithmetic (FP8/BF16 tensor cores, other summation orders). There it is gated on quality instead: KL against the exact prefill, and agreement of the decode that continues from the handed-over state. | Decode and expert serving stay bit-exact. The prefill exception was adopted on 2026-10-20. |
+| 10 | **No single-GPU assumptions.** The discrete-GPU paths must adapt to the GPU they find: residency, streaming slots, chunk sizes and kernel tiles come from its VRAM, measured PCIe bandwidth and architecture (Blackwell and Ada first). Our 96 GB card is the development machine, not a requirement. | First measurement on the same workstation, with VRAM capped by software (fast prefill path, expert-granularity residency, PCIe 5.0 at ~40 GB/s sustained). Prefill tok/s at 2K / 8K tokens: **24 GiB: 559 / 2,052 · 32 GiB: 587 / 2,190 · 48 GiB: 666 / 2,499 · 74 GiB: 901 / 3,025**. For comparison, the two AMD nodes alone reach ~470 / ~710. Short prompts are bound by the expert bytes crossing PCIe, so more VRAM helps them most. |
+| 11 | **Flexible prefill placement.** For each request the router picks where the prefill runs from what is present and healthy: a resident prefill service on a discrete GPU, or the AMD nodes splitting it between them, or a prefix-cache hit that skips most of the prefill. A policy setting chooses `auto`, `gpu`, `nodes` or per-length thresholds, and the router falls back automatically when the GPU service is down or busy. Each model plugs in through the same engine contract. | The GPU service keeps its weights loaded between requests (0.05-0.07 s overhead per request) and hands the state to the nodes in 0.15-0.27 s. The two-node prefill and the prefix cache are both bit-exact. |
+| 12 | **Integrate first, measure once.** Changes are gated for exactness individually, then measured together in one campaign with ablations. This avoids many partial benchmark runs. | — |
+| 13 | **Per-request routing by predicted cost, for any GPU.** For each request the router estimates, per candidate path (prefix-cache resume on the nodes, prefill on the nodes, prefill on the GPU then decode on the nodes), the time to first token and the time to finish: queue wait in seconds of pending work, prefill time from the measured curve of *that* GPU and of the node pair, state handoff, and decode. It picks the lowest total cost, counting the delay it causes to requests already decoding, with a small margin against noise. Even a small saving is taken. GPU profiles (prefill rate by prompt length, VRAM, host-pinned memory, handoff cost) are measured per machine, not hard-coded to one card. Split decode stays out of `auto` until it beats single-placement decode end to end. | With one request, the decode cost is the same on both prefill paths, so the choice depends only on the time to first token. Before the interleaved prefill (decision 17), the nodes paused other decodes while they ran a prefill, so with N active streams a local prefill of B seconds costs about N×B seconds to the others; that favours the GPU under load. Initial rules: nodes below 2,048 prompt tokens when idle (the 512-2,047 band is being measured), GPU eligible from 2,048 tokens or whenever the nodes are busy decoding, cache hits stay on the nodes. Measured end to end on the 96 GB card (resident service, real experts, state handoff, first token on the nodes): with the experts that don't fit in VRAM pinned in host RAM, 2.73 s at 2K, 3.16 s at 8K and 6.05 s at 32K, against 4.35 / 14.3 / 58.9 s on the nodes alone, so the crossover is ~1.2K tokens; when those experts have to come from NVMe it moves to ~14K. The router reads which tier the service got and uses that curve. Measured with concurrency: a prefill on the nodes blocks every other stream for its whole duration (0.45 / 1.3 / 4.4 / 14.5 s at 128 / 512 / 2K / 8K tokens), while importing a GPU-prefilled state pauses them for only 17-48 ms. So the GPU path wins earlier as load grows: the crossover moves from ~1.2K tokens with no other users to ~700 with one, ~450 with two and ~250 with four. |
+| 14 | **Prefix and session state spill to NVMe in blocks; the KV state stays replicated, not sharded.** Each node writes its prefix-cache blocks through to local NVMe (crash-safe files, all-or-nothing hits across nodes), so a long session survives a restart and can be forked or rewound. Our per-token state is small (~890 B), so replicating it costs ~1.8 GB per node for two 1M-token sessions; sharding it by position would add traffic between the nodes at every step. | A 237K-token session resumes after a server restart in 0.16 s (disk read at 4.9 GB/s plus import) instead of 334 s of prefill; 32K in 18 ms. RAM hits, disk hits and disk hits after a restart reproduce the fresh prefill bit for bit, including the next 32 decoded tokens. ~896 B/token on disk. |
+| 15 | **Speculative decoding also with several requests.** The draft model runs on both nodes, and each request keeps its own controller; verification stays exact. | Through the server, 8 concurrent chats of 128 tokens, token ids identical to plain decoding: **2 slots 33.5 → 52.3 tok/s (+56 %), 4 slots 47.8 → 56.2 tok/s (+18 %)**. On code it gains 30–127 % at every batch size; on prose from 3 requests up it falls back to plain rows (neutral). Costs ~9.6 GiB per node for the draft model. In serve, drafting pauses while more than 4 requests are in flight (decision 20). |
+| 16 | **Expert down projections are tensor-parallel across the two nodes,** with a kernel that reads each routed expert once per step. | Bit-exact on both nodes at 1, 2, 4 and 8 requests. 6-row window 69.60 → 67.54 ms (−3.0 %); routed experts 179 → 197 GB/s. |
+| 17 | **A long prefill on the nodes no longer blocks the other streams.** The prefill is resumable and interleaved with decode steps (minimum 64 rows per slice). | Bit-exact. With 4 streams decoding and an 8K prompt arriving, the longest decode stall goes from 14.69 s to 0.19 s. This shifts the GPU/nodes crossover of decision 13 back toward the nodes under load; the router curves will be re-measured. |
+| 18 | **The node-to-node link pre-posts its receive buffers.** | Sends that found no posted receive waited 100–200 ms for link credits. With receives pre-posted, 0 stalls in 9,000 exchanges (14 in 3,000 before), and an 8-request expert-parallel step became stable (91 ms instead of 105/115 ms bimodal). |
+| 19 | **Weight formats are judged on quality and speed together.** A format that improves quality but slows decode is not adopted; a small, measured quality loss is acceptable for a clear speed gain. Quality is always measured with the same fixed metric and reference set. | Applied in decision 6 (2-bit trellis experts: better quality, slower: not adopted yet) and to the second model's expert formats, which are being evaluated on the whole model. |
+| 20 | **Production defaults for the DeepSeek pair, set by one timing campaign with ablations (decision 12).** On by default: segmented batch steps; tensor-parallel expert down projections (decision 16); speculative decoding in the batch and in serve, with drafting paused while more than 4 requests are in flight; interleaved prefill in serve (decision 17); eager sends for messages up to 64 KiB on the node link; fused staging (the attention output product writes the pinned send buffer, and the add reads the pinned receive buffer). Off: tensor-parallel prefill, the prepared weight load and 16-row batch steps. | 132 timed runs, 3 interleaved rounds per arm, every run's tokens checked against its reference. Each item, measured against all on: segmented steps, batch of 8 87.0 → 95.8 tok/s (+9.1 %); expert TP down, 6-row window 66.0 → 64.0 ms (−3.0 %); speculative batch +82 % at 1 request and +53 % at 2, neutral at 4-8 (the controller stops drafting there); speculative serve +62 % at 1 request, +52 % at 2 and +19 % at 4 (8-category short-prompt set). Uncapped, it cost +45 % time to first token at 8 requests; the cap of 4 cuts that to +24 % (3.26 vs 2.63 s) and keeps +7 % throughput. Eager small messages: one-user decode 27.8 → 28.5 tok/s (+2.5 %), bit-identical. Fused staging: −0.2 to −0.4 ms per token and −0.25 ms per step for batches of 1-2, bit-identical. The interleaved prefill has a cost of its own: with 4 streams decoding, an 8K prompt's first token comes at 28.8 s instead of 12.8 s, so long prompts go to the GPU prefill when it is up. Tensor-parallel prefill was 1.4-6.1 % slower than expert-parallel. Serve with these defaults, 64/64 requests token-identical to the campaign reference: 38.4 / 52.7 / 59.3 / 66.8 tok/s at 1 / 2 / 4 / 8 requests. |
+| 21 | **Split decode with speculative decoding.** The GPU runs the first 22 layers with everything resident and the nodes run the rest (the pipeline split of decision 3); the draft model's windows are verified through the split. | Measured live, 24 prompts (8 English, 8 Spanish, 8 code) × 256 tokens: **61.8 tok/s against 46.4 on the two nodes alone with speculative decoding (×1.33)**; English 50.3 vs 37.5, Spanish 54.2 vs 39.3, code 81.1 vs 62.3. With the bit-exact identity (without the trellis mix of decision 7) it gives 61.7 tok/s, and all 24 outputs (6,144 tokens) equal the nodes-only reference. One request end to end in one GPU process (fast GPU prefill of all 40 layers, state handoff to the nodes, split decode): first token at 2.69 s (2K) and 3.59 s (8K), handoff ~0.85 s, then 54.8 and 73.5 tok/s. At 32K the fast prefill's state produced end-of-sequence as its first token, so that row is not used (decision 22). |
+| 22 | **The GPU prefill uses exact arithmetic up to 8K tokens. The fast path runs only above that, and only where its quality gate passes** (mean KL ≤ 0.002 against the exact prefill). | Live timing on the resident GPU service, warm, load excluded, with 73-76 GB of experts pinned in host RAM and the rest read from NVMe: exact 3.39 / 4.04 / 11.55 s at 2K / 8K / 32K tokens, fast 3.82 / 4.31 / 6.04 s. Up to 8K both are bound by the expert bytes crossing PCIe and are equal within the load-to-load variance (~0.5 s); at 32K the fast path is 1.9× faster. Fast vs exact over the last 64 positions: mean KL 0.011 at 2K and 0.0047 at 8K (both fail the gate), 0.0018 at 32K (passes, top-1 100 %). The 32K threshold is being re-checked over at least 256 positions, including the prompt of decision 21. |
+| 23 | **The node-to-node USB4 link: measured limits and what we changed.** In use: pre-posted receive buffers (decision 18); bounded waits with abort and a failure report (60 s, below the serve watchdog) instead of indefinite blocking; eager sends for messages up to 64 KiB; fused staging. Contiguous DMA buffers in the driver are available as an opt-in. | The two cables are one 40 Gb/s and one 20 Gb/s link: ~56 Gb/s per direction of usable data after encoding and headers (calculated). Measured raw with 4 streams: 41.0 Gb/s one way, 39.8 per direction both ways. A ring reading host memory gives ~9-11 Gb/s. Contiguous TX and RX buffers raise a ring on the faster cable from 10.4-10.9 to 11.8-12.3 Gb/s, the rate of a GPU-direct ring, and 4 streams both ways from ~79 to ~85 Gb/s in total, with the same bits. The engine's large messages gain nothing from this (its staging copies hold them at ~13-15 Gb/s per direction), so it stays opt-in. Small messages: a 20 KB exchange takes 18-22 µs back to back, but 70-90 µs on average after ≥ 100 µs idle, which is the model's real cadence; through the engine's host path, ~100-120 µs after a 300 µs gap. That idle cost is not in the driver's wake-up chain: per-CPU high-priority completion work made it worse (decision 25), and receive polling and IRQ pinning were neutral. GPU-direct exchanges in the production apps (same bits as the host path), against host streams: 6-row window +2.9 %, 8K prefill +1.6 %, serve at 2-8 requests +4-7 %, one-user decode −1 %; the layout choice is pending. |
+| 24 | **The second model runs as two full replicas, one per node, behind the router; no tensor parallelism across the link.** Each request runs entirely on one node, and the router balances active decodes. Two server fixes are adopted: the draft controller's learned state is reset for each request, and the speculative windows of concurrent requests are planned and verified together. | Token ids through the router equal the single-node run (78/78). Before the fixes, 8-category short-prompt set, wall aggregate including time to first token: 42.4 / 84.6 / 94.8 / 86.3 tok/s at 1 / 2 / 4 / 6 requests; coding chat on fresh servers: 66.1 / 123.8 / 134.6 tok/s at 1 / 2 / 4 (decode summed over requests 89.1 / 179.0 / 180.7). **Per-request reset:** chat traffic used to leave a slow draft schedule behind (a 1K code prompt 59 → 42 tok/s, persistent); with the reset, after 80 chat requests the same prompt runs at 58.9 tok/s (prose 54.7 instead of 41.3), with the same tokens. **Joint windows:** node decode total on the 1K code prompt 64.1 → 71.0 tok/s at 2 requests (+10.8 %) and 78.1 → 83.1 at 4 (+6.3 %); coding chat +12.5 % at 2 and +36.2 % at 4; one request unchanged (59.86 → 59.89); 84/84 requests token-identical. The replicas with both fixes are being re-measured. |
+| 25 | **Measured and not adopted.** | **Tensor parallelism for one Qwen user over USB4:** an exchange costs ~200 µs today against a budget of ~50 µs (96 exchanges per window, calculated); it reopens only if exchanges at the real cadence get close to their back-to-back time. **Per-CPU high-priority completion work in the USB4 driver:** p99 of a 20 KB exchange 230 µs → 2.9 ms, 6-row window +3.7 %, decode −3.8 %. **2-bit trellis or lookup-table experts:** slower than Q2 on the AMD nodes (decision 6). **Overlapping the attention all-reduce in K chunks:** exact but slower (6-row window +1.2 / +3 / +5 ms at K = 2 / 4 / 8): each extra host exchange costs ~21 µs net, and nothing independent runs after attention to hide it. **Tensor-parallel prefill on the nodes:** 1.4-6.1 % slower than expert-parallel. |
+
+## Development principles
+
+TensorMeld is being developed around a few rules:
+
+1. **Do not require every available device to participate.** More hardware is useful only when it improves the requested objective or enables the workload.
+2. **Treat capacity, latency, and throughput as different goals.**
+3. **Model physical memory honestly.** Shared or unified memory must not be counted more than once.
+4. **Account for communication.** Remote memory is not local VRAM, and link bandwidth alone does not describe distributed inference cost.
+5. **Prefer measured placement decisions over hardware-name heuristics.**
+6. **Keep the core hardware-neutral.** Vendor-specific execution belongs behind explicit backend/worker interfaces.
+7. **Reuse good open-source components where appropriate.** TensorMeld should not reimplement mature model readers, runtimes, kernels, or system libraries without a reason.
+8. **Make fallback and uncertainty explicit.** An incomplete search or unsupported placement must not be presented as proof that no solution exists.
+9. **Preserve user control.** Automatic planning must respect resource limits, excluded devices, privacy boundaries, and workload requirements.
+
+## Open-source reuse
+
+TensorMeld will deliberately build on suitable open-source projects when their licenses, behaviour, and architecture fit the project.
+
+Potential and current areas of reuse include model-format tooling, hardware discovery, inference runtimes, GPU backends, networking primitives, and observability libraries.
+
+Third-party code or dependencies should be recorded with their source, version or revision, license, integration status, and any relevant limitations. Reuse does not imply that TensorMeld inherits the upstream project's support guarantees or that an upstream feature has been validated in TensorMeld.
+
+## What not to expect yet
+
+Please do **not** expect, at this stage:
+
+- a stable installation procedure;
+- a stable configuration schema;
+- stable CLI or API compatibility;
+- supported releases;
+- production security guarantees;
+- validated Windows/Linux feature parity;
+- validated CUDA/ROCm heterogeneous execution across arbitrary hardware;
+- reliable performance comparisons;
+- automatic optimal placement;
+- compatibility with every GGUF/model architecture;
+- migration guarantees between development snapshots.
+
+If you experiment with the repository, assume that you may need to read the source, inspect plans manually, and rebuild configurations after changes.
+
+## Repository layout
+
+The repository is being organised so that architecture decisions remain separate from implementation details:
+
+```text
+docs/
+  architecture/      System contracts and architecture
+  decisions/         Architecture Decision Records (ADRs)
+  implementation/    Roadmap, implementation notes and status
+  specification/     Product and behavioural specifications
+  examples/          Example configurations and scenarios
+
+src/                 TensorMeld implementation
+tests/               Automated tests
+research/            Evaluations and non-normative technical research
+third_party/         Third-party dependency and license records
+```
+
+Documentation under `docs/architecture/` and accepted ADRs should be treated as the intended design contract. Research notes and experimental results are non-normative unless promoted into an explicit architecture decision.
+
+## Why publish this so early?
+
+Because distributed local inference is full of hidden assumptions: memory may be shared, links may not aggregate, execution backends may differ across operating systems, and a mathematically balanced partition can still be slower because of communication.
+
+Publishing the project during development makes those assumptions, experiments, mistakes, and design changes visible rather than presenting a polished result after the fact.
+
+**The repository is public to make the engineering process transparent—not to imply that TensorMeld is already a usable product.**
+
+## Contributions and discussion
+
+Technical discussion, issue reports, references to relevant research, and pointers to reusable open-source work are welcome while the architecture is evolving.
+
+Before investing significant effort in an implementation, please assume interfaces may change and check the current architecture and ADRs first.
+
+## License
+
+TensorMeld's original code is released under the [MIT License](LICENSE). Third-party components keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and `third_party/` for provenance and retained notices.

@@ -1,0 +1,20 @@
+{
+  "schema": "tensormeld/ttft-curve-v1",
+  "notes": "DeepSeek V4.1 Flash, 2026-10-21 04:30. TTFT = prefill (its argmax is the first token) + one decode step on the pair (46 ms measured), both routes. local = AMD pair: 32/128/512/2048 two-rank prefill with the short-prompt overhead fixes (joint pass, warm); 8000/32000 serve --prefill-path device (pieces of 4096). cached_s_per_token: a prefix-cache hit on the pair costs the suffix prefill + 6.3 us per cached token (32000-token prompt, 31744 cached: 0.92 s measured). offload = CUDA prefill on the RTX PRO, exact arm 0a75bb9, 17 expert layers resident (15 at 32K), the rest streamed over PCIe with the PC busy (~18-20 GB/s), process warm; + state export (10-23 ms) + 1 GbE send (40/87/275 ms) + import on the pair (estimated 20-50 ms) + one decode step. The 512-token offload point is the PCIe floor estimate (80 GB of experts per prompt). Fast arm, quiet PCIe and expert-granular residency not measured yet.",
+  "routes": {
+    "local": {"name": "amd-pair", "cached_s_per_token": 6.3e-6, "points": [
+      {"tokens": 32, "ttft_s": 0.239, "provenance": "measured", "source": "prefill 193 ms + step 46"},
+      {"tokens": 128, "ttft_s": 0.477, "provenance": "measured", "source": "prefill 431 ms + step"},
+      {"tokens": 512, "ttft_s": 1.336, "provenance": "measured", "source": "prefill ~1290 ms + step"},
+      {"tokens": 2048, "ttft_s": 4.192, "provenance": "measured", "source": "prefill 4146 ms + step"},
+      {"tokens": 8000, "ttft_s": 14.046, "provenance": "measured", "source": "serve device prefill 14.0 s + step"},
+      {"tokens": 32000, "ttft_s": 55.446, "provenance": "measured", "source": "device prefill 55.4 s (8 x 4096) + step"}
+    ]},
+    "offload": {"name": "rtx-prefill", "points": [
+      {"tokens": 512, "ttft_s": 4.6, "provenance": "estimate", "source": "PCIe floor of the streamed experts"},
+      {"tokens": 2048, "ttft_s": 4.628, "provenance": "measured", "source": "prefill 4.51 s + handoff 0.072 + step 0.046"},
+      {"tokens": 8192, "ttft_s": 5.064, "provenance": "measured", "source": "prefill 4.89 s + handoff 0.128 + step"},
+      {"tokens": 32768, "ttft_s": 12.047, "provenance": "measured", "source": "prefill 11.65 s + handoff 0.351 + step"}
+    ]}
+  }
+}

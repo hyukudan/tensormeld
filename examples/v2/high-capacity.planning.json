@@ -1,0 +1,351 @@
+{
+  "planning_schema": "tensormeld/planning-v1",
+  "provenance": "synthetic",
+  "manifest_ref": "catalog:approved-model-manifest",
+  "workload": {
+    "phase": "decode",
+    "context_tokens": 8192,
+    "max_output_tokens": 1024,
+    "concurrency": 1
+  },
+  "worker_resident": {
+    "g0": {
+      "p0": 1073741824
+    },
+    "g1": {
+      "p1": 1073741824
+    },
+    "g2": {
+      "p2": 1073741824
+    }
+  },
+  "coordinator_resident": {
+    "n0": {
+      "p0": 268435456
+    },
+    "n1": {
+      "p1": 268435456
+    },
+    "n2": {
+      "p2": 268435456
+    }
+  },
+  "units": [
+    {
+      "id": "block.0",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.1",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.2",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.3",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.4",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.5",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.6",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    },
+    {
+      "id": "block.7",
+      "output_bytes": 65536,
+      "placements": {
+        "g0": {
+          "decode_us": 1000,
+          "resident_bytes": {
+            "p0": 26038239232
+          },
+          "workspace_bytes": {
+            "p0": 536870912
+          }
+        },
+        "g1": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p1": 26038239232
+          },
+          "workspace_bytes": {
+            "p1": 536870912
+          }
+        },
+        "g2": {
+          "decode_us": 5000,
+          "resident_bytes": {
+            "p2": 26038239232
+          },
+          "workspace_bytes": {
+            "p2": 536870912
+          }
+        }
+      }
+    }
+  ],
+  "links": [
+    {
+      "id": "l0-1",
+      "source": "device:g0",
+      "target": "device:g1",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "tower-ethernet"
+    },
+    {
+      "id": "l0-2",
+      "source": "device:g0",
+      "target": "device:g2",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "tower-ethernet"
+    },
+    {
+      "id": "l1-0",
+      "source": "device:g1",
+      "target": "device:g0",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "tower-ethernet"
+    },
+    {
+      "id": "l1-2",
+      "source": "device:g1",
+      "target": "device:g2",
+      "payload_bytes_per_s": 3000000000,
+      "latency_us": 80,
+      "physical_group": "helper-usb4"
+    },
+    {
+      "id": "l2-0",
+      "source": "device:g2",
+      "target": "device:g0",
+      "payload_bytes_per_s": 110000000,
+      "latency_us": 100,
+      "physical_group": "tower-ethernet"
+    },
+    {
+      "id": "l2-1",
+      "source": "device:g2",
+      "target": "device:g1",
+      "payload_bytes_per_s": 3000000000,
+      "latency_us": 80,
+      "physical_group": "helper-usb4"
+    }
+  ],
+  "route_mode": "direct",
+  "feedback_bytes": 8
+}

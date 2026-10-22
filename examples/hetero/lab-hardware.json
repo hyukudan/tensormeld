@@ -1,0 +1,175 @@
+{
+ "schema": "tensormeld/hetero-hardware-v1",
+ "nodes": [
+  {
+   "id": "pc",
+   "disk_free_bytes": 1700000000000,
+   "disk_bytes_per_s": 6000000000,
+   "model_files": []
+  },
+  {
+   "id": "node1",
+   "disk_free_bytes": 300000000000,
+   "disk_bytes_per_s": 6000000000,
+   "model_files": [
+    "deepseek-v4.1-flash",
+    "qwen3.8-flash-next"
+   ]
+  },
+  {
+   "id": "node2",
+   "disk_free_bytes": 300000000000,
+   "disk_bytes_per_s": 6000000000,
+   "model_files": [
+    "deepseek-v4.1-flash",
+    "qwen3.8-flash-next"
+   ]
+  }
+ ],
+ "devices": [
+  {
+   "id": "rtx",
+   "node": "pc",
+   "kind": "discrete_gpu",
+   "backend": "cuda",
+   "memory_bytes": 102641958912,
+   "reserved_bytes": 6000000000,
+   "mem_bytes_per_s": 1380000000000,
+   "prefill_ops_per_s": 150000000000000,
+   "step_overhead_us": 40,
+   "crossing_overhead_us": 65,
+   "availability": "preemptible",
+   "supports": [
+    "*"
+   ],
+   "provenance": "measured",
+   "notes": "Measured 2026-10-20 on Windows (WDDM), GPU shared with other jobs (minimums used). mem_bytes_per_s: Q8_0 x A8 decode GEMV prototype over one layer's dense projections (attention + shared expert, 172 MB, CUDA graph) = 124 us/layer = 1.38 TB/s (big GEMVs 1.43-1.49 TB/s; 1.79 nominal). crossing_overhead_us: GPU->TCP->GPU minus TCP alone, p50 ~65 us (D2H 11-26 + H2D after idle 45-75); p99 adds ~150-300 us. step_overhead_us (derived): graph node 0.43 us + small dependent kernels (~3 us fixed each). prefill_ops_per_s stays an estimate: dense INT8 GEMM measures 560-690 TOPS, FP8 500-575, BF16 290-310; 150 assumes quantized grouped kernels at ~22 % of that. 'supports' is the PLANNED backend: today no engine runs these parts here."
+  },
+  {
+   "id": "pc-host",
+   "node": "pc",
+   "kind": "cpu",
+   "backend": "host",
+   "memory_bytes": 137438953472,
+   "reserved_bytes": 85899345920,
+   "mem_bytes_per_s": 60000000000,
+   "prefill_ops_per_s": 1000000000000,
+   "step_overhead_us": 5,
+   "crossing_overhead_us": 5,
+   "availability": "available",
+   "supports": [
+    "ds41.lookup",
+    "qwen.lookup"
+   ],
+   "provenance": "estimate",
+   "notes": "PC host RAM for token-id lookup tables next to the GPU; 48 GiB allowed (the PC runs other work)."
+  },
+  {
+   "id": "node1-gpu",
+   "node": "node1",
+   "kind": "integrated_gpu",
+   "backend": "hip",
+   "memory_bytes": 137438953472,
+   "reserved_bytes": 10737418240,
+   "mem_bytes_per_s": 165000000000,
+   "prefill_ops_per_s": 6500000000000,
+   "prefill_rates": {
+    "qwen.core": 12000000000000,
+    "qwen.gdn": 12000000000000,
+    "qwen.attention": 12000000000000,
+    "qwen.moe": 12000000000000
+   },
+   "step_overhead_us": 115,
+   "crossing_overhead_us": 30,
+   "availability": "available",
+   "supports": [
+    "*"
+   ],
+   "provenance": "measured",
+   "notes": "Rates fitted to engine receipts: decode 20 tok/s two-node (49.8 ms), prefill 567 tok/s at 8K two-node; ~1000 tok/s one-node for the hybrid model."
+  },
+  {
+   "id": "node2-gpu",
+   "node": "node2",
+   "kind": "integrated_gpu",
+   "backend": "hip",
+   "memory_bytes": 137438953472,
+   "reserved_bytes": 10737418240,
+   "mem_bytes_per_s": 165000000000,
+   "prefill_ops_per_s": 6500000000000,
+   "prefill_rates": {
+    "qwen.core": 12000000000000,
+    "qwen.gdn": 12000000000000,
+    "qwen.attention": 12000000000000,
+    "qwen.moe": 12000000000000
+   },
+   "step_overhead_us": 115,
+   "crossing_overhead_us": 30,
+   "availability": "available",
+   "supports": [
+    "*"
+   ],
+   "provenance": "measured",
+   "notes": "Rates fitted to engine receipts: decode 20 tok/s two-node (49.8 ms), prefill 567 tok/s at 8K two-node; ~1000 tok/s one-node for the hybrid model."
+  }
+ ],
+ "links": [
+  {
+   "id": "eth-pc-c1",
+   "a": "pc",
+   "b": "node1",
+   "bytes_per_s": 117000000,
+   "latency_us": 42,
+   "shared_group": "pc-nic",
+   "provenance": "measured",
+   "notes": "1 GbE switch; NICs are 2.5 GbE. link-probe 2026-10-20: RTT p50 84 us, 118.6 MB/s bulk."
+  },
+  {
+   "id": "eth-pc-c2",
+   "a": "pc",
+   "b": "node2",
+   "bytes_per_s": 117000000,
+   "latency_us": 42,
+   "shared_group": "pc-nic",
+   "provenance": "measured"
+  },
+  {
+   "id": "eth-c1-c2",
+   "a": "node1",
+   "b": "node2",
+   "bytes_per_s": 117000000,
+   "latency_us": 42,
+   "provenance": "estimate"
+  },
+  {
+   "id": "usb4-c1-c2",
+   "a": "node1",
+   "b": "node2",
+   "bytes_per_s": 4700000000,
+   "latency_us": 14,
+   "provenance": "measured",
+   "notes": "two cables, host path; 32 us RTT p50 at 20 KB, 4.7 GB/s at 42 MB."
+  }
+ ],
+ "groups": [
+  {
+   "id": "amd-pair",
+   "devices": [
+    "node1-gpu",
+    "node2-gpu"
+   ],
+   "link": "usb4-c1-c2",
+   "supports": [
+    "ds41.attention",
+    "ds41.core",
+    "ds41.draft",
+    "ds41.engram",
+    "ds41.lookup",
+    "ds41.moe-routed",
+    "ds41.moe-shared"
+   ],
+   "notes": "engine group modes today: the 40-layer MoE as expert + tensor parallel over USB4; the hybrid model has no group mode yet"
+  }
+ ],
+ "notes": "Lab profile. Override link rates with --link to ask what-if questions (2.5/10/25 GbE, USB4)."
+}

@@ -1,0 +1,3424 @@
+{
+ "schema": "tensormeld/model-parts-v1",
+ "model": {
+  "id": "qwen3.8-flash-next",
+  "revision": "q4-experts/q8-dense",
+  "numerics": "engine-default",
+  "family": "moe-hybrid-linear-attention"
+ },
+ "provenance": "estimate",
+ "layers": 48,
+ "stream_bytes_per_row": 40960,
+ "token_bytes": 4,
+ "parts": [
+  {
+   "id": "embed",
+   "kind": "embedding",
+   "role": "lookup",
+   "layer": -1,
+   "weight_bytes": 1271398400,
+   "decode": {
+    "read_bytes": 5120
+   },
+   "io": {
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.lookup"
+   ]
+  },
+  {
+   "id": "L0.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 0,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L0.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 0,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L0.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 0,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L0.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 0,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L1.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 1,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L1.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 1,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L1.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 1,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L1.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 1,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L2.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 2,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L2.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 2,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L2.ple",
+   "kind": "per-layer-embedding",
+   "role": "lookup",
+   "layer": 2,
+   "weight_bytes": 28776280883,
+   "decode": {
+    "read_bytes": 35000000
+   },
+   "io": {
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.lookup"
+   ]
+  },
+  {
+   "id": "L2.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 2,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L2.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 2,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L3.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 3,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L3.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 3,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L3.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 3,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L3.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 3,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L4.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 4,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L4.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 4,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L4.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 4,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L4.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 4,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L5.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 5,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L5.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 5,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L5.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 5,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L5.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 5,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L6.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 6,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L6.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 6,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L6.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 6,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L6.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 6,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L7.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 7,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L7.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 7,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L7.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 7,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L7.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 7,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L8.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 8,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L8.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 8,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L8.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 8,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L8.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 8,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L9.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 9,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L9.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 9,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L9.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 9,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L9.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 9,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L10.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 10,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L10.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 10,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L10.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 10,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L10.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 10,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L11.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 11,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L11.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 11,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L11.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 11,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L11.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 11,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L12.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 12,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L12.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 12,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L12.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 12,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L12.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 12,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L13.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 13,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L13.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 13,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L13.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 13,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L13.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 13,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L14.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 14,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L14.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 14,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L14.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 14,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L14.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 14,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L15.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 15,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L15.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 15,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L15.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 15,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L15.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 15,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L16.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 16,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L16.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 16,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L16.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 16,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L16.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 16,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L17.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 17,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L17.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 17,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L17.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 17,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L17.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 17,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L18.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 18,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L18.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 18,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L18.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 18,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L18.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 18,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L19.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 19,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L19.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 19,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L19.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 19,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L19.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 19,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L20.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 20,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L20.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 20,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L20.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 20,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L20.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 20,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L21.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 21,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L21.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 21,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L21.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 21,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L21.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 21,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L22.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 22,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L22.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 22,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L22.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 22,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L22.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 22,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L23.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 23,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L23.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 23,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L23.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 23,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L23.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 23,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L24.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 24,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L24.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 24,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L24.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 24,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L24.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 24,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L25.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 25,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L25.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 25,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L25.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 25,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L25.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 25,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L26.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 26,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L26.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 26,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L26.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 26,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L26.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 26,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L27.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 27,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L27.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 27,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L27.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 27,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L27.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 27,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L28.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 28,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L28.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 28,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L28.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 28,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L28.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 28,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L29.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 29,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L29.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 29,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L29.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 29,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L29.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 29,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L30.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 30,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L30.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 30,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L30.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 30,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L30.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 30,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L31.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 31,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L31.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 31,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L31.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 31,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L31.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 31,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L32.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 32,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L32.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 32,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L32.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 32,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L32.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 32,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L33.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 33,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L33.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 33,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L33.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 33,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L33.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 33,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L34.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 34,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L34.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 34,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L34.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 34,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L34.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 34,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L35.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 35,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L35.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 35,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L35.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 35,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L35.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 35,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L36.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 36,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L36.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 36,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L36.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 36,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L36.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 36,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L37.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 37,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L37.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 37,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L37.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 37,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L37.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 37,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L38.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 38,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L38.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 38,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L38.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 38,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L38.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 38,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L39.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 39,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L39.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 39,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L39.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 39,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L39.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 39,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L40.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 40,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L40.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 40,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L40.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 40,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L40.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 40,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L41.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 41,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L41.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 41,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L41.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 41,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L41.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 41,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L42.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 42,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L42.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 42,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L42.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 42,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L42.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 42,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L43.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 43,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L43.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 43,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L43.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 43,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L43.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 43,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L44.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 44,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L44.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 44,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L44.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 44,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L44.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 44,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L45.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 45,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L45.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 45,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L45.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 45,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L45.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 45,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L46.gdn",
+   "kind": "linear-attention",
+   "role": "anchor",
+   "layer": 46,
+   "weight_bytes": 65600000,
+   "decode": {
+    "read_bytes": 65600000,
+    "ops_per_row": 116000000
+   },
+   "state": {
+    "bytes_fixed": 3300000
+   },
+   "requires": [
+    "qwen.gdn"
+   ]
+  },
+  {
+   "id": "L46.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 46,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L46.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 46,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L46.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 46,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L47.attn",
+   "kind": "full-attention",
+   "role": "anchor",
+   "layer": 47,
+   "weight_bytes": 56200000,
+   "decode": {
+    "read_bytes": 56200000,
+    "ops_per_row": 106000000
+   },
+   "prefill": {
+    "ops_per_row": 156000000
+   },
+   "state": {
+    "bytes_per_token": 2304
+   },
+   "requires": [
+    "qwen.attention"
+   ]
+  },
+  {
+   "id": "L47.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 47,
+   "weight_bytes": 19700000,
+   "decode": {
+    "read_bytes": 19700000,
+    "ops_per_row": 8000000
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "L47.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 47,
+   "weight_bytes": 5200000,
+   "decode": {
+    "read_bytes": 5200000,
+    "ops_per_row": 9800000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "L47.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 47,
+   "weight_bytes": 1604166666,
+   "decode": {
+    "read_bytes": 31250000,
+    "read_bytes_extra_row": 18300000,
+    "ops_per_row": 98000000
+   },
+   "io": {
+    "in_bytes_per_row": 2700,
+    "out_bytes_per_row": 10240
+   },
+   "shardable": true,
+   "requires": [
+    "qwen.moe"
+   ]
+  },
+  {
+   "id": "head",
+   "kind": "lm-head",
+   "role": "head",
+   "layer": 48,
+   "weight_bytes": 675000000,
+   "decode": {
+    "read_bytes": 675000000,
+    "ops_per_row": 1271000000
+   },
+   "prefill": {
+    "rows": "last"
+   },
+   "requires": [
+    "qwen.core"
+   ]
+  },
+  {
+   "id": "draft",
+   "kind": "speculative-drafter",
+   "role": "draft",
+   "layer": 48,
+   "weight_bytes": 2786568256,
+   "optional": true,
+   "requires": [
+    "qwen.draft"
+   ]
+  }
+ ],
+ "notes": "Bytes per token from the engine's decode traffic model; linear-attention state is fixed per request (recurrence), full-attention state grows per token."
+}

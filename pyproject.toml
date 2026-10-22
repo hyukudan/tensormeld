@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tensormeld"
+version = "0.2.0a2"
+description = "Local-first orchestration for heterogeneous companion inference nodes"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+system = ["psutil==7.2.2"]
+gguf = ["gguf==0.19.0"]
+
+[project.scripts]
+tensormeld = "tensormeld.cli:main"
+
+[tool.setuptools]
+license-files = ["THIRD_PARTY_NOTICES.md", "third_party/licenses/*.txt"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

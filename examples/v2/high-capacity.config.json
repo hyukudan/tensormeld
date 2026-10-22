@@ -1,0 +1,186 @@
+{
+  "config_schema": "tensormeld/v2",
+  "installation": {
+    "id": "synthetic-high-capacity-installation",
+    "entrypoint_node": "n0",
+    "default_profile": "interactive"
+  },
+  "nodes": [
+    {
+      "id": "n0",
+      "enrollment_ref": "test:n0",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute",
+        "front_door",
+        "control"
+      ]
+    },
+    {
+      "id": "n1",
+      "enrollment_ref": "test:n1",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute"
+      ]
+    },
+    {
+      "id": "n2",
+      "enrollment_ref": "test:n2",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute"
+      ]
+    }
+  ],
+  "resource_pools": [
+    {
+      "id": "p0",
+      "node": "n0",
+      "kind": "vram",
+      "reported_capacity_bytes": 103079215104
+    },
+    {
+      "id": "p1",
+      "node": "n1",
+      "kind": "unified_ram",
+      "reported_capacity_bytes": 137438953472
+    },
+    {
+      "id": "p2",
+      "node": "n2",
+      "kind": "unified_ram",
+      "reported_capacity_bytes": 137438953472
+    }
+  ],
+  "devices": [
+    {
+      "id": "g0",
+      "node": "n0",
+      "kind": "discrete_gpu",
+      "backend": "cuda",
+      "pool_ref": "p0",
+      "enabled": true
+    },
+    {
+      "id": "g1",
+      "node": "n1",
+      "kind": "integrated_gpu",
+      "backend": "hip",
+      "pool_ref": "p1",
+      "enabled": true
+    },
+    {
+      "id": "g2",
+      "node": "n2",
+      "kind": "integrated_gpu",
+      "backend": "hip",
+      "pool_ref": "p2",
+      "enabled": true
+    }
+  ],
+  "selection": {
+    "mode": "auto",
+    "allowed_nodes": [
+      "n0",
+      "n1",
+      "n2"
+    ],
+    "required_nodes": [],
+    "excluded_nodes": [],
+    "min_compute_nodes": 1,
+    "max_compute_nodes": "auto",
+    "min_compute_devices": 1,
+    "max_compute_devices": "auto",
+    "allowed_device_kinds": [
+      "discrete_gpu",
+      "integrated_gpu"
+    ],
+    "required_devices": [],
+    "excluded_devices": [],
+    "coordinator": {
+      "mode": "auto",
+      "allowed_nodes": [
+        "n0",
+        "n1",
+        "n2"
+      ]
+    },
+    "participation": {
+      "local_gpu": "auto"
+    }
+  },
+  "resource_policies": [
+    {
+      "id": "rp0",
+      "owner_node": "n0",
+      "pool_ref": "p0",
+      "allocation_cap_bytes": 85899345920,
+      "safety_headroom_bytes": 8589934592
+    },
+    {
+      "id": "rp1",
+      "owner_node": "n1",
+      "pool_ref": "p1",
+      "allocation_cap_bytes": 107374182400,
+      "safety_headroom_bytes": 8589934592
+    },
+    {
+      "id": "rp2",
+      "owner_node": "n2",
+      "pool_ref": "p2",
+      "allocation_cap_bytes": 107374182400,
+      "safety_headroom_bytes": 8589934592
+    }
+  ],
+  "profiles": {
+    "interactive": {
+      "execution_mode": "auto",
+      "objective": "interactive_latency",
+      "model_manifest_ref": "catalog:approved-model-manifest",
+      "workload": {
+        "task": "text_generation",
+        "context_tokens": 8192,
+        "max_output_tokens": 1024,
+        "max_active_requests": 1
+      },
+      "semantic_policy": {
+        "automatic_model_change": false,
+        "automatic_weight_encoding_change": false,
+        "automatic_state_encoding_change": false,
+        "automatic_context_reduction": false,
+        "automatic_history_truncation": false
+      },
+      "placement": {
+        "strategy": "whole_blocks",
+        "cpu_offload": "disabled",
+        "require_qualified_execution": true
+      },
+      "lifecycle": {
+        "queue_limit": 4,
+        "on_owner_loss": "fail_request",
+        "on_resource_pressure": "stop_admission_then_drain"
+      }
+    }
+  },
+  "network_policy": {
+    "transport": "authenticated_ip",
+    "interface_selection": "measured",
+    "multirail": "disabled",
+    "max_parallel_probes": 1
+  },
+  "privacy": {
+    "persist_prompts": false,
+    "external_telemetry": false
+  },
+  "planning_policy": {
+    "search_budget": {
+      "candidate_limit": 10000,
+      "deadline_ms": 2000
+    },
+    "on_budget_exhaustion": "return_search_incomplete"
+  }
+}

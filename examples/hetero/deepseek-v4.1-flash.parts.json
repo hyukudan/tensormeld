@@ -1,0 +1,4056 @@
+{
+ "schema": "tensormeld/model-parts-v1",
+ "model": {
+  "id": "deepseek-v4.1-flash",
+  "revision": "q2-experts/q8-dense",
+  "numerics": "engine-default",
+  "family": "moe-ced-mhc"
+ },
+ "provenance": "estimate",
+ "layers": 40,
+ "stream_bytes_per_row": 81920,
+ "token_bytes": 4,
+ "moe": {
+  "experts": 384,
+  "top_k": 6,
+  "expert_bytes": 9953280
+ },
+ "parts": [
+  {
+   "id": "embed",
+   "kind": "embedding",
+   "role": "lookup",
+   "layer": -1,
+   "weight_bytes": 1320000000,
+   "decode": {
+    "read_bytes": 10240
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "requires": [
+    "ds41.lookup"
+   ]
+  },
+  {
+   "id": "L0.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 0,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L0.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 0,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L0.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 0,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L0.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 0,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L1.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 1,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L1.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 1,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L1.engram_kv",
+   "kind": "engram-projection",
+   "role": "anchor",
+   "layer": 1,
+   "weight_bytes": 315000000,
+   "decode": {
+    "read_bytes": 315000000,
+    "ops_per_row": 315000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.engram"
+   ]
+  },
+  {
+   "id": "L1.engram_table",
+   "kind": "engram-table",
+   "role": "lookup",
+   "layer": 1,
+   "weight_bytes": 0,
+   "storage_bytes": 101377334312,
+   "decode": {
+    "read_bytes": 6336
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "out_bytes_per_row": 6336
+   },
+   "requires": [
+    "ds41.lookup"
+   ]
+  },
+  {
+   "id": "L1.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 1,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L1.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 1,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L2.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 2,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808,
+    "bytes_per_token": 178
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L2.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 2,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L2.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 2,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L2.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 2,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L3.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 3,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L3.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 3,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L3.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 3,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L3.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 3,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L4.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 4,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L4.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 4,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L4.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 4,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L4.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 4,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L5.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 5,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L5.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 5,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L5.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 5,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L5.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 5,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L6.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 6,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L6.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 6,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L6.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 6,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L6.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 6,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L7.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 7,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L7.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 7,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L7.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 7,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L7.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 7,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L8.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 8,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808,
+    "bytes_per_token": 178
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L8.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 8,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L8.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 8,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L8.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 8,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L9.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 9,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L9.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 9,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L9.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 9,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L9.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 9,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L10.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 10,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L10.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 10,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L10.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 10,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L10.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 10,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L11.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 11,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L11.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 11,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L11.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 11,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L11.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 11,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L12.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 12,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L12.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 12,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L12.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 12,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L12.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 12,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L13.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 13,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L13.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 13,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L13.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 13,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L13.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 13,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L14.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 14,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808,
+    "bytes_per_token": 178
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L14.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 14,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L14.engram_kv",
+   "kind": "engram-projection",
+   "role": "anchor",
+   "layer": 14,
+   "weight_bytes": 315000000,
+   "decode": {
+    "read_bytes": 315000000,
+    "ops_per_row": 315000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.engram"
+   ]
+  },
+  {
+   "id": "L14.engram_table",
+   "kind": "engram-table",
+   "role": "lookup",
+   "layer": 14,
+   "weight_bytes": 0,
+   "storage_bytes": 101377334312,
+   "decode": {
+    "read_bytes": 6336
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "out_bytes_per_row": 6336
+   },
+   "requires": [
+    "ds41.lookup"
+   ]
+  },
+  {
+   "id": "L14.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 14,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L14.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 14,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L15.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 15,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L15.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 15,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L15.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 15,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L15.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 15,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L16.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 16,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L16.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 16,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L16.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 16,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L16.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 16,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L17.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 17,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L17.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 17,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L17.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 17,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L17.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 17,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L18.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 18,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L18.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 18,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L18.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 18,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L18.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 18,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L19.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 19,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "all"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L19.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 19,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L19.ced_bridge",
+   "kind": "ced-bridge",
+   "role": "anchor",
+   "layer": 19,
+   "weight_bytes": 4000000,
+   "decode": {
+    "read_bytes": 4000000,
+    "ops_per_row": 8000000
+   },
+   "prefill": {
+    "ops_per_row": 8000000,
+    "rows": "all"
+   },
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L19.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 19,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L19.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 19,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "all"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L20.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 20,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 2414
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808,
+    "bytes_per_token": 356
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L20.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 20,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 2414
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L20.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 20,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2414
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L20.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 20,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2414
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L21.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 21,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 2287
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L21.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 21,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 2287
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L21.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 21,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2287
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L21.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 21,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2287
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L22.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 22,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 2160
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L22.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 22,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 2160
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L22.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 22,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2160
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L22.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 22,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2160
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L23.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 23,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 2033
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L23.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 23,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 2033
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L23.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 23,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2033
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L23.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 23,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 2033
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L24.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 24,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1906
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L24.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 24,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1906
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L24.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 24,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1906
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L24.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 24,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1906
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L25.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 25,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1779
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L25.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 25,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1779
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L25.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 25,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1779
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L25.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 25,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1779
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L26.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 26,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1652
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L26.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 26,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1652
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L26.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 26,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1652
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L26.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 26,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1652
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L27.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 27,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1525
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L27.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 27,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1525
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L27.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 27,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1525
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L27.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 27,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1525
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L28.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 28,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1398
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L28.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 28,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1398
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L28.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 28,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1398
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L28.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 28,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1398
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L29.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 29,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1271
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L29.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 29,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1271
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L29.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 29,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1271
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L29.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 29,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1271
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L30.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 30,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1144
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L30.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 30,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1144
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L30.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 30,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1144
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L30.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 30,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1144
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L31.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 31,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 1017
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L31.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 31,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 1017
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L31.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 31,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1017
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L31.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 31,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 1017
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L32.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 32,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 890
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L32.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 32,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 890
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L32.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 32,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 890
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L32.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 32,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 890
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L33.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 33,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 763
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L33.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 33,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 763
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L33.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 33,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 763
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L33.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 33,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 763
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L34.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 34,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 636
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L34.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 34,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 636
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L34.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 34,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 636
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L34.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 34,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 636
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L35.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 35,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 509
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L35.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 35,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 509
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L35.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 35,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 509
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L35.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 35,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 509
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L36.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 36,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 382
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L36.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 36,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 382
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L36.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 36,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 382
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L36.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 36,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 382
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L37.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 37,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 255
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L37.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 37,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 255
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L37.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 37,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 255
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L37.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 37,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 255
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L38.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 38,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": {
+     "max": 128
+    }
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L38.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 38,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": {
+     "max": 128
+    }
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L38.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 38,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": {
+     "max": 128
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L38.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 38,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": {
+     "max": 128
+    }
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "L39.attn",
+   "kind": "attention",
+   "role": "anchor",
+   "layer": 39,
+   "weight_bytes": 135000000,
+   "decode": {
+    "read_bytes": 135000000,
+    "ops_per_row": 253000000
+   },
+   "prefill": {
+    "ops_per_row": 337000000,
+    "rows": "last"
+   },
+   "state": {
+    "bytes_fixed": 71808
+   },
+   "io": {
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "replicated_fraction": 0.07,
+   "requires": [
+    "ds41.attention"
+   ]
+  },
+  {
+   "id": "L39.mix",
+   "kind": "router-mix",
+   "role": "anchor",
+   "layer": 39,
+   "weight_bytes": 10000000,
+   "decode": {
+    "read_bytes": 10000000,
+    "ops_per_row": 6000000
+   },
+   "prefill": {
+    "ops_per_row": 6000000,
+    "rows": "last"
+   },
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "L39.shared",
+   "kind": "shared-expert",
+   "role": "branch",
+   "layer": 39,
+   "weight_bytes": 37600000,
+   "decode": {
+    "read_bytes": 37600000,
+    "ops_per_row": 70800000
+   },
+   "prefill": {
+    "rows": "last"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-shared"
+   ]
+  },
+  {
+   "id": "L39.experts",
+   "kind": "routed-experts",
+   "role": "branch",
+   "layer": 39,
+   "weight_bytes": 3811783475,
+   "decode": {
+    "read_bytes": 60000000,
+    "read_bytes_extra_row": 56000000,
+    "ops_per_row": 425000000
+   },
+   "prefill": {
+    "rows": "last"
+   },
+   "io": {
+    "in_bytes_per_row": 5808,
+    "out_bytes_per_row": 20480,
+    "combine": "per-shard"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.moe-routed"
+   ]
+  },
+  {
+   "id": "head",
+   "kind": "lm-head",
+   "role": "head",
+   "layer": 40,
+   "weight_bytes": 703000000,
+   "decode": {
+    "read_bytes": 703000000,
+    "ops_per_row": 1324000000
+   },
+   "prefill": {
+    "rows": "last"
+   },
+   "shardable": true,
+   "requires": [
+    "ds41.core"
+   ]
+  },
+  {
+   "id": "draft",
+   "kind": "speculative-drafter",
+   "role": "draft",
+   "layer": 40,
+   "weight_bytes": 7967164334,
+   "optional": true,
+   "requires": [
+    "ds41.draft"
+   ]
+  }
+ ],
+ "cuts": [
+  {
+   "after_layer": 2,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 3,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 4,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 5,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 6,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 8,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 9,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 10,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 11,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 12,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 14,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 15,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 16,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 17,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 18,
+   "side_bytes_per_token": 178
+  },
+  {
+   "after_layer": 19,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 20,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 21,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 22,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 23,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 24,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 25,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 26,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 27,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 28,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 29,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 30,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 31,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 32,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 33,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 34,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 35,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 36,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 37,
+   "side_bytes_per_token": 356
+  },
+  {
+   "after_layer": 38,
+   "side_bytes_per_token": 356
+  }
+ ],
+ "notes": "Shapes from the model card; bytes/token from engine receipts; prefill rows of layers 20..39 follow the exact causal cone (layer 38-m computes 128+127m rows)."
+}

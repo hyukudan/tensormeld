@@ -1,0 +1,255 @@
+{
+  "config_schema": "tensormeld/v2",
+  "installation": {
+    "id": "example-four-node-installation",
+    "entrypoint_node": "pc",
+    "default_profile": "interactive"
+  },
+  "nodes": [
+    {
+      "id": "pc",
+      "enrollment_ref": "local:pc",
+      "enabled": true,
+      "allowed_roles": [
+        "front_door",
+        "control",
+        "coordinator",
+        "compute"
+      ]
+    },
+    {
+      "id": "helper-a",
+      "enrollment_ref": "enrolled:helper-a",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute",
+        "cache"
+      ]
+    },
+    {
+      "id": "helper-b",
+      "enrollment_ref": "enrolled:helper-b",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute",
+        "cache"
+      ]
+    },
+    {
+      "id": "helper-c",
+      "enrollment_ref": "enrolled:helper-c",
+      "enabled": true,
+      "allowed_roles": [
+        "coordinator",
+        "compute",
+        "cache"
+      ]
+    }
+  ],
+  "resource_pools": [
+    {
+      "id": "pc-vram",
+      "node": "pc",
+      "kind": "vram",
+      "reported_capacity_bytes": 12884901888
+    },
+    {
+      "id": "pc-vram-2",
+      "node": "pc",
+      "kind": "vram",
+      "reported_capacity_bytes": 25769803776
+    },
+    {
+      "id": "pc-ram",
+      "node": "pc",
+      "kind": "system_ram",
+      "reported_capacity_bytes": 68719476736
+    },
+    {
+      "id": "helper-a-shared-ram",
+      "node": "helper-a",
+      "kind": "unified_ram",
+      "reported_capacity_bytes": 137438953472
+    },
+    {
+      "id": "helper-b-vram",
+      "node": "helper-b",
+      "kind": "vram",
+      "reported_capacity_bytes": 25769803776
+    },
+    {
+      "id": "helper-c-vram",
+      "node": "helper-c",
+      "kind": "vram",
+      "reported_capacity_bytes": 51539607552
+    }
+  ],
+  "devices": [
+    {
+      "id": "pc-gpu",
+      "node": "pc",
+      "kind": "discrete_gpu",
+      "backend": "cuda",
+      "pool_ref": "pc-vram",
+      "enabled": true
+    },
+    {
+      "id": "pc-gpu-2",
+      "node": "pc",
+      "kind": "discrete_gpu",
+      "backend": "cuda",
+      "pool_ref": "pc-vram-2",
+      "enabled": true
+    },
+    {
+      "id": "helper-a-igpu",
+      "node": "helper-a",
+      "kind": "integrated_gpu",
+      "backend": "hip",
+      "pool_ref": "helper-a-shared-ram",
+      "enabled": true
+    },
+    {
+      "id": "helper-b-gpu",
+      "node": "helper-b",
+      "kind": "discrete_gpu",
+      "backend": "cuda",
+      "pool_ref": "helper-b-vram",
+      "enabled": true
+    },
+    {
+      "id": "helper-c-gpu",
+      "node": "helper-c",
+      "kind": "discrete_gpu",
+      "backend": "hip",
+      "pool_ref": "helper-c-vram",
+      "enabled": true
+    }
+  ],
+  "selection": {
+    "mode": "auto",
+    "allowed_nodes": [
+      "pc",
+      "helper-a",
+      "helper-b",
+      "helper-c"
+    ],
+    "required_nodes": [],
+    "excluded_nodes": [],
+    "min_compute_nodes": 1,
+    "max_compute_nodes": 3,
+    "min_compute_devices": 1,
+    "max_compute_devices": 4,
+    "allowed_device_kinds": [
+      "discrete_gpu",
+      "integrated_gpu"
+    ],
+    "required_devices": [],
+    "excluded_devices": [],
+    "coordinator": {
+      "mode": "auto",
+      "allowed_nodes": [
+        "pc",
+        "helper-a",
+        "helper-b",
+        "helper-c"
+      ]
+    },
+    "participation": {
+      "local_gpu": "auto"
+    }
+  },
+  "resource_policies": [
+    {
+      "id": "pc-vram-policy",
+      "owner_node": "pc",
+      "pool_ref": "pc-vram",
+      "allocation_cap_bytes": 9663676416,
+      "safety_headroom_bytes": 2147483648
+    },
+    {
+      "id": "pc-vram-2-policy",
+      "owner_node": "pc",
+      "pool_ref": "pc-vram-2",
+      "allocation_cap_bytes": 21474836480,
+      "safety_headroom_bytes": 2147483648
+    },
+    {
+      "id": "pc-ram-policy",
+      "owner_node": "pc",
+      "pool_ref": "pc-ram",
+      "allocation_cap_bytes": 34359738368,
+      "safety_headroom_bytes": 8589934592
+    },
+    {
+      "id": "helper-a-ram-policy",
+      "owner_node": "helper-a",
+      "pool_ref": "helper-a-shared-ram",
+      "allocation_cap_bytes": 107374182400,
+      "safety_headroom_bytes": 12884901888
+    },
+    {
+      "id": "helper-b-vram-policy",
+      "owner_node": "helper-b",
+      "pool_ref": "helper-b-vram",
+      "allocation_cap_bytes": 21474836480,
+      "safety_headroom_bytes": 2147483648
+    },
+    {
+      "id": "helper-c-vram-policy",
+      "owner_node": "helper-c",
+      "pool_ref": "helper-c-vram",
+      "allocation_cap_bytes": 42949672960,
+      "safety_headroom_bytes": 4294967296
+    }
+  ],
+  "profiles": {
+    "interactive": {
+      "execution_mode": "auto",
+      "objective": "interactive_latency",
+      "model_manifest_ref": "catalog:approved-model-manifest",
+      "workload": {
+        "task": "text_generation",
+        "context_tokens": 8192,
+        "max_output_tokens": 1024,
+        "max_active_requests": 1
+      },
+      "semantic_policy": {
+        "automatic_model_change": false,
+        "automatic_weight_encoding_change": false,
+        "automatic_state_encoding_change": false,
+        "automatic_context_reduction": false,
+        "automatic_history_truncation": false
+      },
+      "placement": {
+        "strategy": "whole_blocks",
+        "cpu_offload": "disabled",
+        "require_qualified_execution": true
+      },
+      "lifecycle": {
+        "queue_limit": 4,
+        "on_owner_loss": "fail_request",
+        "on_resource_pressure": "stop_admission_then_drain"
+      }
+    }
+  },
+  "network_policy": {
+    "transport": "authenticated_ip",
+    "interface_selection": "measured",
+    "multirail": "disabled",
+    "max_parallel_probes": 1
+  },
+  "privacy": {
+    "persist_prompts": false,
+    "external_telemetry": false
+  },
+  "planning_policy": {
+    "search_budget": {
+      "candidate_limit": 10000,
+      "deadline_ms": 2000
+    },
+    "on_budget_exhaustion": "return_search_incomplete"
+  }
+}

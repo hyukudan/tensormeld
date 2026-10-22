@@ -1,0 +1,71 @@
+{
+  "schema": "tensormeld/replica-router-v1",
+  "listen": {
+    "address": "127.0.0.1",
+    "port": 18600
+  },
+  "replicas": [
+    {
+      "id": "node1",
+      "node": "node1",
+      "address": "192.0.2.11",
+      "port": 18501,
+      "max_inflight": 8,
+      "api_key_file": "engine.key"
+    },
+    {
+      "id": "node2",
+      "node": "node2",
+      "address": "192.0.2.12",
+      "port": 18501,
+      "max_inflight": 8,
+      "api_key_file": "engine.key"
+    }
+  ],
+  "health": {
+    "interval_s": 1.0,
+    "timeout_s": 2.0,
+    "failures_to_down": 2
+  },
+  "limits": {
+    "queue_timeout_s": 600,
+    "read_timeout_s": 900
+  },
+  "prefill": {
+    "policy": "auto",
+    "node_profile": {
+      "prefill_curve": [
+        [
+          1272,
+          2.7
+        ],
+        [
+          4096,
+          5.0
+        ],
+        [
+          8192,
+          8.5
+        ],
+        [
+          32768,
+          34.0
+        ]
+      ],
+      "restore_s": 0.01
+    },
+    "decode_s_per_token": [
+      [
+        1,
+        0.0215
+      ],
+      [
+        8,
+        0.17
+      ]
+    ],
+    "cache": {
+      "block_tokens": 2048
+    }
+  }
+}

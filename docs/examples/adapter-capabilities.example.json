@@ -1,0 +1,23 @@
+{
+  "adapter_schema": "tensormeld/adapter-capabilities-v1",
+  "adapter_id": "example-native-adapter",
+  "engine": "example-engine",
+  "engine_revision": "replace-with-pinned-revision",
+  "placement": {
+    "strategies": ["whole_blocks"],
+    "exact_owner_binding": true,
+    "explicit_unit_ranges": true,
+    "mixed_backends": false,
+    "remote_compute": true,
+    "coordinator_outside_compute": true,
+    "max_compute_devices": 4,
+    "max_compute_nodes": 4,
+    "max_segments": 8
+  },
+  "route_modes": ["direct", "via_coordinator"],
+  "coordinator_nodes": ["control", "companion-a"],
+  "devices": [
+    {"id": "gpu-main", "node": "control", "backend": "cuda"},
+    {"id": "gpu-companion-a", "node": "companion-a", "backend": "hip"}
+  ]
+}
