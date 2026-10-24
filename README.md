@@ -22,6 +22,19 @@
 
 **Important distinction:** TensorMeld is **not** the engine producing the standalone Strix Halo token-generation numbers, and it is **not yet a stable distributed inference product**. [Strix Halo Engine Lab](https://github.com/hyukudan/strix-halo-engine-lab) owns native execution; [Hyperloom](https://github.com/hyukudan/hyperloom) is the integration/control project. Components and experimental adapters should not be mistaken for an accepted end-to-end deployment.
 
+## Getting started (contributors and experimenters)
+
+TensorMeld is **pre-alpha**: there is no supported end-user installation or one-command distributed-inference setup. To inspect or develop it:
+
+```bash
+git clone https://github.com/hyukudan/tensormeld.git
+cd tensormeld
+```
+
+Start with [the implementation status](IMPLEMENTATION_STATUS.md), [validation instructions](VALIDATION.md), [examples](examples/) and [architecture documents](docs/architecture/). Check [pyproject.toml](pyproject.toml) for the Python package and supported toolchain before selecting a local development environment. Follow validation instructions for the particular module you are changing rather than assuming any experiment is an accepted serving configuration.
+
+**Want to run a model today?** The native Strix Halo execution path belongs to [Strix Halo Engine Lab](https://github.com/hyukudan/strix-halo-engine-lab). [Hyperloom](https://github.com/hyukudan/hyperloom) is the separate project for integrating lifecycle and cluster control. Neither integration is implied to be production-ready by this quick start.
+
 ## AMD-first implementation, independent inference roadmap
 
 **AMD-first in engineering priority; hardware-neutral in the orchestration core.**
