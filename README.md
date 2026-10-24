@@ -121,6 +121,57 @@ This section records the placement decisions we are currently working under, and
 
 **Second model.** Qwen3.8-Flash-Next, in a mostly 4-bit GGUF quantization (111 GB: routed experts in Q4_K / Q5_1 with a few layers kept at higher precision, per-layer token embeddings in IQ4_NL, attention and shared parts in Q8_0), plus a distilled Q8_0 draft head for speculative decoding. Each Strix Halo node holds a complete copy, and the router sends each request to one of them (decision 24).
 
+**Third model (bring-up).** MiniMax M3.1 Flash, EXL3 trellis weights at 3.06 bits per weight, as a tensor-parallel pair over USB4 with its own engine, following the same distribution recipe as DeepSeek (one request on the whole pair; replicas first when more copies fit). Its numbers are preliminary.
+
+### Measured on 2026-10-24
+
+Every number below is measured, greedy, and exact against its reference unless the row says otherwise
+(token ids, logits digests or state bytes, as stated). *Release* is the public engine release of 2026-10-23;
+*pre-release* means an integration build measured after it, whose code lands in the next engine release.
+Older rows keep their own date. The decisions table further down keeps the evidence of 2026-10-23 and earlier.
+
+**DeepSeek V4.1 Flash, two Strix Halo nodes, expert tensor parallel (TP2) over USB4.**
+
+| What | Value | Date | Build | Conditions |
+|---|---|---|---|---|
+| Greedy decode, 1 stream | **30.6 ms/token = 32.7 tok/s** (production build in the same session: 34.7 ms/token) | 2026-10-24 | pre-release | interleaved A/B ×3; both ranks identical to the stored reference in every run |
+| Verify window of 6 rows | **58.92 ms** (production 63.25 ms) | 2026-10-24 | pre-release | same runs |
+| Batched decode, 8 streams, no drafting | **78.97 ms/step = 101.3 tok/s** aggregate (release: 95.9) | 2026-10-24 | pre-release | 8 prompts × 48 tokens; tokens identical; interleaved A/B ×3, ranges disjoint |
+| Prefill, time to first token | 1K **2.20 s** (465 tok/s); 8K **10.78 s** (760 tok/s; production 11.21 s in the same session); 16K **20.40 s** (production 21.36 s) | 2026-10-24 | pre-release | logits identical on both ranks and between builds; 16K: A/B ×3 |
+| Prefill, time to first token, 32K | **39.55 s** (828 tok/s), 2 runs (41.37 s without the new prefill defaults) | 2026-10-23 | pre-release | logits identical |
+| DSpark speculative decode, 24 prompts × 256 tokens | **62.3 tok/s** on code; 37.5 English, 39.3 Spanish; 46.4 over all 24 | 2026-10-22 | release | ids equal plain greedy |
+| Split with the RTX PRO (layers 0-21 on the RTX PRO, the rest on the pair), DSpark | **81.1 tok/s** on code; 61.8 over all 24 (×1.33 against the pair alone); greedy 38.3 tok/s | 2026-10-22 | release | declared composed identity with the trellis-coded sites (KL 1.7e-3 against the pair); bitwise equal to the pair without them |
+| Exact prefill on the RTX PRO, state handed to the pair | time to first token **3.64 / 4.39 / 12.20 s** at 2K / 8K / 32K | 2026-10-22 | release | warm resident service, load excluded; state identical to the exact reference |
+
+**Qwen3.8-Flash-Next.**
+
+| What | Value | Date | Build | Conditions |
+|---|---|---|---|---|
+| RTX PRO prefill offload, time to first token, 1K / 4K / 8K / 16K / 32K | **1.36 / 1.92 / 2.94 / 4.95 / 8.99 s**; the same node server alone: 1.80 / 5.20 / 10.46 / 21.43 / 44.02 s | 2026-10-24 | pre-release | exact CUDA prefill that reproduces the node's prefill bit for bit; state streamed to the node layer by layer over 1 GbE with a lossless codec on 2 connections; 64 generated tokens identical to the node-only run at every length; one run per length |
+| One node, prompt reading, 1K / 4K / 16K / 32K | 1.13 / **3.72 / 14.46 / 29.60 s** (production build, same session: 1.15 / 3.83 / 15.24 / 31.24 s) | 4K-32K 2026-10-24; 1K 2026-10-22 | pre-release (1K: release) | fresh process per run, A/B ×4, median of 4; prefix state and logits identical |
+| One node server (1 replica, 8 slots), 8-category short-prompt set, 4 concurrent | **61.2 → 100.7 tok/s** wall aggregate (+65 %) | 2026-10-24 | pre-release | the running prompts' tiled blocks grouped into one batch, their tails run as windows, the windows of all prompts run together; 32/32 requests token-identical to each request alone |
+| Same server, coding chat, 8 concurrent | **79.3 → 107.4 tok/s** wall aggregate with prompt grouping alone (+36 %, 2 runs each); **76.1 → 125.0** with all three changes (median of 3, +64 %); longest time to first token 10.6-11.3 → 2.0-3.4 s | 2026-10-24 | pre-release | every request's tokens equal the request alone |
+
+**MiniMax M3.1 Flash (bring-up, preliminary), two nodes, TP2 over USB4.**
+
+| What | Value | Date | Build | Conditions |
+|---|---|---|---|---|
+| Greedy decode, 1K / 8K context | **55.14 ms/token = 18.1 tok/s** / 57.06 ms/token = 17.5 tok/s (152.9 ms/token on the first optimized build the same morning) | 2026-10-24 | pre-release, all defaults | both ranks agree; batch of 8: 43.0 tok/s aggregate, rows identical to each request alone |
+| Later the same day | 53.1 ms/token (next build, A/B ×3), then 55.4 → 51.0 ms/token with a one-launch index projection (in-process A/B ×3), since made the default | 2026-10-24 | pre-release | 1K tokens identical in every arm |
+| Prefill, time to first token | 1K 5.94 s, 8K 45.0 s | 2026-10-24 | pre-release, all defaults | |
+| RTX PRO prefill hand-off gate, 1K | **PASS**: the attention state computed on the RTX PRO (K/V and index keys of 60 layers, ~78 MB per rank) is byte-identical to the node's FP32 reference prefill on 3 prompts × 2 ranks, and the 257 greedy tokens decoded after the import equal the node-only run | 2026-10-24 | pre-release | gate only: hand-off timing and the 8K gate are not measured yet |
+
+The MiniMax quality gate (teacher-forced, 7 pre-registered rules) is not declared passed yet: one prompt passes 7 of
+7, the other 6 of 7 (top-1 agreement 71.7 % against 73.8 % required). A gate over more prompts is planned.
+
+**Orchestration.** The deployment controller that launches these engines was accepted on the DeepSeek pair with a
+golden-render check, a token gate, negative tests and an interleaved A/B/A serve check (within 3 %; measured +0.3 to
++2.2 %, never slower): see [deployment-controller.md](docs/implementation/deployment-controller.md). The replica
+router's RTX prefill offload for the Qwen replicas is in this repository (`prefill_offload` in
+[replica-router.md](docs/implementation/replica-router.md)).
+
+### Decisions
+
 | # | Decision | Status / evidence (2026-10-23) |
 |---|---|---|
 | 1 | **Prefill and decode may use different placements.** The plan is chosen per phase, and the request state is handed over between them. | The handoff format is implemented. A 2,048-token prompt exports to 4.72 MB of state. |
@@ -148,6 +199,8 @@ This section records the placement decisions we are currently working under, and
 | 23 | **The node-to-node USB4 link: measured limits and what we changed.** In use: pre-posted receive buffers (decision 18); bounded waits with abort and a failure report (60 s, below the serve watchdog) instead of indefinite blocking; eager sends for messages up to 64 KiB; fused staging. Contiguous DMA buffers in the driver are available as an opt-in. | The two cables are one 40 Gb/s and one 20 Gb/s link: ~56 Gb/s per direction of usable data after encoding and headers (calculated). Measured raw with 4 streams, one process per stream: 41.0 Gb/s one way and 39.8 per direction both ways as the sum of the four streams' own rates; over the common window in which all streams are running, ~37 Gb/s per direction, because the stream on the slower cable finishes last. A ring reading host memory gives ~9-11 Gb/s. Contiguous TX and RX buffers raise a ring on the faster cable from ~11.2 to ~12.1 Gb/s, the rate of a GPU-direct ring, with the same bits (the sum of per-stream rates, 4 streams both ways, goes from ~79 to ~85 Gb/s; the common-window rate stays ~37 Gb/s per direction, set by the slower cable). The model's step time does not change (6-row window 63.90 vs 63.95 ms), so it stays opt-in. The engine's large messages were held at ~13-15 Gb/s per direction by its staging copies; an opt-in pipelined host path (1 MiB chunks, checksum overlapped with the copy) moves 13 MiB in 3.19 ms and 21 MiB in 5.15 ms (~34 Gb/s per direction, bytes exact), worth +1.2-1.3 % on 4K-16K prefills. Small messages: a 20 KB exchange takes 18-22 µs back to back, but 70-90 µs on average after ≥ 100 µs idle, which is the model's real cadence; through the engine's host path, ~100-130 µs after a 300 µs gap. Most of that idle cost is the wake-up chain from interrupt to reader: per-CPU high-priority completion work made it worse (decision 25) and IRQ pinning was neutral. Opt-in busy polling in the driver, together with per-message ready flags in the engine, makes a 20 KB message available ~32 µs after a 300 µs gap (p50; p99 113-151 µs). It is not on by default: it has not passed a model gate, and full busy polling lowers a ring's bandwidth by 7.5-8 % (12.1 → 11.2 Gb/s). GPU-direct exchanges in the production apps (same bits as the host path), against host streams: 6-row window +2.9 %, 8K prefill +1.6 %, serve at 2-8 requests +4-7 %, one-user decode −1 %; the layout choice is pending. |
 | 24 | **The second model runs as two full replicas, one per node, behind the router; no tensor parallelism across the link.** Each request runs entirely on one node, and the router balances active decodes. Two server fixes are adopted: the draft controller's learned state is reset for each request, and the speculative windows of concurrent requests are planned and verified together. | Measured on 2026-10-22 with both fixes, servers restarted before each of 3 rounds (median), greedy, token ids through the router equal to the single-node run (570/570). **Coding chat** (~70-token prompt, 187-token answers), decode rate summed over requests: **90.7 / 181.5 / 201.6 / 255.0 tok/s at 1 / 2 / 4 / 8 users** (wall aggregate including time to first token 68.1 / 136.2 / 146.9 / 166.7). **8-category short-prompt set**, wall aggregate including time to first token: **42.8 / 85.8 / 102.9 / 110.6 / 120.4 tok/s at 1 / 2 / 4 / 6 / 8 users** (time to first token p50 0.89 s at 1 user, 2.55 s at 8). Before the fixes the same set gave 42.4 / 84.6 / 94.8 / 86.3 at 1 / 2 / 4 / 6, and coding chat 89.1 / 179.0 / 180.7 at 1 / 2 / 4. **Per-request reset:** chat traffic used to leave a slow draft schedule behind (a 1K code prompt 59 → 42 tok/s, persistent); with the reset, after 80 chat requests it runs at 58.9 tok/s (prose 54.7 instead of 41.3), with the same tokens. **Joint windows:** on one node, the 1K code prompt 64.1 → 71.0 tok/s at 2 requests (+10.8 %) and 78.1 → 83.1 at 4 (+6.3 %); coding chat +12.5 % at 2 and +36.2 % at 4; one request unchanged (59.86 → 59.89). One node, one request: 59.9 tok/s on a 1K code prompt and 55.5 on 1K prose (256 tokens). |
 | 25 | **Measured and not adopted.** | **Tensor parallelism for one Qwen user over USB4:** an exchange costs ~200 µs today against a budget of ~50 µs (96 exchanges per window, calculated); it reopens only if exchanges at the real cadence get close to their back-to-back time. **Per-CPU high-priority completion work in the USB4 driver:** p99 of a 20 KB exchange 230 µs → 2.9 ms, 6-row window +3.7 %, decode −3.8 %. **2-bit trellis or lookup-table experts:** slower than Q2 on the AMD nodes (decision 6). **Overlapping the attention all-reduce in K chunks:** exact but slower (6-row window +1.2 / +3 / +5 ms at K = 2 / 4 / 8): each extra host exchange costs ~21 µs net, and nothing independent runs after attention to hide it. **Tensor-parallel prefill on the nodes:** 1.4-6.1 % slower than expert-parallel. |
+| 26 | **Qwen prompts of 1K tokens or more go to the RTX PRO prefill service when it is up**; shorter prompts, and every prompt when the service is down, priced out by its queue or refusing, are read on the node. The router holds the replica, tokenizes on it, asks the service to prefill and import the state into that replica, then forwards the original request; any failure falls back to the replica's own prefill. | Measured 2026-10-24 on the real path (identical tokens on both routes): time to first token 1.36 / 1.92 / 2.94 / 4.95 / 8.99 s with the offload against 1.80 / 5.20 / 10.46 / 21.43 / 44.02 s on the node at 1K-32K; 4.9× at 32K. The offload already wins at the shortest measured length, so the 1K floor is the configured minimum, not a measured crossover. |
+| 27 | **MiniMax M3.1 Flash runs on its own engine as a TP2 pair**, with the same distribution recipe as DeepSeek and its own kernels. An RTX PRO prefill is admitted only with a byte-identical state hand-off. | Bring-up, preliminary (2026-10-24): greedy decode 18.1 tok/s at 1K and 17.5 at 8K with all defaults, 51.0 ms/token after the latest exact change; 1K hand-off gate PASS (state bytes identical, 257 tokens equal to node-only). |
 
 ## Security model
 
