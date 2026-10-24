@@ -7,6 +7,21 @@
 >
 > Expect incomplete features, breaking changes, experimental code paths, incorrect planning decisions, unfinished documentation, and repository history that may change substantially while the architecture is being developed.
 
+## TensorMeld in 30 seconds
+
+**TensorMeld is the planning and routing layer for heterogeneous local AI inference.** It aims to match compute, memory and interconnect constraints to a suitable execution placement across different devices and hosts—without pretending that remote RAM is local GPU memory.
+
+| If you are looking for… | Start here |
+|---|---|
+| Project readiness | [Current status](#current-status) and [What not to expect yet](#what-not-to-expect-yet) |
+| Why different devices need different placements | [Why TensorMeld?](#why-tensormeld) |
+| Actual measured planning experiments | [Heterogeneous placement](#heterogeneous-placement-working-decisions) |
+| Security boundaries | [Security model](#security-model) |
+| Implementation map | [Repository layout](#repository-layout) |
+| Inference execution on Strix Halo | [Strix Halo Engine Lab](https://github.com/hyukudan/strix-halo-engine-lab) |
+
+**Important distinction:** TensorMeld is **not** the engine producing the standalone Strix Halo token-generation numbers, and it is **not yet a stable distributed inference product**. [Strix Halo Engine Lab](https://github.com/hyukudan/strix-halo-engine-lab) owns native execution; [Hyperloom](https://github.com/hyukudan/hyperloom) is the integration/control project. Components and experimental adapters should not be mistaken for an accepted end-to-end deployment.
+
 ## AMD-first implementation, independent inference roadmap
 
 **AMD-first in engineering priority; hardware-neutral in the orchestration core.**
