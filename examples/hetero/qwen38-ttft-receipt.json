@@ -1,0 +1,76 @@
+{
+  "schema": "tensormeld/ttft-curve-v1",
+  "notes": "Qwen3.8-Flash-Next, measured 2026-10-24 on the real path. local = the node replica's own prefill (the same production server the router forwards to: 2,048-row prompt tiles, A8 profile, MTP draft head). offload = the RTX PRO 6000 CUDA prefill service (exact A8 port) with its defaults (state released layer by layer, lossless bp-v1 chunks, 2 connections) streaming the state over 1 GbE to the replica's state import, plus the replica's restore and last row. Both routes give identical tokens. Offload already wins at 1K (1.36 vs 1.80 s); a linear extrapolation of both curves puts the crossover near 550 tokens (estimate, below the measured range), so min_tokens (1024) is the practical floor.",
+  "routes": {
+    "local": {
+      "name": "strix-node",
+      "points": [
+        {
+          "tokens": 1024,
+          "ttft_s": 1.795,
+          "provenance": "measured",
+          "source": "production Qwen server prefill_ms (2,048-row tiles, A8, MTP draft head); 2026-10-24, node A, RTX PRO idle; one run per length"
+        },
+        {
+          "tokens": 4096,
+          "ttft_s": 5.201,
+          "provenance": "measured",
+          "source": "production Qwen server prefill_ms (2,048-row tiles, A8, MTP draft head); 2026-10-24, node A, RTX PRO idle; one run per length"
+        },
+        {
+          "tokens": 8192,
+          "ttft_s": 10.463,
+          "provenance": "measured",
+          "source": "production Qwen server prefill_ms (2,048-row tiles, A8, MTP draft head); 2026-10-24, node A, RTX PRO idle; one run per length"
+        },
+        {
+          "tokens": 16384,
+          "ttft_s": 21.429,
+          "provenance": "measured",
+          "source": "production Qwen server prefill_ms (2,048-row tiles, A8, MTP draft head); 2026-10-24, node A, RTX PRO idle; one run per length"
+        },
+        {
+          "tokens": 32768,
+          "ttft_s": 44.023,
+          "provenance": "measured",
+          "source": "production Qwen server prefill_ms (2,048-row tiles, A8, MTP draft head); 2026-10-24, node A, RTX PRO idle; one run per length"
+        }
+      ]
+    },
+    "offload": {
+      "name": "rtx-prefill",
+      "points": [
+        {
+          "tokens": 1024,
+          "ttft_s": 1.356,
+          "provenance": "measured",
+          "source": "service defaults (release by layer, bp-v1, 2 connections): POST /v1/prefill wall + node prefill_ms after import; 2026-10-24, node A, RTX PRO otherwise idle; one run per length; 64 greedy tokens identical to the node-only run"
+        },
+        {
+          "tokens": 4096,
+          "ttft_s": 1.917,
+          "provenance": "measured",
+          "source": "service defaults (release by layer, bp-v1, 2 connections): POST /v1/prefill wall + node prefill_ms after import; 2026-10-24, node A, RTX PRO otherwise idle; one run per length; 64 greedy tokens identical to the node-only run"
+        },
+        {
+          "tokens": 8192,
+          "ttft_s": 2.941,
+          "provenance": "measured",
+          "source": "service defaults (release by layer, bp-v1, 2 connections): POST /v1/prefill wall + node prefill_ms after import; 2026-10-24, node A, RTX PRO otherwise idle; one run per length; 64 greedy tokens identical to the node-only run"
+        },
+        {
+          "tokens": 16384,
+          "ttft_s": 4.952,
+          "provenance": "measured",
+          "source": "service defaults (release by layer, bp-v1, 2 connections): POST /v1/prefill wall + node prefill_ms after import; 2026-10-24, node A, RTX PRO otherwise idle; one run per length; 64 greedy tokens identical to the node-only run"
+        },
+        {
+          "tokens": 32768,
+          "ttft_s": 8.992,
+          "provenance": "measured",
+          "source": "service defaults (release by layer, bp-v1, 2 connections): POST /v1/prefill wall + node prefill_ms after import; 2026-10-24, node A, RTX PRO otherwise idle; one run per length; 64 greedy tokens identical to the node-only run"
+        }
+      ]
+    }
+  }
+}

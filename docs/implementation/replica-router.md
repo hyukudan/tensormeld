@@ -132,6 +132,139 @@ The contract is engine-neutral: any model whose decode server implements `/token
 a state import route, and whose prefill service implements `/health` and `/v1/prefill`,
 plugs in without router changes.
 
+### Qwen prefill offload to the RTX service (`prefill_offload`)
+
+Opt-in and off by default: without a `prefill_offload` object the router forwards exactly
+as described above (no tokenize call, no extra header, no extra status or metrics). It is
+the receipt-driven rule for the Qwen replicas. A request still runs on **one** node
+replica. When the rule offloads, the RTX PRO prefill service prefills the prompt for the
+replica the router already picked:
+
+1. The router acquires and **holds** the replica first (ordinary selection and affinity).
+2. It gets the prompt's token ids:
+   - token-id prompts are taken as given;
+   - text completions (`"prompt": "..."` or `["..."]`) go through the held replica's
+     `/tokenize` as `{"prompt": text}`;
+   - chat bodies go to `/tokenize` unchanged. The Qwen serve applies `chat_prompt(body)`,
+     the same template as the generation, so the ids are exact.
+3. It decides the route (`prefill_offload.decide`).
+4. On offload it checks the replica's capability with `GET <import_url>/layout`. This route
+   exists only when the replica runs `--rtx-state-import`.
+5. It sends `POST <endpoint>/v1/prefill {"tokens", "handoff": "<import_url>", "reserve_tokens", "session"}`
+   and waits for the reply. `reserve_tokens` is the request's `max_completion_tokens` or
+   `max_tokens`, else `default_reserve_tokens`. The service imports the state into that
+   replica and answers with `position`, which must equal `tokens - 1`.
+6. It forwards the **original request unchanged** to the same replica. After a successful
+   import the replica restores the parked state for a prompt that starts with those tokens.
+   After any failure (connect or I/O error, timeout, HTTP 502/503/413, position mismatch)
+   the replica simply prefills itself. The offload never fails a request, and a stale
+   parked state is harmless because the replica checks it against the prompt.
+
+`/v1/messages` (Anthropic body) is never offloaded: the router cannot ask the replica to
+tokenize it the way the generation would. If the held replica's connection is refused, the
+request moves to another replica as usual, and the rule runs again for that replica.
+
+```json
+"prefill_offload": {
+  "endpoint": "http://192.0.2.20:18700",
+  "route": "hetero/qwen38-ttft-receipt.json",
+  "import_path": "/admin/rtx-import",
+  "timeout_s": 120,
+  "min_tokens": 1024
+}
+```
+
+The Qwen receipt is measured on the real path (2026-10-24, 1 GbE, identical tokens on both routes): node replica
+1.80 / 5.20 / 10.46 / 21.43 / 44.02 s and RTX offload (service defaults: release by layer, bp-v1, 2 connections)
+1.36 / 1.92 / 2.94 / 4.95 / 8.99 s at 1K / 4K / 8K / 16K / 32K tokens. Offload already wins at 1K; the curves'
+extrapolated crossover is ~550 tokens, so `min_tokens` (1024) is the effective floor.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `endpoint` | required | `http://ADDR:PORT` of the RTX prefill service: numeric loopback or private address, no path |
+| `route` | required | a `tensormeld/ttft-curve-v1` receipt (path relative to the config file, or inline), or a plan's `tensormeld/prefill-route-v1` section |
+| `local_max_tokens` | from `route` | operator override of the threshold (source `configured`) |
+| `min_tokens` | 1024 | never offload a prompt shorter than this |
+| `import_path` | `/admin/rtx-import` | handoff URL per replica: `http://<replica address>:<port><import_path>`, unless the replica entry has `import_url` |
+| `replicas[].import_url` | derived | explicit handoff URL for that replica (numeric private address); only allowed with `prefill_offload` |
+| `api_key_file` | none | key sent to the service as `Authorization: Bearer` |
+| `handoff_codec` | none (service default) | `identity` or `bp-v1` (lossless byte-plane + Huffman chunks, used only when the replica lists the codec) |
+| `cooperative_local_rows` | none | `[[min_tokens, q], ...]`: for prompts of at least `min_tokens`, the service also posts the replica's own completion of prompt[0, q] and sends only rows >= q; the replica needs its prefix state cache (`--prefix-cache-host-bytes`) and q a multiple of its block (2048 in the production server configuration) |
+| `timeout_s` / `health_timeout_s` | 120 / 1 | prefill call timeout; `/health` and `/layout` probe timeout |
+| `default_reserve_tokens` | `prefill.default_output_tokens` (256) | `reserve_tokens` when the request gives no `max_tokens` |
+| `prefill_path` / `health_path` | `/v1/prefill`, `/health` | service routes |
+
+`prefill_offload` needs `prefill.policy = "nodes"`: it does not combine with the cost
+placement above.
+
+**Decision rule.** Let `n` be the number of prompt tokens. The rule is evaluated in order:
+
+1. `n < min_tokens`: local.
+2. `n <= local_max_tokens`: local. The threshold is the override if one is given. Otherwise
+   it is the `local_max_tokens` of the route section, or the measured crossover of the
+   receipt curves. Both curves are end-to-end TTFT against prompt tokens, so the
+   break-even is the point where the curves cross. Up to this step no network call is made.
+3. Otherwise the router asks the service's `GET /health`:
+   - no answer: local (`service_unreachable`);
+   - `status != "ok"`: local (`service_failed`);
+   - `n > max_positions`: local (`service_max_positions`).
+4. With `ahead = busy + queued` jobs already at the service, the queue is priced with the
+   curves:
+   - `ahead == 0`: offload;
+   - otherwise offload iff `offload(n) + q_rtx < local(n) + q_local`, where
+     `q_rtx = ahead * offload(n)` and `q_local = 0`.
+
+   `q_rtx` counts every job ahead as one prefill of the same length, because the service
+   does not report the lengths it holds. `q_local` is 0 because the held replica runs only
+   this request (`max_inflight` 1). With a threshold-only route section (no curves), a busy
+   service always means local.
+
+**Records.** `X-TensorMeld-Prefill` takes one of three forms:
+- `offload:rtx`;
+- `local:<reason>`, where the reason is one of `below_min_tokens`, `below_threshold`,
+  `service_unreachable`, `service_failed`, `service_max_positions`, `service_queue`,
+  `service_busy`, `replica_no_import`, `no_tokens`;
+- `fallback:<reason>`, where the reason is one of `http502`, `http503`, `http413`,
+  `timeout`, `io`, `position_mismatch`.
+
+`/api/status` has a `prefill_offload` member with:
+- counts per route (local, offload, fallback) and per reason;
+- the total RTX wall seconds;
+- the last 64 per-request records. Each record holds the replica, tokens, route, reason,
+  fallback, handoff, session, `rtx_wall_s`, the service's own `seconds`
+  (queue/prefill/transfer/import/total), the curve values when they were used, and
+  `router_s`.
+
+`/metrics` adds `tensormeld_router_prefill_offload_total{route}`,
+`..._reason_total{reason}` and `..._rtx_seconds_total`. `serve-replicas` prints each
+record as a `tensormeld router: prefill_offload {...}` line on stderr.
+
+**Receipt.** `examples/hetero/qwen38-ttft-receipt.json` has two measured curves (2026-10-24, one run per
+length, tokens identical on both routes):
+- `local`: the node replica's own prefill on the production server the router forwards to (2,048-row prompt
+  tiles): 1.80 / 5.20 / 10.46 / 21.43 / 44.02 s at 1K / 4K / 8K / 16K / 32K tokens;
+- `offload`: end-to-end TTFT through the RTX prefill service with its defaults, including the state transfer
+  over 1 GbE, the replica's import and its last row: 1.36 / 1.92 / 2.94 / 4.95 / 8.99 s.
+
+Both curves are `measured`, so the receipt's provenance is `measured`. The router still records `rtx_wall_s` and
+the service's `seconds` per request, so the curves can be re-checked against live traffic. An example router
+config is in `examples/qwen-replicas-router-rtx-prefill.json`.
+
+**Limits.**
+- There is no prefix-cache term. The replica's restorable prefix is unknown to the router,
+  so the rule is the threshold on the full prompt. A long prompt that is mostly cached on
+  the replica can be offloaded needlessly. The DeepSeek rule's `cached_tokens` path needs a
+  Qwen serve endpoint that reports the hit length.
+- The queue price is coarse: there are no per-job lengths, and a running job counts as a
+  full one.
+- `q_local = 0` assumes `max_inflight = 1`.
+- The held replica sits idle while the service prefills. Requests that arrive meanwhile go
+  to the other replica or wait.
+- The service reply is trusted only for `position`. Correctness rests on the replica's own
+  check of the parked state against the prompt.
+- The curves come from one measured run per length, and the decision is made per request.
+  There is no feedback loop that updates the curves from the recorded seconds.
+
 ## Load client
 
 `tensormeld bench-replicas --url URL --users N --turns T --max-tokens M --doc FILE`
@@ -188,3 +321,9 @@ credential isolation, status and metrics, affinity keys and LRU, sticky conversa
 affinity yielding to load, failover and return, prefill offload with handoff before the
 request, token prompts without tokenize, fallback on failing/busy/down services, cache
 hits kept local, config validation, and the load client through the router.
+`tests/test_prefill_offload.py` covers `prefill_offload` with a fake RTX service and fake
+Qwen replicas: off forwards unchanged, short prompts stay local without a service call,
+long prompts are prefilled for the held replica (its own handoff URL, held during the
+prefill, import before the completion), chat tokenized on that replica with the same body,
+502 / timeout / position-mismatch fallback, busy service priced by the curves, failed or
+unreachable service, replica without the import route, receipt and config validation.

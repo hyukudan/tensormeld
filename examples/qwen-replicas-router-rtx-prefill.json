@@ -1,0 +1,17 @@
+{
+  "schema": "tensormeld/replica-router-v1",
+  "listen": {"address": "127.0.0.1", "port": 18600},
+  "replicas": [
+    {"id": "node1", "node": "node1", "address": "192.0.2.11", "port": 18501, "max_inflight": 1},
+    {"id": "node2", "node": "node2", "address": "192.0.2.12", "port": 18501, "max_inflight": 1}
+  ],
+  "health": {"interval_s": 1.0, "timeout_s": 2.0, "failures_to_down": 2},
+  "limits": {"queue_timeout_s": 600, "read_timeout_s": 900},
+  "prefill_offload": {
+    "endpoint": "http://192.0.2.20:18700",
+    "import_path": "/admin/rtx-import",
+    "route": "hetero/qwen38-ttft-receipt.json",
+    "timeout_s": 120,
+    "min_tokens": 1024
+  }
+}

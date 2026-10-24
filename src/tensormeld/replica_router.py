@@ -75,6 +75,16 @@ from .route_cost import (
     choose,
     local_cost,
 )
+from .prefill_offload import (
+    OffloadStats,
+    PrefillOffloadConfig,
+    decide as decide_offload,
+    parse_prefill_offload,
+    prefill as rtx_prefill,
+    replica_can_import,
+    reserve_tokens,
+    service_health,
+)
 from .schema import ValidationError, items, number, record, text, unique
 from .serving_policy import JointReservation
 
@@ -204,14 +214,16 @@ class RouterConfig:
     affinity: AffinityConfig = AffinityConfig()
     prefill: PrefillConfig = PrefillConfig()
     balance_active_decodes: bool = False
+    prefill_offload: PrefillOffloadConfig | None = None  # opt-in GPU prefill offload; None = off
 
     @staticmethod
-    def parse(data: Any) -> "RouterConfig":
+    def parse(data: Any, base_dir: str | Path | None = None) -> "RouterConfig":
+        """`base_dir` resolves a relative `prefill_offload.route` receipt path (the config's directory)."""
         data = record(
             data,
             "router",
             {"schema", "listen", "replicas"},
-            {"api_key_file", "health", "limits", "affinity", "prefill", "balance_active_decodes"},
+            {"api_key_file", "health", "limits", "affinity", "prefill", "balance_active_decodes", "prefill_offload"},
         )
         if data["schema"] != ROUTER_CONFIG_SCHEMA:
             raise ValidationError(f"router.schema: expected {ROUTER_CONFIG_SCHEMA}")
@@ -241,8 +253,18 @@ class RouterConfig:
                 api_key=_read_key(raw["api_key_file"], f"{where}.api_key_file") if "api_key_file" in raw else None,
             )
 
+        import_urls: dict[str, Any] = {}
         for i, raw in enumerate(items(data["replicas"], "router.replicas", MAX_REPLICAS)):
-            replicas.append(endpoint_spec(raw, f"router.replicas[{i}]"))
+            if isinstance(raw, dict) and "import_url" in raw:
+                if "prefill_offload" not in data:
+                    raise ValidationError(f"router.replicas[{i}].import_url: needs prefill_offload")
+                raw = dict(raw)
+                url = raw.pop("import_url")
+                spec = endpoint_spec(raw, f"router.replicas[{i}]")
+                import_urls[spec.id] = url
+            else:
+                spec = endpoint_spec(raw, f"router.replicas[{i}]")
+            replicas.append(spec)
         unique([r.id for r in replicas], "router.replicas.id")
         unique([f"{r.address}:{r.port}" for r in replicas], "router.replicas endpoint")
         health = record(
@@ -327,7 +349,20 @@ class RouterConfig:
                 raise ValidationError(f"router.prefill.{key}: expected an absolute path")
             return value
 
+        default_output_tokens = _bounded_int(
+            prefill.get("default_output_tokens", 256), "router.prefill.default_output_tokens", 1, 1 << 20
+        )
+        prefill_offload = None
+        if "prefill_offload" in data:
+            if policy != "nodes":
+                raise ValidationError("router.prefill_offload: needs prefill.policy nodes (one offload rule at a time)")
+            prefill_offload = parse_prefill_offload(
+                data["prefill_offload"], tuple(replicas), import_urls,
+                base_dir=Path(base_dir) if base_dir is not None else None,
+                read_key=_read_key, default_reserve=default_output_tokens,
+            )
         return RouterConfig(
+            prefill_offload=prefill_offload,
             balance_active_decodes=balance,
             prefill=PrefillConfig(
                 policy=policy,
@@ -335,9 +370,7 @@ class RouterConfig:
                 service_profiles=tuple(service_profiles),
                 node_profile=node_profile,
                 decode_s_per_token=decode_curve,
-                default_output_tokens=_bounded_int(
-                    prefill.get("default_output_tokens", 256), "router.prefill.default_output_tokens", 1, 1 << 20
-                ),
+                default_output_tokens=default_output_tokens,
                 cache_block_tokens=_bounded_int(cache.get("block_tokens", 1024 if balance else 2048), "router.prefill.cache.block_tokens", 16, 1 << 20),
                 cache_entries=_bounded_int(cache.get("max_entries", 65536), "router.prefill.cache.max_entries", 1, 1 << 22),
                 cost=CostPolicy(
@@ -396,7 +429,7 @@ def load_router_config(path: str | Path) -> RouterConfig:
         data = json.loads(raw, object_pairs_hook=no_duplicates)
     except (UnicodeError, json.JSONDecodeError, RecursionError) as exc:
         raise ValidationError(f"invalid JSON: {exc}") from exc
-    return RouterConfig.parse(data)
+    return RouterConfig.parse(data, base_dir=Path(path).parent)
 
 
 def _digest(previous: bytes, value: Any) -> bytes:
@@ -1042,6 +1075,17 @@ def _metrics_text(snapshot: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _offload_metrics_text(stats: OffloadStats) -> str:
+    counts, reasons, secs = stats.totals()
+    lines = ["# TYPE tensormeld_router_prefill_offload_total counter"]
+    lines += [f'tensormeld_router_prefill_offload_total{{route="{k}"}} {v}' for k, v in counts.items()]
+    lines.append("# TYPE tensormeld_router_prefill_offload_reason_total counter")
+    lines += [f'tensormeld_router_prefill_offload_reason_total{{reason="{k}"}} {v}' for k, v in sorted(reasons.items())]
+    lines.append("# TYPE tensormeld_router_prefill_offload_rtx_seconds_total counter")
+    lines.append(f"tensormeld_router_prefill_offload_rtx_seconds_total {secs:.3f}")
+    return "\n".join(lines) + "\n"
+
+
 class _RouterHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "tensormeld-router"
@@ -1085,10 +1129,16 @@ class _RouterHandler(BaseHTTPRequestHandler):
             if self.server.services is not None:
                 snapshot = {**snapshot, "prefill": {"policy": self.server.config.prefill.policy,
                                                     **self.server.services.snapshot()}}
+            if self.server.offload_stats is not None:
+                snapshot = {**snapshot, "prefill_offload": self.server.offload_stats.snapshot(
+                    self.server.config.prefill_offload)}
             extra = self.server.status_extra
             self._send_json(200, {**snapshot, **extra()} if extra is not None else snapshot)
         elif path == "/metrics":
-            body = _metrics_text(snapshot).encode("utf-8")
+            body = _metrics_text(snapshot)
+            if self.server.offload_stats is not None:
+                body += _offload_metrics_text(self.server.offload_stats)
+            body = body.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; version=0.0.4")
             self.send_header("Content-Length", str(len(body)))
@@ -1180,6 +1230,8 @@ class _RouterHandler(BaseHTTPRequestHandler):
             try:
                 if hold_slot and self.server.services is not None and path in PREFILL_ROUTES:
                     self._prefill_note = self._prefill_note or "local"
+                if hold_slot and path in PREFILL_ROUTES and self.server.config.prefill_offload is not None:
+                    self._prefill_offload(spec, path, body)
                 ok = self._exchange(spec, path, body)
                 return
             except _ConnectFailed as exc:
@@ -1189,6 +1241,61 @@ class _RouterHandler(BaseHTTPRequestHandler):
                 if hold_slot:
                     pool.release(spec.id, ok=ok)
         self._send_error_json(503, "no replica accepted the connection", "overloaded_error")
+
+    def _prefill_offload(self, spec: ReplicaSpec, path: str, body: bytes | None) -> None:
+        """`prefill_offload` rule on the replica already held for this request: maybe have the
+        GPU prefill service prefill the prompt and hand its state to that replica. Never fails
+        the request: every error leaves the replica to prefill itself."""
+        server = self.server
+        config = server.config.prefill_offload
+        assert config is not None and server.offload_stats is not None
+        t0 = time.monotonic()
+        rec: dict[str, Any] = {"replica": spec.id, "path": path}
+        try:
+            data = json.loads(body or b"")
+        except (UnicodeError, ValueError, RecursionError):
+            data = None
+        tokens = None
+        if isinstance(data, dict):
+            prompt = data.get("prompt") if path == "/v1/completions" else None
+            if isinstance(prompt, list) and prompt and all(type(t) is int and t >= 0 for t in prompt):
+                tokens = prompt
+            elif path == "/v1/completions":
+                if isinstance(prompt, list) and len(prompt) == 1 and isinstance(prompt[0], str):
+                    prompt = prompt[0]
+                if isinstance(prompt, str) and prompt:
+                    tokens = self._tokenize(spec, path, {"prompt": prompt})
+            else:
+                tokens = self._tokenize(spec, path, data)
+        if tokens is None:
+            rec.update(route="local", reason="no_tokens", tokens=None)
+        else:
+            rec["tokens"] = len(tokens)
+            # Threshold first (no network); ask the service only when the prompt is long enough.
+            decision = decide_offload(config.route, len(tokens), config.min_tokens, {"status": "ok"})
+            if decision["route"] == "offload":
+                decision = decide_offload(config.route, len(tokens), config.min_tokens, service_health(config))
+            rec.update({k: v for k, v in decision.items() if k != "tokens"})
+            if decision["route"] == "offload":
+                if not replica_can_import(config, spec.id, spec.api_key):
+                    rec.update(route="local", reason="replica_no_import")
+                else:
+                    result = rtx_prefill(config, spec.id, tokens, reserve_tokens(data, config.default_reserve_tokens))
+                    rec.update(handoff=result["handoff"], session=result["session"],
+                               rtx_wall_s=result.get("wall_s"), rtx_seconds=result.get("seconds"))
+                    if result.get("local_rows"):
+                        rec["local_rows"] = result["local_rows"]
+                    if not result["ok"]:
+                        rec["fallback"] = result["reason"]
+        rec["router_s"] = round(time.monotonic() - t0, 3)
+        self._prefill_note = (f"fallback:{rec['fallback']}" if rec.get("fallback")
+                              else "offload:rtx" if rec["route"] == "offload" else f"local:{rec['reason']}")
+        server.offload_stats.record(rec)
+        if server.offload_log is not None:
+            try:
+                server.offload_log(rec)
+            except Exception:  # a log sink never fails a request
+                pass
 
     def _forward_placed(self, path: str, body: bytes | None) -> bool:
         """Cost-placed generation request (policy auto or rtx). Returns False when it cannot
@@ -1519,6 +1626,8 @@ class ReplicaRouterServer(ThreadingHTTPServer):
         self.pool = pool
         self.status_extra: Any = None
         self.admin_routes: dict[str, Any] = {}
+        self.offload_stats: OffloadStats | None = OffloadStats() if config.prefill_offload is not None else None
+        self.offload_log: Any = None  # callable(record) for per-request prefill_offload records
         self.affinity: AffinityTable | None = (
             AffinityTable(config.affinity.max_entries) if config.affinity.mode == "prefix" else None
         )
@@ -1604,6 +1713,9 @@ class ReplicaRouter:
 def serve_replicas(config: RouterConfig, stop: threading.Event, log: Any = None) -> dict[str, Any]:
     """Run the router until `stop` is set; return the final status snapshot."""
     router = ReplicaRouter(config)
+    if log is not None and config.prefill_offload is not None:
+        router.server.offload_log = lambda rec: print(
+            "tensormeld router: prefill_offload " + json.dumps(rec, separators=(",", ":")), file=log, flush=True)
     router.start()
     host, port = router.address
     if log is not None:

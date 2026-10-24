@@ -124,6 +124,9 @@ plan carries `prefill_route` for the best prefill-decode pair that shares the be
   crossover can be far too low; use a measured receipt (example: `examples/hetero/ds41-ttft-receipt.json`).
 - `tensormeld.prefill_route.PrefillRoute.decide(prompt, cached, offload_up)` is the per-request rule for the process
   that admits requests.
+- For Qwen whole-model replicas the replica router applies the same thresholds per request, with the RTX queue priced
+  by the curves: `prefill_offload` in [replica-router.md](replica-router.md) (receipt
+  `examples/hetero/qwen38-ttft-receipt.json`).
 
 ## Engine contract (`tensormeld/engine-describe-v1`)
 
