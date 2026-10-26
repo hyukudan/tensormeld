@@ -478,6 +478,26 @@ class SupervisorTest(unittest.TestCase):
         launcher.remove(secret)
         self.assertFalse(Path(secret).exists())
 
+    def test_ssh_wrapper_keeps_the_program_while_the_channel_is_open(self):
+        # The dead-man switch must wait for the channel's stdin, not fire on the /dev/null a
+        # non-interactive sh gives a background job by default.
+        tmp = Path(tempfile.mkdtemp(prefix="tm-ssh-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        posix = lambda p: str(p).replace("\\", "/")  # noqa: E731
+        launcher = SshLauncher("n1", "user@node1", ssh_command=(sys.executable, str(FIXTURES / "fake_ssh.py")))
+        script = tmp / "engine.sh"
+        script.write_text('sleep 1\necho "READY {\\"role\\": \\"pipeline-stage\\", \\"layers\\": [0, 1]}"\n'
+                          'while :; do sleep 1; done\n', encoding="utf-8")
+        proc = ManagedProcess(LaunchSpec("tail-r1", "n1", (posix(script),), {}, posix(tmp / "dep"), ("sh",)),
+                              launcher)
+        proc.start()
+        self.assertEqual(proc.wait_ready(20)["layers"], [0, 1])
+        time.sleep(1)
+        self.assertTrue(proc.alive)
+        result = proc.stop(10)
+        self.assertFalse(result["killed"])
+        self.assertFalse(proc.alive)
+
 
 if __name__ == "__main__":
     unittest.main()
