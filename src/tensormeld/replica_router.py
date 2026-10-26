@@ -75,6 +75,8 @@ from .route_cost import (
     choose,
     local_cost,
 )
+from .prefill_routes import Health, NoRoute, RouteStats, RouteTable, StateFile, admissible as route_admissible
+from .prefill_routes import select as select_route
 from .prefill_offload import (
     OffloadStats,
     PrefillOffloadConfig,
@@ -176,7 +178,7 @@ class AffinityConfig:
     max_extra_inflight: int = 1
 
 
-PREFILL_POLICIES = ("nodes", "rtx", "auto")
+PREFILL_POLICIES = ("nodes", "rtx", "auto", "routes")
 
 
 @dataclass(frozen=True)
@@ -194,6 +196,7 @@ class PrefillConfig:
     tokenize_path: str = "/tokenize"
     prefill_path: str = "/v1/prefill"
     wait_s: float = 600.0
+    routes: RouteTable | None = None   # policy "routes": the orchestrator's decision table (prefill_routes.py)
 
 
 @dataclass(frozen=True)
@@ -302,6 +305,7 @@ class RouterConfig:
             {
                 "policy", "services", "node_profile", "decode_s_per_token", "default_output_tokens", "cache",
                 "margin_s", "margin_frac", "min_tokens_idle", "handoff_path", "tokenize_path", "prefill_path", "wait_s",
+                "routes",
             },
         )
         policy = text(prefill.get("policy", "nodes"), "router.prefill.policy")
@@ -336,6 +340,18 @@ class RouterConfig:
         )
         if policy == "auto" and (node_profile is None or any(sp is None for sp in service_profiles)):
             raise ValidationError("router.prefill: policy auto needs node_profile and a profile for every service")
+        routes = None
+        if policy == "routes":
+            if "routes" not in prefill:
+                raise ValidationError("router.prefill: policy routes needs a routes table")
+            routes = RouteTable.parse(prefill["routes"])
+            if any(r.place == "offload" and r.enabled for r in routes.routes) and not services:
+                raise ValidationError("router.prefill.routes: an enabled offload route needs a prefill service")
+            if len(services) > 1:
+                raise ValidationError("router.prefill.routes: policy routes takes at most one prefill service (the one "
+                                      "bound to the table's service set)")
+        elif "routes" in prefill:
+            raise ValidationError("router.prefill.routes: only with policy routes")
         decode_curve = (
             Curve.parse(prefill["decode_s_per_token"], "router.prefill.decode_s_per_token")
             if "decode_s_per_token" in prefill
@@ -382,6 +398,7 @@ class RouterConfig:
                 tokenize_path=route_path("tokenize_path", "/tokenize"),
                 prefill_path=route_path("prefill_path", "/v1/prefill"),
                 wait_s=_seconds(prefill.get("wait_s", 600.0), "router.prefill.wait_s", 0, 3600),
+                routes=routes,
             ),
             affinity=AffinityConfig(
                 mode=mode,
@@ -1041,6 +1058,10 @@ class HealthMonitor:
         self._thread.join(timeout=self.pool.config.health_timeout_s * count + 5)
 
 
+def _ms(since: float) -> float:
+    return round((time.monotonic() - since) * 1000, 1)
+
+
 class _ConnectFailed(Exception):
     """The upstream connection failed before any request byte was sent."""
 
@@ -1101,6 +1122,9 @@ class _RouterHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        record = getattr(self, "_route_record", None)
+        if record is not None:
+            self.send_header("X-TensorMeld-Route-Id", record["id"])
         self.end_headers()
         self.wfile.write(body)
 
@@ -1129,6 +1153,8 @@ class _RouterHandler(BaseHTTPRequestHandler):
             if self.server.services is not None:
                 snapshot = {**snapshot, "prefill": {"policy": self.server.config.prefill.policy,
                                                     **self.server.services.snapshot()}}
+            if self.server.route_stats is not None:
+                snapshot = {**snapshot, "prefill_routes": self.server.route_stats.snapshot()}
             if self.server.offload_stats is not None:
                 snapshot = {**snapshot, "prefill_offload": self.server.offload_stats.snapshot(
                     self.server.config.prefill_offload)}
@@ -1215,6 +1241,9 @@ class _RouterHandler(BaseHTTPRequestHandler):
             session = next((self.headers.get(h) for h in SESSION_HEADERS if self.headers.get(h)), None)
             keys = affinity_keys(path, body, session)
             prefer = affinity.lookup(keys)
+        if hold_slot and path in PREFILL_ROUTES and self.server.config.prefill.policy == "routes":
+            self._forward_routes(path, body, keys)
+            return
         if (hold_slot and path in PREFILL_ROUTES and self.server.config.prefill.policy in ("auto", "rtx")
                 and self._forward_placed(path, body)):
             return
@@ -1387,6 +1416,177 @@ class _RouterHandler(BaseHTTPRequestHandler):
         self._send_error_json(503, "no replica accepted the connection", "overloaded_error")
         return True
 
+    def _route_tokens(self, path: str, body: bytes | None) -> tuple[list[int] | None, str, int]:
+        """The prompt's token ids for route selection (prompt length and context bound): one prompt per request,
+        never guessed. On failure: (None, why, HTTP status): 400 for the request, 503 when no replica tokenized it."""
+        try:
+            data = json.loads(body or b"")
+        except (UnicodeError, ValueError, RecursionError):
+            return None, "the request body is not JSON", 400
+        if not isinstance(data, dict):
+            return None, "the request body is not a JSON object", 400
+        prompt = data.get("prompt") if path == "/v1/completions" else None
+        if isinstance(prompt, list) and prompt and all(type(t) is int and t >= 0 for t in prompt):
+            return prompt, "", 0
+        if path == "/v1/completions" and not isinstance(prompt, str):
+            return None, "one prompt per request (a string or one list of token ids)", 400
+        try:
+            tokens = self._tokenize(self.server.pool.pick_any(), path, data)
+        except NoReplicaAvailable as exc:
+            return None, f"no replica to tokenize ({exc.reason})", 503
+        return (tokens, "", 0) if tokens else (None, "tokenization failed", 503)
+
+    def _forward_routes(self, path: str, body: bytes | None, keys: list[bytes] | None = None) -> None:
+        try:
+            self._forward_routes_recorded(path, body, keys)
+        finally:
+            self._route_record = None
+
+    def _forward_routes_recorded(self, path: str, body: bytes | None, keys: list[bytes] | None = None) -> None:
+        """Policy routes: the orchestrator's decision table picks local prefill or an offload per request
+        (prefill_routes.py). The decode slot is taken first; the route is chosen after that wait with a fresh state and
+        checked again after the prefill service's wait, right before the hand-off. A failed hand-off resumes the walk at
+        the route's fallback; nothing admissible is a 503 with the trace. Prefill placement never changes tokens."""
+        server = self.server
+        pool, services, table, stats = server.pool, server.services, server.config.prefill.routes, server.route_stats
+        tokens, why, status = self._route_tokens(path, body)
+        started = time.monotonic()
+        record = stats.begin(prompt_tokens=None if tokens is None else len(tokens))
+        self._route_record = record
+        if tokens is None:
+            stats.refuse([{"route": "-", "result": why}])
+            stats.note(record, outcome="refused", status=status, why=why, total_ms=_ms(started))
+            self._send_error_json(status, f"recipe routing needs the prompt length: {why}",
+                                  "invalid_request_error" if status == 400 else "overloaded_error")
+            return
+        data = json.loads(body)
+        budget = data.get("max_tokens") or data.get("max_completion_tokens")
+        context = len(tokens) + (budget if type(budget) is int and budget > 0 else table.default_generation_tokens)
+        stats.note(record, context_tokens=context)
+        tried: set[str] = set()
+        for _ in range(len(pool.specs())):
+            view = pool.load_view(frozenset(tried))
+            if not view:
+                stats.note(record, outcome="no_replica", status=503, total_ms=_ms(started))
+                self._send_error_json(503, "no healthy replica", "overloaded_error")
+                return
+            rid = min(view, key=lambda v: (v[1], v[2]))[0]
+            try:
+                spec = pool.acquire(frozenset(tried), require=rid)      # the decode slot first (it may wait)
+            except NoReplicaAvailable:
+                tried.add(rid)
+                continue
+            ok = False
+            if keys and server.affinity is not None:
+                server.affinity.record(keys, spec.id)
+            try:
+                # Thresholds are on the tokens the prefill computes: the prompt minus this replica's cached prefix.
+                uncached = len(tokens) - min(server.mirrors[rid].lookup(tokens), len(tokens))
+                stats.note(record, uncached_tokens=uncached, replica=rid)
+                failed: set[str] = set()
+                while True:
+                    state, why_state = server.route_state.read()
+                    health = Health(service_up=bool(services is not None and services.up_ids()), replica_up=True)
+                    try:
+                        route, _ = select_route(table, uncached, context, state, why_state, health, frozenset(failed))
+                    except NoRoute as exc:
+                        stats.refuse(exc.trace)
+                        stats.note(record, {"replica": rid, "route": None, "place": None, "outcome": "refused",
+                                            "why": str(exc)}, outcome="refused", status=503, total_ms=_ms(started))
+                        self._send_error_json(503, f"no admissible prefill route: {exc}", "overloaded_error")
+                        return
+                    if route.place == "local":
+                        note = f"route:{route.id};local"
+                        break
+                    up = services.up_ids()
+                    if not up:
+                        # The service went down after selection: the walk resumes at the route's fallback.
+                        stats.note(record, {"replica": rid, "route": route.id, "place": "offload",
+                                            "outcome": "not_admitted_after_wait", "why": "service gone after selection"})
+                        stats.failed(sent=False)
+                        services.count("fallback")
+                        failed.add(route.id)
+                        continue
+                    sid = min(up, key=services.pending_s)
+
+                    def recheck(route=route):
+                        fresh, why_fresh = server.route_state.read()
+                        return route_admissible(table, route, uncached, context, fresh, why_fresh,
+                                                Health(service_up=True, replica_up=True), frozenset(failed))
+                    if self._offload_checked(sid, spec, tokens, recheck):
+                        note = f"route:{route.id};offload:{sid}"
+                        services.count("offload")
+                        break
+                    # The engines park imports by token prefix: a late import cannot change any request's tokens.
+                    why_offload = getattr(self, "_offload_why", "") or ""
+                    sent = not why_offload.startswith(("not admitted", "wait", "accelerator"))
+                    stats.note(record, {"replica": rid, "route": route.id, "place": "offload",
+                                        "outcome": "handoff_failed" if sent else "not_admitted_after_wait",
+                                        "why": why_offload})
+                    stats.failed(sent=sent)
+                    services.count("fallback")
+                    failed.add(route.id)
+                stats.admitted(route.id)
+                stats.note(record, {"replica": rid, "route": route.id, "place": route.place, "outcome": "admitted",
+                                    "why": None}, route=route.id, place=route.place)
+                self._prefill_note = note
+                self._relay_status = self._relay_outcome = self._relay_first_byte = None
+                ok = self._exchange(spec, path, body)
+                status = self._relay_status
+                outcome = ("served" if ok else "client_gone" if self._relay_outcome == "client_gone"
+                           else "upstream_error")
+                stats.note(record, outcome=outcome, status=status, total_ms=_ms(started),
+                           ttfb_ms=None if self._relay_first_byte is None else round(
+                               (self._relay_first_byte - started) * 1000, 1))
+                if ok and route.place == "local":
+                    server.mirrors[rid].record(tokens)
+                return
+            except _ConnectFailed as exc:
+                stats.note(record, {"replica": spec.id, "route": record["route"], "place": record["place"],
+                                    "outcome": "connect_failed", "why": str(exc)})
+                pool.mark_down(spec.id, str(exc))
+                tried.add(spec.id)
+            finally:
+                pool.release(spec.id, ok=ok)
+        stats.note(record, outcome="no_replica", status=503, total_ms=_ms(started))
+        self._send_error_json(503, "no replica accepted the connection", "overloaded_error")
+
+    def _offload_checked(self, sid: str, replica: ReplicaSpec, tokens: list[int], recheck) -> bool:
+        """Reserve the service (bounded wait), check the route is still admissible after that wait, then prefill +
+        hand off; True when the state reached the replica. `recheck()` returns None or why not."""
+        resource = self.server.joint_reservation
+        if resource is not None:
+            with resource.use("prefill") as allowed:
+                if not allowed:
+                    self._offload_why = "accelerator_reserved"
+                    return False
+                return self._offload_service_checked(sid, replica, tokens, recheck)
+        return self._offload_service_checked(sid, replica, tokens, recheck)
+
+    def _offload_service_checked(self, sid: str, replica: ReplicaSpec, tokens: list[int], recheck) -> bool:
+        services = self.server.services
+        prof = self.server.service_profile(sid)
+        hold = (prof.service_s + prof.prefill(len(tokens)) + prof.handoff(len(tokens))) if prof else 1.0
+        token = services.reserve(sid, hold)
+        started = ok = False
+        t0 = time.monotonic()
+        try:
+            started = services.start(sid, token)
+            if not started:
+                self._offload_why = "wait"
+                return False
+            why = recheck()
+            if why is not None:
+                self._offload_why = "not admitted after the wait: " + why
+                ok = True   # nothing was sent: not a service failure
+                return False
+            ok, self._offload_why = self._offload(self.server.service_spec(sid), replica, tokens)
+            return ok
+        finally:
+            services.finish(sid, token, started=started, ok=ok)
+            if ok and self._offload_why == "":
+                services.offload_ms += (time.monotonic() - t0) * 1000
+
     def _forward_balanced(self, path: str, body: bytes | None, tokens: list[int], out_tokens: int) -> bool:
         """Reserve the decode slot atomically before prefill, including service waits.
 
@@ -1542,6 +1742,9 @@ class _RouterHandler(BaseHTTPRequestHandler):
             headers["Content-Length"] = str(len(body))
         if spec.api_key is not None:
             headers["Authorization"] = f"Bearer {spec.api_key}"
+        record = getattr(self, "_route_record", None)
+        if record is not None:
+            headers["X-Request-Id"] = record["id"]     # lets an engine that logs it join its statistics
         return headers
 
     def _exchange(self, spec: ReplicaSpec, path: str, body: bytes | None) -> bool:
@@ -1560,11 +1763,13 @@ class _RouterHandler(BaseHTTPRequestHandler):
                 resp = conn.getresponse()
             except (OSError, http.client.HTTPException) as exc:
                 # Sent (or partly sent): never replayed on another replica.
+                self._relay_status, self._relay_outcome = 502, "upstream_error"
                 self._send_error_json(502, f"replica {spec.id} failed: {type(exc).__name__}", "api_error")
                 self.close_connection = True
                 return False
             return self._relay(spec, resp)
         except _ClientGone:
+            self._relay_outcome = "client_gone"
             self.close_connection = True
             return False
         finally:
@@ -1580,6 +1785,7 @@ class _RouterHandler(BaseHTTPRequestHandler):
 
     def _relay(self, spec: ReplicaSpec, resp: http.client.HTTPResponse) -> bool:
         length = resp.getheader("Content-Length")
+        self._relay_status, self._relay_first_byte = resp.status, time.monotonic()
         try:
             self.send_response(resp.status)
             for name in FORWARDED_RESPONSE_HEADERS:
@@ -1593,6 +1799,9 @@ class _RouterHandler(BaseHTTPRequestHandler):
             cost = getattr(self, "_cost_note", None)
             if cost:
                 self.send_header("X-TensorMeld-Route-Cost", cost)
+            record = getattr(self, "_route_record", None)
+            if record is not None:
+                self.send_header("X-TensorMeld-Route-Id", record["id"])
             if length is not None and length.isdigit():
                 self.send_header("Content-Length", length)
             else:
@@ -1601,16 +1810,25 @@ class _RouterHandler(BaseHTTPRequestHandler):
         except OSError as exc:
             raise _ClientGone() from exc
         chunked = length is None or not length.isdigit()
+        remaining = None if chunked else int(length)
         while True:
             try:
                 data = resp.read1(PIPE_CHUNK_BYTES)
             except (OSError, http.client.HTTPException):
                 # Upstream broke mid-response: end the client response visibly incomplete.
+                self._relay_outcome = "upstream_error"
                 self.close_connection = True
                 return False
             if not data:
                 break
+            if remaining is not None:
+                remaining -= len(data)
             self._write(b"%x\r\n%s\r\n" % (len(data), data) if chunked else data)
+        if remaining:
+            # The upstream closed before its declared Content-Length: the client got an incomplete response.
+            self._relay_outcome = "upstream_error"
+            self.close_connection = True
+            return False
         if chunked:
             self._write(b"0\r\n\r\n")
         return 200 <= resp.status < 300
@@ -1631,6 +1849,9 @@ class ReplicaRouterServer(ThreadingHTTPServer):
         self.affinity: AffinityTable | None = (
             AffinityTable(config.affinity.max_entries) if config.affinity.mode == "prefix" else None
         )
+        table = config.prefill.routes
+        self.route_state: StateFile | None = StateFile(table.state_file, table.max_age_s) if table else None
+        self.route_stats: RouteStats | None = RouteStats(table) if table else None
         self.services: ServicePool | None = (
             ServicePool(config.prefill.services, config.failures_to_down, config.prefill.wait_s)
             if config.prefill.services or config.prefill.policy != "nodes"

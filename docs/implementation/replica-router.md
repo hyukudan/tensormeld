@@ -38,7 +38,8 @@ status snapshot as JSON.
 | `affinity.mode` | `off` | `prefix`: conversations go back to the replica that served their longest known prefix |
 | `affinity.max_entries` | 65536 | bounded LRU of prefix digests |
 | `affinity.max_extra_inflight` | 1 | affinity yields when the preferred replica has this many more requests than the least loaded free one |
-| `prefill.policy` | `nodes` | `nodes`: prefill on the decode replica; `auto`: cost model (below); `rtx`: always offload while a service is up |
+| `prefill.policy` | `nodes` | `nodes`: prefill on the decode replica; `auto`: cost model (below); `rtx`: always offload while a service is up; `routes`: an orchestrator's decision table (below) |
+| `prefill.routes` | required by `routes` | the decision table (`tensormeld/prefill-route-table-v1`), see "Prefill route table" |
 | `prefill.node_profile` | required by `auto` | `{"prefill_curve": [[tokens, seconds], ...], "restore_s"}`: the replicas' measured prefill time |
 | `prefill.decode_s_per_token` | `[[1, 1/46], [8, 1/6]]` | per-request decode seconds per token by active requests (slot-wait estimates) |
 | `prefill.default_output_tokens` | 256 | output length assumed for estimates (capped by the request's `max_tokens`) |
@@ -131,6 +132,39 @@ mispredicted placement, never a wrong answer.
 The contract is engine-neutral: any model whose decode server implements `/tokenize` and
 a state import route, and whose prefill service implements `/health` and `/v1/prefill`,
 plugs in without router changes.
+
+### Prefill route table (`prefill.policy = "routes"`)
+
+An orchestrator that knows the hardware compiles an ordered decision table and a small state file; the router
+evaluates the table for every generation request (`prefill_routes.py`). Each route says where the prompt is
+prefilled (`local` on the decode replica, or `offload` to a prefill service with hand-off), for which prompt lengths
+(`when`, inclusive), which device sets and links it needs, its context bound, the host RAM it charges when its
+process is not already running, and its `fallback`.
+
+Per request: the prompt is tokenized by the replica (its chat template applies; one prompt per request, else 400);
+the context is the prompt plus the request's `max_tokens` (else the table's `default_generation_tokens`). Routes are
+walked in order; a matching route that cannot be admitted follows its fallback chain (a target must match too); the
+first admissible route wins. A route is admissible when the context fits, its handoff route's prompt bounds hold,
+every member device of its sets is available in the state file and the router's own health agrees (a prefill service
+up for a service set, the chosen replica up for the decode set), its links are up, and its RAM charge leaves at least
+`floor_gib` free on every host. Nothing admissible: 503 with the trace. The state file (`tensormeld/prefill-route-state-v1`) is
+re-read when it changes; missing, unreadable or older than `max_age_s` state makes every route inadmissible (fail
+closed). A failed hand-off resumes the walk at that route's fallback for the same request. The service slot is
+reserved with the hard `wait_s` deadline. Engines park imported states by token prefix, so a late import cannot change
+any request's tokens. The router needs the prompt length: a malformed request is refused with 400, and when no replica
+could tokenize the prompt the answer is 503 (`overloaded_error`). State files with non-finite numbers, oversized
+integers or a wrong shape count as unreadable (fail closed).
+
+`/api/status` adds `prefill_routes`: requests admitted per route, refusals (with the last trace), failed hand-offs
+(`handoff_failed`, the hand-off was sent) and `not_admitted_after_wait` (the offload never started: service wait,
+admission recheck, accelerator held or service gone; the request continues on its fallback). It also carries `instance`
+and `started_at` of the router process and `recent`, one record per routed request for the last 256: `id`, `at`,
+prompt / uncached / context tokens, `replica`, `attempts` (each with its route, place, outcome
+`admitted | handoff_failed | not_admitted_after_wait | connect_failed | refused` and reason), the final `route`, `place`,
+`outcome` (an attempt outcome, or `refused` / `no_replica` before any attempt), `status` (the status the client
+received), `ttfb_ms` and `total_ms`. Every routed response carries the record id in
+`X-TensorMeld-Route-Id`. The response header `X-TensorMeld-Prefill` names the route (`route:<id>;local` or
+`route:<id>;offload:<service>`).
 
 ### Qwen prefill offload to the RTX service (`prefill_offload`)
 
