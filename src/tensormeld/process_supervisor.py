@@ -145,13 +145,17 @@ def remote_wrapper(spec: LaunchSpec) -> str:
     """The fixed POSIX sh program the remote side runs for one process."""
     env = " ".join(shlex.quote(f"{k}={v}") for k, v in sorted(spec.env.items()))
     command = " ".join(shlex.quote(a) for a in spec.command)
+    # A non-interactive sh gives an asynchronous list /dev/null as stdin unless it is redirected
+    # explicitly, so the dead-man switch reads the channel through fd 3 (otherwise it fires at once).
     return "\n".join([
         f"mkdir -p {shlex.quote(spec.work_dir)} && cd {shlex.quote(spec.work_dir)} || exit 97",
-        f"env -i PATH={REMOTE_PATH} {env} {command} </dev/null &",
+        "exec 3<&0",
+        f"env -i PATH={REMOTE_PATH} {env} {command} </dev/null 3<&- &",
         "child=$!",
         'echo "TM-PID $child"',
         "trap 'kill -TERM $child 2>/dev/null' TERM INT HUP",
-        "(cat >/dev/null; kill -TERM $child 2>/dev/null) &",
+        "(cat <&3 >/dev/null; kill -TERM $child 2>/dev/null) &",
+        "exec 3<&-",
         "code=0",
         "while kill -0 $child 2>/dev/null; do wait $child; code=$?; done",
         'echo "TM-EXIT $code"',

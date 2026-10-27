@@ -304,7 +304,11 @@ class StreamingTests(RouterCase):
             b"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
             b"Content-Length: %d\r\n\r\n%s" % (len(body), body)
         )
-        self.assertIn(b'"i":0', sock.recv(4096) + sock.recv(4096))
+        received = b""
+        while b'"i":0' not in received:  # headers and the first event may come in one segment or several
+            chunk = sock.recv(4096)
+            self.assertTrue(chunk, "connection closed before the first event")
+            received += chunk
         sock.close()
         time.sleep(0.2)
         engines[0].stream_gate.set()
